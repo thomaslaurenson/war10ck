@@ -5,5 +5,6 @@ Public repo for public stuff
 ## Aliases
 
 ```
-wget https://pub.thomaslaurenson.com/aliases/install.sh | bash
+curl -o- https://pub.thomaslaurenson.com/aliases/install.sh | bash
+wget -qO- https://pub.thomaslaurenson.com/aliases/install.sh | bash
 ```
