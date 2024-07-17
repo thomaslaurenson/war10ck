@@ -8,3 +8,12 @@ Public repo for public stuff
 curl -o- https://pub.thomaslaurenson.com/aliases/install.sh | bash
 wget -qO- https://pub.thomaslaurenson.com/aliases/install.sh | bash
 ```
+
+## Installers
+
+### Docker
+
+```
+curl -o- https://pub.thomaslaurenson.com/installers/docker_ubuntu.sh | bash
+curl -o- https://pub.thomaslaurenson.com/installers/docker_debian.sh | bash
+```

@@ -8,8 +8,12 @@ NC="\033[0m"
 # Add aliases file ~/.bashrc
 echo -e "${RED}[+] Loading aliases into ~/.bashrc file...${NC}"
 
-curl https://pub.thomaslaurenson.com/aliases/aliases \
--o $HOME/.aliases
+if command -v curl &> /dev/null
+then
+    curl https://pub.thomaslaurenson.com/aliases/aliases -o $HOME/.aliases
+else
+    wget https://pub.thomaslaurenson.com/aliases/aliases -O "$HOME/.aliases"
+fi
 
 if ! grep "# CUSTOM ALIASES" ~/.bashrc > /dev/null; then
     {
