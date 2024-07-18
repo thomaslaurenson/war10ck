@@ -11,6 +11,13 @@ wget -qO- https://pub.thomaslaurenson.com/aliases/install.sh | bash
 
 ## Installers
 
+### Developer Tools
+
+```
+curl -o- https://pub.thomaslaurenson.com/installers/vscode.sh | bash
+curl -o- https://pub.thomaslaurenson.com/installers/terraform.sh | bash
+```
+
 ### Docker
 
 ```
