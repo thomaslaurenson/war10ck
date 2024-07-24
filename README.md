@@ -6,8 +6,14 @@ Public repo for public stuff
 
 ```
 curl -o- https://pub.thomaslaurenson.com/aliases/install.sh | bash
-wget -qO- https://pub.thomaslaurenson.com/aliases/install.sh | bash
 ```
+
+## Tmux
+
+```
+curl -o- https://pub.thomaslaurenson.com/tmux/install.sh | bash
+```
+
 
 ## Installers
 
