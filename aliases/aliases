@@ -19,6 +19,7 @@ alias ....="cd ../../.."
 alias tmux_source="tmux source ~/.tmux.conf"
 
 # Git aliases
+alias g="git"
 alias gs="git status"
 alias gp="git push"
 alias gb="git branch"
@@ -32,9 +33,9 @@ alias m="make"
 alias python="python3"
 alias py="python3"
 alias py_http='python3 -m http.server 8080'
-alias vcreate="python -m venv venv"
-alias vactivate="source venv/bin/activate"
-alias vremove="rm -rf ./venv"
+alias pyvc="python -m venv venv"
+alias pyva="source venv/bin/activate"
+alias pyvr="rm -rf ./venv"
 
 # Docker
 alias d="docker"
@@ -46,6 +47,4 @@ alias tf="terraform"
 # OpenStack
 alias os="openstack"
 alias oss="openstack server"
-alias osss="openstack server show"
 alias osp="openstack project"
-alias osps="openstack project show"
