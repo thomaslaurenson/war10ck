@@ -14,6 +14,12 @@ curl -o- https://pub.thomaslaurenson.com/aliases/install.sh | bash
 curl -o- https://pub.thomaslaurenson.com/tmux/install.sh | bash
 ```
 
+## Git
+
+```
+curl -o- https://pub.thomaslaurenson.com/git/install.sh | bash
+```
+
 
 ## Installers
 

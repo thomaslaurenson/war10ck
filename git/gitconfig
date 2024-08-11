@@ -1,0 +1,12 @@
+[user]
+    name = thomaslaurenson
+    email = thomas@thomaslaurenson.com
+    signingkey = /home/thomas/.ssh/thomas.pub
+[gpg]
+    format = ssh
+[commit]
+    gpgsign = true
+[push]
+    default = current
+[init]
+	defaultBranch = main
