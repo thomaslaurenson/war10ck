@@ -2,19 +2,21 @@
 
 Public repo for public stuff
 
-## Aliases
+## Configuration
+
+### Aliases
 
 ```
 curl -o- https://pub.thomaslaurenson.com/aliases/install.sh | bash
 ```
 
-## Tmux
+### Tmux
 
 ```
 curl -o- https://pub.thomaslaurenson.com/tmux/install.sh | bash
 ```
 
-## Git
+### Git
 
 ```
 curl -o- https://pub.thomaslaurenson.com/git/install.sh | bash
@@ -28,6 +30,7 @@ curl -o- https://pub.thomaslaurenson.com/git/install.sh | bash
 ```
 curl -o- https://pub.thomaslaurenson.com/installers/vscode.sh | bash
 curl -o- https://pub.thomaslaurenson.com/installers/terraform.sh | bash
+curl -o- https://pub.thomaslaurenson.com/installers/golang.sh | bash
 ```
 
 ### Docker
