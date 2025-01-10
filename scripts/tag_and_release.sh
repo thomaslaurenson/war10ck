@@ -2,13 +2,16 @@
 
 
 cd "$(dirname "$0")" || exit 1
-source ./export.sh
 
-echo "[*] Current version: $PROJECT_VERSION"
+echo "[*] Existing tag: $(git describe --tags --abbrev=0)"
+
+read -rp "[*] Enter new tag: v" PUB_VERSION
+
+echo "[*] Proposed version: $PUB_VERSION"
 
 read -rp "[*] Tag and Release? (y/N) " yn
 case $yn in
-	y ) git tag "$PROJECT_VERSION";
+	y ) git tag v"$PUB_VERSION";
         git push --tags;
         exit 0;;
 	n ) echo "[*] Exiting...";
