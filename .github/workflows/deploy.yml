@@ -13,13 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get latest tag
-        id: get_tag
-        run: echo "::set-output name=tag::$(git describe --tags --abbrev=0)"
-
       - name: Update install.sh with latest tag
         run: |
-          TAG=${{ steps.get_tag.outputs.tag }}
+          TAG=${{ github.ref_name }}
           sed -i "s/export PUB_VERSION=.*/export PUB_VERSION=$TAG/" dist/config/install.sh
 
       - name: Upload artifact
