@@ -1,9 +1,9 @@
 name: Deploy GitHub Pages
 
 on:
-  push
-    # tags:
-    #   - "v*.*.*"
+  push:
+    tags:
+      - "v*.*.*"
 
 jobs:
   upload:
@@ -16,7 +16,7 @@ jobs:
       - name: Update install.sh with latest tag
         run: |
           TAG=${{ github.ref_name }}
-          sed -i "s/export PUB_VERSION=.*/export PUB_VERSION=$TAG/" dist/config/install.sh
+          sed -i "s/PUB_VERSION=.*/PUB_VERSION=$TAG/" dist/config/install.sh
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

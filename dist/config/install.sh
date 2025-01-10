@@ -20,11 +20,11 @@ fi
 PUB_VERSION=""
 # Overwrite, or add, version in ~/.bashrc
 if grep "# PUB VERSION" ~/.bashrc > /dev/null; then
-    sed -i 's/export PUB_VERSION=.*/export PUB_VERSION=$PUB_VERSION/' ~/.bashrc
+    sed -i 's/export PUB_VERSION=v0.1.3
 else
     {
         echo -e "\n# PUB VERSION"
-        echo -e "export PUB_VERSION=$PUB_VERSION"
+        echo -e "export PUB_VERSION=v0.1.3
     }  >> ~/.bashrc
 fi
 
