@@ -24,8 +24,8 @@ jobs:
           args: >-
             --standalone
             --metadata title="pub"
-            --from markdown
-            --to html5
+            --from=markdown
+            --to=html5
             --output=dist/index.html
             README.md
 
