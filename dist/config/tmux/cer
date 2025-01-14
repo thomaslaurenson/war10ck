@@ -1,3 +1,4 @@
+new-session -d -s cer
 new-window -n local
 new-window -n os \
   'cd ~/repos/poetry_openstack; exec bash'

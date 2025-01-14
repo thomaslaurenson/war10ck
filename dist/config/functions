@@ -16,5 +16,6 @@ tmuxxx () {
     fi
 
     # Start the tmux session
-    tmux source-file "$HOME/.tmux/$1";
+    tmux -f "$HOME/.tmux/tmux.conf" start-server \; source-file "$HOME/.tmux/$1"
+    tmux attach-session -t $1
 }
