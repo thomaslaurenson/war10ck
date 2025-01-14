@@ -1,0 +1,3 @@
+new-window -n local
+new-window -n box \
+  'ssh box'
