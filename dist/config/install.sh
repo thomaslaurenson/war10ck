@@ -1,10 +1,15 @@
 #!/bin/bash
 
 
+PUB_URL="https://pub.thomaslaurenson.com"
+
 # Hardcoded files
-URL_ALIASES="https://pub.thomaslaurenson.com/config/aliases"
-URL_GITCONFIG="https://pub.thomaslaurenson.com/config/gitconfig"
-URL_TMUXCONF="https://pub.thomaslaurenson.com/config/tmux.conf"
+URL_ALIASES="$PUB_URL/config/aliases"
+URL_FUNCTIONS="$PUB_URL/config/functions"
+URL_GITCONFIG="$PUB_URL/config/gitconfig"
+URL_TMUX_CONF="$PUB_URL/config/tmux/tmux.conf"
+URL_TMUX_CER="$PUB_URL/config/tmux/cer"
+URL_TMUX_HOMELAB="$PUB_URL/config/tmux/homelab"
 
 # Determine remote fetch command
 if command -v curl &> /dev/null; then
@@ -16,7 +21,7 @@ else
     exit 1
 fi
 
-# Version (set in GitHub Actions deploy.yml workflow)
+# Version (this is set in GitHub Actions deploy.yml workflow)
 PUB_VERSION=""
 echo "[*] Setting pub version: $PUB_VERSION"
 # Overwrite, or add, version in ~/.bashrc
@@ -29,9 +34,21 @@ else
     }  >> ~/.bashrc
 fi
 
+# Fetch and add functions file to ~/.bashrc
+echo "[*] Configuring functions..."
+$FETCH_CMD "$HOME/.functions" "$URL_FUNCTIONS"
+if ! grep "# CUSTOM FUNCTIONS" ~/.bashrc > /dev/null; then
+    {
+        echo -e "\n# CUSTOM FUNCTIONS"
+        echo -e "if [ -f ~/.functions ]; then"
+        echo -e "    . ~/.functions"
+        echo -e "fi"
+    }  >> ~/.bashrc
+fi
+
 # Fetch and add aliases file to ~/.bashrc
 echo "[*] Configuring aliases..."
-$FETCH_CMD "$HOME/.aliases" https://pub.thomaslaurenson.com/config/aliases
+$FETCH_CMD "$HOME/.aliases" "$URL_ALIASES"
 if ! grep "# CUSTOM ALIASES" ~/.bashrc > /dev/null; then
     {
         echo -e "\n# CUSTOM ALIASES"
@@ -41,11 +58,13 @@ if ! grep "# CUSTOM ALIASES" ~/.bashrc > /dev/null; then
     }  >> ~/.bashrc
 fi
 
-# Fetch and add gitignore config
+# Fetch gitignore config
 echo "[*] Configuring git..."
-$FETCH_CMD "$HOME/.gitconfig" https://pub.thomaslaurenson.com/config/gitconfig
+$FETCH_CMD "$HOME/.gitconfig" "$URL_GITCONFIG"
 
-# Fetch and add tmux.conf file
+# Fetch tmux configuration and sessions configurations
 echo "[*] Configuring tmux..."
-$FETCH_CMD "$HOME/.tmux.conf" https://pub.thomaslaurenson.com/config/tmux.conf
-tmux source ~/.tmux.conf
+mkdir -p "$HOME/.tmux"
+$FETCH_CMD "$HOME/.tmux/tmux.conf" "$URL_TMUX_CONF"
+$FETCH_CMD "$HOME/.tmux/cer" "$URL_TMUX_CER"
+$FETCH_CMD "$HOME/.tmux/homelab" "$URL_TMUX_HOMELAB"

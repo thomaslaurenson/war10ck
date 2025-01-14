@@ -16,7 +16,7 @@ alias ...="cd ../.."
 alias ....="cd ../../.."
 
 # Tmux
-alias tmux_source="tmux source ~/.tmux.conf"
+alias tmux_source="tmux source ~/.tmux/tmux.conf"
 
 # Git aliases
 alias g="git"
