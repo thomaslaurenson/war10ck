@@ -1,0 +1,20 @@
+# CUSTOM FUNCTIONS
+
+tmuxxx () {
+    # If no argument is passed, print the help message
+    if [ -z "$1" ]; then
+        echo "Usage: tmuxxx <session-name>";
+        echo "Sessions: cer,homelab";
+        return;
+    fi
+
+    # Check $1 is a valid session name
+    if [ "$1" != "cer" ] && [ "$1" != "homelab" ]; then
+        echo "Invalid session name";
+        echo "Sessions: cer,homelab";
+        return;
+    fi
+
+    # Start the tmux session
+    tmux source-file "$HOME/.tmux/$1";
+}

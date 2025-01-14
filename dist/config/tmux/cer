@@ -1,0 +1,5 @@
+new-window -n local
+new-window -n os \
+  'cd ~/repos/poetry_openstack; exec bash'
+new-window -n tunnel
+new-window -n prod

@@ -11,8 +11,8 @@ sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyring
 sudo chmod a+r /etc/apt/keyrings/docker.asc
 
 # Add the repository to Apt sources
-echo \
-  "deb [arch=$(dpkg --print-architecture) \
+# shellcheck disable=SC2027,SC2027,SC1091
+echo "deb [arch=$(dpkg --print-architecture) \
   signed-by=/etc/apt/keyrings/docker.asc] \
   https://download.docker.com/linux/debian \
   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
