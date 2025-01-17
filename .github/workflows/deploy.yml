@@ -15,8 +15,8 @@ jobs:
 
       - name: Update install.sh with latest tag
         run: |
-          TAG=${{ github.ref_name }}
-          sed -i "s/^PUB_VERSION=.*/PUB_VERSION=$TAG/" dist/config/install.sh
+          LATEST_TAG=${{ github.ref_name }}
+          sed -i "s/^PUB_VERSION=.*/PUB_VERSION=$LATEST_TAG/" dist/config/install.sh
 
       - name: Generate basic HTML index page
         uses: docker://pandoc/core:3.5
