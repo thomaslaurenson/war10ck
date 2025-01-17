@@ -1,18 +1,26 @@
 #!/bin/bash
 
 
-PUB_URL="https://pub.thomaslaurenson.com"
+PUB_URL="https://pub.thomaslaurenson.com/config"
+
+IS_LOCAL=false
+if [ "$IS_LOCAL" = true ]; then
+    cd "$(dirname "$0")" || exit 1
+    PUB_URL="."
+fi
 
 # Hardcoded files
-URL_ALIASES="$PUB_URL/config/aliases"
-URL_FUNCTIONS="$PUB_URL/config/functions"
-URL_GITCONFIG="$PUB_URL/config/gitconfig"
-URL_TMUX_CONF="$PUB_URL/config/tmux/tmux.conf"
-URL_TMUX_CER="$PUB_URL/config/tmux/cer"
-URL_TMUX_HOMELAB="$PUB_URL/config/tmux/homelab"
+URL_ALIASES="$PUB_URL/aliases"
+URL_FUNCTIONS="$PUB_URL/functions"
+URL_GITCONFIG="$PUB_URL/gitconfig"
+URL_TMUX_CONF="$PUB_URL/tmux/tmux.conf"
+URL_TMUX_CER="$PUB_URL/tmux/cer"
+URL_TMUX_HOMELAB="$PUB_URL/tmux/homelab"
 
-# Determine remote fetch command
-if command -v curl &> /dev/null; then
+# Determine fetch command
+if "$IS_LOCAL" = true; then
+    FETCH_CMD="backwards_cp"
+elif command -v curl &> /dev/null; then
     FETCH_CMD="curl -s -o"
 elif command -v wget &> /dev/null; then
     FETCH_CMD="wget -q -O"
@@ -20,6 +28,11 @@ else
     echo "[!] No fetch command found... Exiting"
     exit 1
 fi
+
+# Define backwards_cp which switches source and destination
+backwards_cp() {
+    cp "$2" "$1"
+}
 
 # Version (this is set in GitHub Actions deploy.yml workflow)
 PUB_VERSION=""
