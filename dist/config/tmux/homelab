@@ -1,4 +1,3 @@
-new-session -d -s homelab
-new-window -n local
+new-session -d -s homelab -n local
 new-window -n box \
   'ssh box'
