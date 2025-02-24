@@ -4,6 +4,7 @@
 alias ll="ls -lisa"
 alias c="clear"
 alias cls="clear"
+alias e="exit"
 alias ping="ping -c 4"
 alias myip="curl http://ipecho.net/plain; echo"
 alias update="sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y"
@@ -33,13 +34,10 @@ alias m="make"
 alias python="python3"
 alias py="python3"
 alias py_http='python3 -m http.server 8080'
-alias pyvc="python -m venv venv"
-alias pyva="source venv/bin/activate"
-alias pyvr="rm -rf ./venv"
+alias py_venv="python -m venv venv && source venv/bin/activate"
 
 # Docker
 alias d="docker"
-alias dprune="docker system prune -af; docker volume prune -f"
 
 # Terraform
 alias tf="terraform"
@@ -48,3 +46,6 @@ alias tf="terraform"
 alias os="openstack"
 alias oss="openstack server"
 alias osp="openstack project"
+
+# Kubernetes
+alias k="kubectl"
