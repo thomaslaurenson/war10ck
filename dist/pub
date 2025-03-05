@@ -1,0 +1,146 @@
+#!/bin/bash
+
+
+PUB_VERSION=""
+
+PUB_URL="https://pub.thomaslaurenson.com"
+IS_LOCAL=true
+if [ "$IS_LOCAL" = true ]; then
+    cd "$(dirname "$0")" || exit 1
+    PUB_URL="../dist"
+fi
+
+URL_ALIASES="$PUB_URL/config/aliases"
+URL_FUNCTIONS="$PUB_URL/config/functions"
+URL_GITCONFIG="$PUB_URL/config/gitconfig"
+URL_TMUX_CONF="$PUB_URL/config/tmux/tmux.conf"
+URL_TMUX_CER="$PUB_URL/config/tmux/cer"
+URL_TMUX_HOMELAB="$PUB_URL/config/tmux/homelab"
+
+# Determine fetch command
+if [ "$IS_LOCAL" = true ]; then
+    FETCH_CMD="_backwards_cp"
+elif command -v curl &> /dev/null; then
+    FETCH_CMD="curl -s -o"
+elif command -v wget &> /dev/null; then
+    FETCH_CMD="wget -q -O"
+else
+    echo "[!] No fetch command found... Exiting"
+    exit 1
+fi
+
+# Define backwards_cp which switches source and destination
+_backwards_cp() {
+    cp "$2" "$1"
+}
+
+version() {
+    echo "$PUB_VERSION"
+}
+
+# CONFIG
+config() {
+    local subcommand=$1; shift
+    # Check if the subcommand is a valid function and call it
+    if type "config__$subcommand" >/dev/null 2>&1; then
+        "config__$subcommand" "$@"
+    else
+        echo "[!] Invalid subcommand argument: $subcommand. Exiting."
+        exit 1
+    fi
+}
+
+config__update() {
+  command echo "config__update"
+}
+
+config__install() {
+    config__aliases
+    config__functions
+    config__gitconfig
+    config__tmux
+}
+
+config__functions() {
+    echo "[*] Configuring functions..."
+    $FETCH_CMD "$HOME/.functions" "$URL_FUNCTIONS"
+    if ! grep "# CUSTOM FUNCTIONS" ~/.bashrc > /dev/null; then
+        {
+            echo -e "\n# CUSTOM FUNCTIONS"
+            echo -e "if [ -f ~/.functions ]; then"
+            echo -e "    . ~/.functions"
+            echo -e "fi"
+        }  >> ~/.bashrc
+    fi
+}
+
+config__aliases() {
+    echo "[*] Configuring aliases..."
+    $FETCH_CMD "$HOME/.aliases" "$URL_ALIASES"
+    if ! grep "# CUSTOM ALIASES" ~/.bashrc > /dev/null; then
+        {
+            echo -e "\n# CUSTOM ALIASES"
+            echo -e "if [ -f ~/.aliases ]; then"
+            echo -e "    . ~/.aliases"
+            echo -e "fi"
+        }  >> ~/.bashrc
+    fi
+}
+
+config__gitconfig() {
+    echo "[*] Configuring git..."
+    $FETCH_CMD "$HOME/.gitconfig" "$URL_GITCONFIG"
+}
+
+config__tmux() {
+    echo "[*] Configuring tmux..."
+    $FETCH_CMD "$HOME/.tmux.conf" "$URL_TMUX_CONF"
+    $FETCH_CMD "$HOME/.tmux/cer" "$URL_TMUX_CER"
+    $FETCH_CMD "$HOME/.tmux/homelab" "$URL_TMUX_HOMELAB"
+}
+
+# INSTALL
+install() {
+    echo "update"
+}
+
+# ENTRYPOINT
+
+# Check last argument is not the script itself
+# If it is, then we are being sourced, so just load functions and return
+[[ $_ != $0 ]] && return
+
+valid_subcommands=("config" "install" "version")
+
+# Function to check if an element is in an array
+_is_valid_subcommand() {
+    local subcommand=$1
+    for valid_subcommand in "${valid_subcommands[@]}"; do
+        if [[ "$valid_subcommand" == "$subcommand" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Check a valid subcommand was passed
+subcommand=$1
+if ! _is_valid_subcommand "$subcommand"; then
+    echo "[!] Invalid subcommand: $subcommand"
+    echo "[!] Valid subcommands: ${valid_subcommands[@]}"
+    echo "[!] Exiting."
+    exit 1
+fi
+
+# Double check a valid function name matches the subcommand
+# declare -f will return 0 if the function is found (above)
+# $1 is checked because this is the "subcommand" we want to run
+if declare -f "$subcommand" >/dev/null 2>&1; then
+    # Invoke function with all ($@) arguments
+    "$@"
+else
+    echo "[!] Invalid subcommand: $subcommand"
+    echo "[!] No matching function."
+    echo "[!] Exiting."
+    exit 1
+fi
