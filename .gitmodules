@@ -1,6 +1,0 @@
-[submodule "pubbup/extern/CLI11"]
-	path = pubbup/extern/CLI11
-	url = https://github.com/CLIUtils/CLI11.git
-[submodule "pubbup/extern/cpr"]
-	path = pubbup/extern/cpr
-	url = https://github.com/libcpr/cpr.git
