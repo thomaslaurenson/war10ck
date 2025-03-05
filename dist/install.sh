@@ -30,4 +30,10 @@ _backwards_cp() {
 
 # Fetch and add functions file to ~/.bashrc
 echo "[*] Configuring pub..."
-$FETCH_CMD "/usr/local/bin" "$URL_PUB"
+$FETCH_CMD "pub" "$URL_PUB"
+
+echo "[*] Setting executable permissions"
+chmod +x /usr/local/bin/pub
+
+echo "[*] Installing to path (requires sudo!)"
+sudo cp pub /usr/local/bin/pub
