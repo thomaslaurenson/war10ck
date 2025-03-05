@@ -32,8 +32,11 @@ _backwards_cp() {
 echo "[*] Configuring pub..."
 $FETCH_CMD "pub" "$URL_PUB"
 
-echo "[*] Setting executable permissions"
-chmod +x /usr/local/bin/pub
-
 echo "[*] Installing to path (requires sudo!)"
-sudo cp pub /usr/local/bin/pub
+sudo mv pub /usr/local/bin/pub
+
+echo "[*] Setting executable permissions"
+sudo chmod +x /usr/local/bin/pub
+
+echo "[*] Setting executable ownership"
+sudo chown root:root /usr/local/bin/pub
