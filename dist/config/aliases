@@ -5,10 +5,12 @@ alias ll="ls -lisa"
 alias c="clear"
 alias cls="clear"
 alias e="exit"
+alias h="history"
 alias ping="ping -c 4"
 alias myip="curl http://ipecho.net/plain; echo"
 alias update="sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y"
 alias df="df -H"
+alias ssh="ssh -v -o 'IdentitiesOnly=yes'"
 alias reload="exec $BASH"
 
 # Directory traversal
@@ -44,8 +46,9 @@ alias tf="terraform"
 
 # OpenStack
 alias os="openstack"
-alias oss="openstack server"
+alias osa="openstack allocation"
 alias osp="openstack project"
+alias oss="openstack server"
 
 # Kubernetes
 alias k="kubectl"
