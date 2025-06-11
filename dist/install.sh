@@ -28,7 +28,6 @@ _backwards_cp() {
     cp "$2" "$1"
 }
 
-# Fetch and add functions file to ~/.bashrc
 echo "[*] Configuring war10ck..."
 
 if [ $IS_LOCAL = false ]; then

@@ -92,7 +92,7 @@ config__tmux() {
     echo "[*] Configuring tmux..."
     $FETCH_CMD "$HOME/.tmux.conf" "$URL_TMUX_CONF"
     $FETCH_CMD "$HOME/.tmux/cer" "$URL_TMUX_CER"
-    $FETCH_CMD "$HOME/.tmux/homelab" "$URL_TMUX_HOMELAB"
+    $FETCH_CMD "$HOME/.tmux/home" "$URL_TMUX_HOME"
 }
 
 # Subcommand: install
@@ -141,7 +141,7 @@ URL_FUNCTIONS="$BASE_URL/config/functions"
 URL_GITCONFIG="$BASE_URL/config/gitconfig"
 URL_TMUX_CONF="$BASE_URL/config/tmux/tmux.conf"
 URL_TMUX_CER="$BASE_URL/config/tmux/cer"
-URL_TMUX_HOMELAB="$BASE_URL/config/tmux/homelab"
+URL_TMUX_HOME="$BASE_URL/config/tmux/home"
 
 # Determine fetch command to use
 if [ "$IS_LOCAL" = true ]; then
