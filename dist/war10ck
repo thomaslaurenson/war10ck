@@ -3,23 +3,23 @@
 
 # Subcommand: version
 version() {
-    echo "$PUB_VERSION"
+    echo "$VERSION"
 }
 
 # Subcommand: update
 update() {
     echo "[*] UPDATE..."
-    if [ -f "/usr/local/bin/pub" ]; then
-        echo "[*] Updating pub... requires sudo!"
-        $FETCH_CMD "/tmp/pub" "$URL_PUB"
+    if [ -f "/usr/local/bin/war10ck" ]; then
+        echo "[*] Updating war10ck... requires sudo!"
+        $FETCH_CMD "/tmp/war10ck" "$URL_WARLOCK"
         echo "[*] Installing to path"
-        sudo mv /tmp/pub /usr/local/bin/pub
+        sudo mv /tmp/war10ck /usr/local/bin/war10ck
         echo "[*] Setting executable permissions"
-        sudo chmod +x /usr/local/bin/pub
+        sudo chmod +x /usr/local/bin/war10ck
         echo "[*] Setting executable ownership"
-        sudo chown root:root /usr/local/bin/pub
+        sudo chown root:root /usr/local/bin/war10ck
     else
-        echo "[!] Could not find /usr/local/bin/pub. Exiting."
+        echo "[!] Could not find /usr/local/bin/war10ck. Exiting."
         exit 1
     fi
 }
@@ -27,11 +27,11 @@ update() {
 # Subcommand: remove
 remove() {
     echo "[*] REMOVE..."
-    if [ -f "/usr/local/bin/pub" ]; then
-        echo "[*] Removing pub... requires sudo!"
-        sudo rm -f "/usr/local/bin/pub"
+    if [ -f "/usr/local/bin/war10ck" ]; then
+        echo "[*] Removing war10ck... requires sudo!"
+        sudo rm -f "/usr/local/bin/war10ck"
     else
-        echo "[!] Could not find /usr/local/bin/pub. Exiting."
+        echo "[!] Could not find /usr/local/bin/war10ck. Exiting."
         exit 1
     fi
 }
@@ -92,7 +92,7 @@ config__tmux() {
     echo "[*] Configuring tmux..."
     $FETCH_CMD "$HOME/.tmux.conf" "$URL_TMUX_CONF"
     $FETCH_CMD "$HOME/.tmux/cer" "$URL_TMUX_CER"
-    $FETCH_CMD "$HOME/.tmux/homelab" "$URL_TMUX_HOMELAB"
+    $FETCH_CMD "$HOME/.tmux/home" "$URL_TMUX_HOME"
 }
 
 # Subcommand: install
@@ -124,9 +124,9 @@ _is_valid_subcommand() {
 # If it is, then we are being sourced, so just load functions and return
 [[ $_ != "$0" ]] && return
 
-PUB_VERSION=""
+VERSION=""
 
-BASE_URL="https://pub.thomaslaurenson.com"
+BASE_URL="https://war10ck.thomaslaurenson.com"
 
 # Toggle to use local files for testing
 IS_LOCAL=false
@@ -135,13 +135,13 @@ if [ "$IS_LOCAL" = true ]; then
     BASE_URL="../dist"
 fi
 
-URL_PUB="$BASE_URL/pub"
+URL_WARLOCK="$BASE_URL/war10ck"
 URL_ALIASES="$BASE_URL/config/aliases"
 URL_FUNCTIONS="$BASE_URL/config/functions"
 URL_GITCONFIG="$BASE_URL/config/gitconfig"
 URL_TMUX_CONF="$BASE_URL/config/tmux/tmux.conf"
 URL_TMUX_CER="$BASE_URL/config/tmux/cer"
-URL_TMUX_HOMELAB="$BASE_URL/config/tmux/homelab"
+URL_TMUX_HOME="$BASE_URL/config/tmux/home"
 
 # Determine fetch command to use
 if [ "$IS_LOCAL" = true ]; then

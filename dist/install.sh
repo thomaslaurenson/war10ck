@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-URL="https://pub.thomaslaurenson.com"
+URL="https://war10ck.thomaslaurenson.com"
 
 IS_LOCAL=false
 if [ "$IS_LOCAL" = true ]; then
@@ -9,7 +9,7 @@ if [ "$IS_LOCAL" = true ]; then
     URL="."
 fi
 
-URL_PUB="$URL/pub"
+URL_WARLOCK="$URL/war10ck"
 
 # Determine fetch command
 if [ "$IS_LOCAL" = true ]; then
@@ -28,15 +28,18 @@ _backwards_cp() {
     cp "$2" "$1"
 }
 
-# Fetch and add functions file to ~/.bashrc
-echo "[*] Configuring pub..."
-$FETCH_CMD "pub" "$URL_PUB"
+echo "[*] Configuring war10ck..."
 
-echo "[*] Installing to path (requires sudo!)"
-sudo mv pub /usr/local/bin/pub
+if [ $IS_LOCAL = false ]; then
+    echo "[*] Copying war10ck..."
+    $FETCH_CMD "war10ck" "$URL_WARLOCK"
+fi
 
-echo "[*] Setting executable permissions"
-sudo chmod +x /usr/local/bin/pub
+echo "[*] Installing to path... (requires sudo!)"
+sudo cp war10ck /usr/local/bin/war10ck
 
-echo "[*] Setting executable ownership"
-sudo chown root:root /usr/local/bin/pub
+echo "[*] Setting executable permissions..."
+sudo chmod +x /usr/local/bin/war10ck
+
+echo "[*] Setting executable ownership..."
+sudo chown root:root /usr/local/bin/war10ck

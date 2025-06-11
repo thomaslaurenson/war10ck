@@ -4,14 +4,14 @@ tmuxxx () {
     # If no argument is passed, print the help message
     if [ -z "$1" ]; then
         echo "Usage: tmuxxx <session-name>";
-        echo "Sessions: cer,homelab";
+        echo "Sessions: cer,home";
         return;
     fi
 
     # Check $1 is a valid session name
-    if [ "$1" != "cer" ] && [ "$1" != "homelab" ]; then
+    if [ "$1" != "cer" ] && [ "$1" != "home" ]; then
         echo "Invalid session name";
-        echo "Sessions: cer,homelab";
+        echo "Sessions: cer,home";
         return;
     fi
 

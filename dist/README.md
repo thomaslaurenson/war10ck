@@ -1,20 +1,7 @@
-# pub
+# war10ck
 
-Public repo for public stuff
-
-## Configuration
+Personal automated bash environment configuration
 
 ```
-curl -o- https://pub.thomaslaurenson.com/config/install.sh | bash
-```
-
-## Installers
-
-```
-curl -o- https://pub.thomaslaurenson.com/install/docker_ubuntu.sh | bash
-curl -o- https://pub.thomaslaurenson.com/install/docker_debian.sh | bash
-curl -o- https://pub.thomaslaurenson.com/install/golang.sh | bash
-curl -o- https://pub.thomaslaurenson.com/install/terraform.sh | bash
-curl -o- https://pub.thomaslaurenson.com/install/tools.sh | bash
-curl -o- https://pub.thomaslaurenson.com/install/vscode.sh | bash
+curl -o- https://war10ck.thomaslaurenson.com/install.sh | bash
 ```

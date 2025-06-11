@@ -13,17 +13,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Update pub with latest tag
+      - name: Update with latest tag
         run: |
           LATEST_TAG=${{ github.ref_name }}
-          sed -i "s/^PUB_VERSION=.*/PUB_VERSION=$LATEST_TAG/" dist/pub
+          sed -i "s/^VERSION=.*/VERSION=$LATEST_TAG/" dist/war10ck
 
       - name: Generate basic HTML index page
         uses: docker://pandoc/core:3.5
         with:
           args: >-
             --standalone
-            --metadata title="pub"
+            --metadata title="war10ck"
             --from=markdown
             --to=html5
             --output=dist/index.html
