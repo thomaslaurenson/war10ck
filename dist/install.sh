@@ -30,13 +30,17 @@ _backwards_cp() {
 
 # Fetch and add functions file to ~/.bashrc
 echo "[*] Configuring war10ck..."
-$FETCH_CMD "war10ck" "$URL_WARLOCK"
 
-echo "[*] Installing to path (requires sudo!)"
-sudo mv war10ck /usr/local/bin/war10ck
+if [ $IS_LOCAL = false ]; then
+    echo "[*] Copying war10ck..."
+    $FETCH_CMD "war10ck" "$URL_WARLOCK"
+fi
 
-echo "[*] Setting executable permissions"
+echo "[*] Installing to path... (requires sudo!)"
+sudo cp war10ck /usr/local/bin/war10ck
+
+echo "[*] Setting executable permissions..."
 sudo chmod +x /usr/local/bin/war10ck
 
-echo "[*] Setting executable ownership"
+echo "[*] Setting executable ownership..."
 sudo chown root:root /usr/local/bin/war10ck
