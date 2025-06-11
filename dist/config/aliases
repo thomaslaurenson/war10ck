@@ -10,6 +10,7 @@ alias ping="ping -c 4"
 alias myip="curl http://ipecho.net/plain; echo"
 alias update="sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y"
 alias df="df -H"
+alias shred="shred -u -z"
 alias ssh="ssh -v -o 'IdentitiesOnly=yes'"
 alias reload="exec $BASH"
 
@@ -31,15 +32,21 @@ alias gd="git diff"
 
 # C/C++
 alias m="make"
+alias cm="cmake"
 
 # Python
 alias python="python3"
+alias p="python3"
 alias py="python3"
 alias py_http='python3 -m http.server 8080'
-alias py_venv="python -m venv venv && source venv/bin/activate"
+alias py_venv="python -m venv venv && source ./venv/bin/activate"
 
 # Docker
 alias d="docker"
+alias dr="docker run"
+alias di="docker image"
+alias dv="docker volume"
+alias dc="docker compose"
 
 # Terraform
 alias tf="terraform"
@@ -49,6 +56,7 @@ alias os="openstack"
 alias osa="openstack allocation"
 alias osp="openstack project"
 alias oss="openstack server"
+alias osi="openstack image"
 
 # Kubernetes
 alias k="kubectl"
