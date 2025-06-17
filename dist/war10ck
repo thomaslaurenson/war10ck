@@ -45,26 +45,29 @@ config() {
         "config__$subcommand" "$@"
     else
         echo "[!] Invalid subcommand argument: $subcommand. Exiting."
-        echo "[!] Valid arguments: update install aliases functions gitconfig tmux"
+        echo "[!] Valid arguments: rundmc aliases functions gitconfig tmux packages"
         exit 1
     fi
 }
 
-config__install() {
-    config__functions
+config() {
+    config__rundmc
     config__aliases
+    config__functions
     config__git
     config__tmux
+    config__packages
 }
 
-config__functions() {
-    echo "[*] Configuring functions..."
-    $FETCH_CMD "$HOME/.functions" "$URL_FUNCTIONS"
-    if ! grep "# CUSTOM FUNCTIONS" ~/.bashrc > /dev/null; then
+config__rundmc() {
+    echo "[*] Configuring rundmc..."
+    $FETCH_CMD "$HOME/.rundmc" "$URL_CONFIG_RUNDMC"
+
+    if ! grep "# RUNDMC" ~/.bashrc > /dev/null; then
         {
-            echo -e "\n# CUSTOM FUNCTIONS"
-            echo -e "if [ -f ~/.functions ]; then"
-            echo -e "    . ~/.functions"
+            echo -e "\n# RUNDMC"
+            echo -e "if [ -f ~/.rundmc ]; then"
+            echo -e "    . ~/.rundmc"
             echo -e "fi"
         }  >> ~/.bashrc
     fi
@@ -72,32 +75,124 @@ config__functions() {
 
 config__aliases() {
     echo "[*] Configuring aliases..."
-    $FETCH_CMD "$HOME/.aliases" "$URL_ALIASES"
-    if ! grep "# CUSTOM ALIASES" ~/.bashrc > /dev/null; then
-        {
-            echo -e "\n# CUSTOM ALIASES"
-            echo -e "if [ -f ~/.aliases ]; then"
-            echo -e "    . ~/.aliases"
-            echo -e "fi"
-        }  >> ~/.bashrc
-    fi
+    $FETCH_CMD "$HOME/.aliases" "$URL_CONFIG_ALIASES"
+}
+
+config__functions() {
+    echo "[*] Configuring functions..."
+    $FETCH_CMD "$HOME/.functions" "$URL_CONFIG_FUNCTIONS"
 }
 
 config__git() {
     echo "[*] Configuring git..."
-    $FETCH_CMD "$HOME/.gitconfig" "$URL_GITCONFIG"
+    $FETCH_CMD "$HOME/.gitconfig" "$URL_CONFIG_GITCONFIG"
 }
 
 config__tmux() {
     echo "[*] Configuring tmux..."
-    $FETCH_CMD "$HOME/.tmux.conf" "$URL_TMUX_CONF"
-    $FETCH_CMD "$HOME/.tmux/cer" "$URL_TMUX_CER"
-    $FETCH_CMD "$HOME/.tmux/home" "$URL_TMUX_HOME"
+    $FETCH_CMD "$HOME/.tmux.conf" "$URL_CONFIG_TMUX_CONF"
+    $FETCH_CMD "$HOME/.tmux/cer" "$URL_CONFIG_TMUX_CER"
+    $FETCH_CMD "$HOME/.tmux/home" "$URL_CONFIG_TMUX_HOME"
+}
+
+config__packages() {
+    echo "[*] Configuring packages..."
+    package_list=(
+        vim
+        wget
+        curl
+        tree
+        gh
+        jq
+    )
+    sudo apt -y install "${package_list[@]}"
 }
 
 # Subcommand: install
 install() {
     echo "[*] INSTALL..."
+    local subcommand=$1; shift
+    # Check if the subcommand is a valid function and call it
+    if type "install__$subcommand" >/dev/null 2>&1; then
+        "install__$subcommand" "$@"
+    else
+        echo "[!] Invalid subcommand argument: $subcommand. Exiting."
+        echo "[!] Valid arguments: docker golang hugo mitmproxy terraform vscode"
+        exit 1
+    fi
+}
+
+install__docker() {
+    echo "[*] Installing Docker..."
+    if [ -f "/usr/bin/docker" ]; then
+        echo "[!] Docker already installed. Skipping installation."
+    else
+        $FETCH_CMD "/tmp/docker.sh" "$URL_INSTALL_DOCKER"
+        sudo bash /tmp/docker.sh
+        echo "[*] Docker installation complete."
+        echo "[*] Please log out and back in to apply group changes."
+        rm -f /tmp/docker.sh
+    fi
+}
+
+install__golang() {
+    echo "[*] Installing Go..."
+    if [ -f "/usr/local/bin/go" ]; then
+        echo "[!] Go already installed. Skipping installation."
+    else
+        $FETCH_CMD "/tmp/golang.sh" "$URL_INSTALL_GOLANG"
+        sudo bash /tmp/golang.sh
+        echo "[*] Go installation complete."
+        rm -f /tmp/golang.sh
+    fi
+}
+
+install__hugo() {
+    echo "[*] Installing Hugo..."
+    if command -v hugo &> /dev/null; then
+        echo "[!] Hugo already installed. Skipping installation."
+    else
+        $FETCH_CMD "/tmp/hugo.sh" "$URL_INSTALL_HUGO"
+        sudo bash /tmp/hugo.sh
+        echo "[*] Hugo installation complete."
+        rm -f /tmp/hugo.sh
+    fi
+}
+
+install__mitmproxy() {
+    echo "[*] Installing mitmproxy..."
+    if command -v mitmproxy &> /dev/null; then
+        echo "[!] mitmproxy already installed. Skipping installation."
+    else
+        $FETCH_CMD "/tmp/mitmproxy.sh" "$URL_INSTALL_MITMPROXY"
+        sudo bash /tmp/mitmproxy.sh
+        echo "[*] mitmproxy installation complete."
+        rm -f /tmp/mitmproxy.sh
+    fi
+}
+
+install__terraform() {
+    echo "[*] Installing Terraform..."
+    if command -v terraform &> /dev/null; then
+        echo "[!] Terraform already installed. Skipping installation."
+    else
+        $FETCH_CMD "/tmp/terraform.sh" "$URL_INSTALL_TERRAFORM"
+        sudo bash /tmp/terraform.sh
+        echo "[*] Terraform installation complete."
+        rm -f /tmp/terraform.sh
+    fi
+}
+
+install__vscode() {
+    echo "[*] Installing Visual Studio Code..."
+    if command -v code &> /dev/null; then
+        echo "[!] Visual Studio Code already installed. Skipping installation."
+    else
+        $FETCH_CMD "/tmp/vscode.sh" "$URL_INSTALL_VSCODE"
+        sudo bash /tmp/vscode.sh
+        echo "[*] Visual Studio Code installation complete."
+        rm -f /tmp/vscode.sh
+    fi
 }
 
 # HELPERS
@@ -136,12 +231,19 @@ if [ "$IS_LOCAL" = true ]; then
 fi
 
 URL_WARLOCK="$BASE_URL/war10ck"
-URL_ALIASES="$BASE_URL/config/aliases"
-URL_FUNCTIONS="$BASE_URL/config/functions"
-URL_GITCONFIG="$BASE_URL/config/gitconfig"
-URL_TMUX_CONF="$BASE_URL/config/tmux/tmux.conf"
-URL_TMUX_CER="$BASE_URL/config/tmux/cer"
-URL_TMUX_HOME="$BASE_URL/config/tmux/home"
+URL_CONFIG_RUNDMC="$BASE_URL/config/rundmc"
+URL_CONFIG_FUNCTIONS="$BASE_URL/config/functions"
+URL_CONFIG_ALIASES="$BASE_URL/config/aliases"
+URL_CONFIG_GITCONFIG="$BASE_URL/config/gitconfig"
+URL_CONFIG_TMUX_CONF="$BASE_URL/config/tmux/tmux.conf"
+URL_CONFIG_TMUX_CER="$BASE_URL/config/tmux/cer"
+URL_CONFIG_TMUX_HOME="$BASE_URL/config/tmux/home"
+URL_INSTALL_DOCKER="$BASE_URL/install/docker.sh"
+URL_INSTALL_GOLANG="$BASE_URL/install/golang.sh"
+URL_INSTALL_HUGO="$BASE_URL/install/hugo.sh"
+URL_INSTALL_MITMPROXY="$BASE_URL/install/mitmproxy.sh"
+URL_INSTALL_TERRAFORM="$BASE_URL/install/terraform.sh"
+URL_INSTALL_VSCODE="$BASE_URL/install/vscode.sh"
 
 # Determine fetch command to use
 if [ "$IS_LOCAL" = true ]; then
@@ -155,7 +257,7 @@ else
     exit 1
 fi
 
-valid_subcommands=("update" "remove" "config" "install" "version")
+valid_subcommands=("version" "update" "remove" "config" "install")
 
 # Check a valid subcommand was passed
 subcommand=$1

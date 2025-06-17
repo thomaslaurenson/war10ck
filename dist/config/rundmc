@@ -1,0 +1,9 @@
+# CUSTOM FUNCTIONS
+if [ -f ~/.functions ]; then
+    . ~/.functions
+fi
+
+# CUSTOM ALIASES
+if [ -f ~/.aliases ]; then
+    . ~/.aliases
+fi

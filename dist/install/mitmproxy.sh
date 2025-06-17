@@ -28,6 +28,4 @@ tar -xzf "mitmproxy-$LATEST_TAG.tar.gz"
 # Remove tarball
 rm "mitmproxy-$LATEST_TAG.tar.gz"
 
-# Copy binaries to $HOME/.local/bin
-mkdir -p "$HOME/.local/bin"
-mv mitm* "$HOME/.local/bin/"
+mv mitm* "/usr/local/bin/"
