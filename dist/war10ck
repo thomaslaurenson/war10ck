@@ -117,7 +117,7 @@ install() {
         "install__$subcommand" "$@"
     else
         echo "[!] Invalid subcommand argument: $subcommand. Exiting."
-        echo "[!] Valid arguments: docker golang hugo mitmproxy terraform vscode"
+        echo "[!] Valid arguments: docker golang hugo mitmproxy nvm terraform vscode"
         exit 1
     fi
 }
@@ -168,6 +168,18 @@ install__mitmproxy() {
         sudo bash /tmp/mitmproxy.sh
         echo "[*] mitmproxy installation complete."
         rm -f /tmp/mitmproxy.sh
+    fi
+}
+
+install__nvm() {
+    echo "[*] Installing nvm..."
+    if command -v nvm &> /dev/null; then
+        echo "[!] nvm already installed. Skipping installation."
+    else
+        $FETCH_CMD "/tmp/nvm.sh" "$URL_INSTALL_MITMPROXY"
+        sudo bash /tmp/nvm.sh
+        echo "[*] nvm installation complete."
+        rm -f /tmp/nvm.sh
     fi
 }
 

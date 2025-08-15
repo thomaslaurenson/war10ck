@@ -1,5 +1,3 @@
-# war10ck
-
 Personal automated bash environment configuration
 
 ```
