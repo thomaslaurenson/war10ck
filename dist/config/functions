@@ -1,5 +1,6 @@
 # CUSTOM FUNCTIONS
 
+# function: tmuxxx
 tmuxxx () {
     # If no argument is passed, print the help message
     if [ -z "$1" ]; then
@@ -18,4 +19,76 @@ tmuxxx () {
     # Start the tmux session
     tmux -f "$HOME/.tmux/tmux.conf" start-server \; source-file "$HOME/.tmux/$1"
     tmux attach-session -t $1
+}
+
+# function: github_clone_user_repositories
+github_clone_user_repositories() {
+    echo -n "[*] Enter GitHub user/org name: "
+    read -r TARGET
+
+    JSON_FIELDS="name,sshUrl"
+    REPO_METADATA=$(gh repo list "$TARGET" -L 100 --no-archived --json "$JSON_FIELDS")
+
+    REPO_DIR="/home/$USER/repos/$TARGET"
+    mkdir -p "$REPO_DIR"
+    cd "$REPO_DIR" || exit 1
+
+    # Loop array of repo SSH URLs and clone
+    jq -c '.[]' <<< "$REPO_METADATA" | while read -r JSON; do
+        name=$(jq -c '.name' <<< "$JSON"  | tr -d '"')
+        sshUrl=$(jq -c '.sshUrl' <<< "$JSON"  | tr -d '"')
+
+        echo "[*] Processing: $name"
+
+        # Check if folder already exists
+        if [ ! -d "$REPO_DIR/$name" ]; then
+            echo "[*] Cloning: $sshUrl"
+            git clone "$sshUrl"
+        fi
+    done
+}
+
+# function: github_disable_project_for_user
+github_disable_project_for_user() {
+    echo -n "[*] Enter GitHub user/org name: "
+    read -r TARGET
+
+    JSON_FIELDS="nameWithOwner,hasProjectsEnabled"
+    REPO_METADATA=$(gh repo list "$TARGET" -L 100 --no-archived --json $JSON_FIELDS)
+
+    # Loop repos, check for enabled project and disable the project
+    jq -c '.[]' <<< "$REPO_METADATA" | while read -r JSON; do
+        hasProjectsEnabled=$(jq -c '.hasProjectsEnabled | tostring' <<< "$JSON"  | tr -d '"')
+        nameWithOwner=$(jq -c '.nameWithOwner' <<< "$JSON"  | tr -d '"')
+        echo "[*] $nameWithOwner | $hasProjectsEnabled"
+
+        # Disable the repository wiki if it is enabled
+        if [ "$hasProjectsEnabled" = "true" ]; then
+            echo "[*] Disabling repository project..."
+            gh repo edit "$nameWithOwner" --enable-projects=false
+        fi
+
+    done
+}
+
+# function: github_disable_wiki_for_user
+github_disable_wiki_for_user() {
+    echo -n "[*] Enter GitHub user/org name: "
+    read -r TARGET
+
+    JSON_FIELDS="nameWithOwner,hasWikiEnabled"
+    REPO_METADATA=$(gh repo list "$TARGET" -L 100 --no-archived --json $JSON_FIELDS)
+
+    # Loop repos, check for enabled wiki and disable the wiki
+    jq -c '.[]' <<< "$REPO_METADATA" | while read -r JSON; do
+        hasWikiEnabled=$(jq -c '.hasWikiEnabled | tostring' <<< "$JSON"  | tr -d '"')
+        nameWithOwner=$(jq -c '.nameWithOwner' <<< "$JSON"  | tr -d '"')
+        echo "[*] $nameWithOwner | $hasWikiEnabled"
+
+        # Disable the repository wiki if it is enabled
+        if [ "$hasWikiEnabled" = "true" ]; then
+            echo "[*] Disabling repository wiki..."
+            gh repo edit "$nameWithOwner" --enable-wiki=false
+        fi
+    done
 }
