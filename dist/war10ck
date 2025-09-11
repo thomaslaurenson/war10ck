@@ -45,7 +45,17 @@ config() {
         "config__$subcommand" "$@"
     else
         echo "[!] Invalid subcommand argument: $subcommand. Exiting."
-        echo "[!] Valid arguments: rundmc aliases functions gitconfig tmux packages"
+        valid_args=(
+            rundmc
+            aliases
+            functions
+            gitconfig
+            tmux
+        )
+        echo "[!] Valid arguments:"
+        for arg in "${valid_args[@]}"; do
+            echo "    $arg"
+        done
         exit 1
     fi
 }
@@ -56,7 +66,7 @@ config() {
     config__functions
     config__git
     config__tmux
-    config__packages
+    # config__nuke  # This runs with war10ck nuke, it shouldnt
 }
 
 config__rundmc() {
@@ -91,21 +101,25 @@ config__git() {
 config__tmux() {
     echo "[*] Configuring tmux..."
     $FETCH_CMD "$HOME/.tmux.conf" "$URL_CONFIG_TMUX_CONF"
+    mkdir -p "$HOME/.tmux"
     $FETCH_CMD "$HOME/.tmux/cer" "$URL_CONFIG_TMUX_CER"
     $FETCH_CMD "$HOME/.tmux/home" "$URL_CONFIG_TMUX_HOME"
 }
 
-config__packages() {
-    echo "[*] Configuring packages..."
-    package_list=(
-        vim
-        wget
-        curl
-        tree
-        gh
-        jq
-    )
-    sudo apt -y install "${package_list[@]}"
+config__nuke() {
+
+    echo "[*] Nuking configuration..."
+    rm "$HOME/.rundmc"
+
+    # Remove the RUNDMC block (from '# RUNDMC' to the 'fi')
+    if [ -f "$HOME/.bashrc" ]; then
+        sed -i '/# RUNDMC/,/fi/d' "$HOME/.bashrc"
+    fi
+
+    rm "$HOME/.aliases"
+    rm "$HOME/.functions"
+    rm "$HOME/.gitconfig"
+    rm -rf "$HOME/.tmux"
 }
 
 # Subcommand: install
@@ -117,7 +131,23 @@ install() {
         "install__$subcommand" "$@"
     else
         echo "[!] Invalid subcommand argument: $subcommand. Exiting."
-        echo "[!] Valid arguments: docker golang hugo mitmproxy nvm terraform vscode"
+        valid_args=(
+            docker
+            ghidra
+            golang
+            hugo
+            java
+            mitmproxy
+            nvm
+            packages
+            signal
+            terraform
+            vscode
+        )
+        echo "[!] Valid arguments:"
+        for arg in "${valid_args[@]}"; do
+            echo "    $arg"
+        done
         exit 1
     fi
 }
@@ -135,64 +165,85 @@ install__docker() {
     fi
 }
 
+install__ghidra() {
+    echo "[*] Installing Ghidra..."
+    $FETCH_CMD "/tmp/ghidra.sh" "$URL_INSTALL_GHIDRA"
+    sudo bash /tmp/ghidra.sh
+    echo "[*] Ghidra installation complete."
+    rm -f /tmp/ghidra.sh
+}
+
 install__golang() {
     echo "[*] Installing Go..."
-    if [ -f "/usr/local/bin/go" ]; then
-        echo "[!] Go already installed. Skipping installation."
-    else
-        $FETCH_CMD "/tmp/golang.sh" "$URL_INSTALL_GOLANG"
-        sudo bash /tmp/golang.sh
-        echo "[*] Go installation complete."
-        rm -f /tmp/golang.sh
-    fi
+    $FETCH_CMD "/tmp/golang.sh" "$URL_INSTALL_GOLANG"
+    sudo bash /tmp/golang.sh
+    echo "[*] Go installation complete."
+    rm -f /tmp/golang.sh
 }
 
 install__hugo() {
     echo "[*] Installing Hugo..."
-    if command -v hugo &> /dev/null; then
-        echo "[!] Hugo already installed. Skipping installation."
-    else
-        $FETCH_CMD "/tmp/hugo.sh" "$URL_INSTALL_HUGO"
-        sudo bash /tmp/hugo.sh
-        echo "[*] Hugo installation complete."
-        rm -f /tmp/hugo.sh
-    fi
+    $FETCH_CMD "/tmp/hugo.sh" "$URL_INSTALL_HUGO"
+    sudo bash /tmp/hugo.sh
+    echo "[*] Hugo installation complete."
+    rm -f /tmp/hugo.sh
+}
+
+install__java() {
+    echo "[*] Installing Java..."
+    $FETCH_CMD "/tmp/java.sh" "$URL_INSTALL_JAVA"
+    sudo bash /tmp/java.sh
+    echo "[*] Java installation complete."
+    rm -f /tmp/java.sh
 }
 
 install__mitmproxy() {
     echo "[*] Installing mitmproxy..."
-    if command -v mitmproxy &> /dev/null; then
-        echo "[!] mitmproxy already installed. Skipping installation."
-    else
-        $FETCH_CMD "/tmp/mitmproxy.sh" "$URL_INSTALL_MITMPROXY"
-        sudo bash /tmp/mitmproxy.sh
-        echo "[*] mitmproxy installation complete."
-        rm -f /tmp/mitmproxy.sh
-    fi
+    $FETCH_CMD "/tmp/mitmproxy.sh" "$URL_INSTALL_MITMPROXY"
+    sudo bash /tmp/mitmproxy.sh
+    echo "[*] mitmproxy installation complete."
+    rm -f /tmp/mitmproxy.sh
 }
 
 install__nvm() {
     echo "[*] Installing nvm..."
-    if command -v nvm &> /dev/null; then
-        echo "[!] nvm already installed. Skipping installation."
-    else
-        $FETCH_CMD "/tmp/nvm.sh" "$URL_INSTALL_MITMPROXY"
-        sudo bash /tmp/nvm.sh
-        echo "[*] nvm installation complete."
-        rm -f /tmp/nvm.sh
-    fi
+    $FETCH_CMD "/tmp/nvm.sh" "$URL_INSTALL_MITMPROXY"
+    sudo bash /tmp/nvm.sh
+    echo "[*] nvm installation complete."
+    rm -f /tmp/nvm.sh
 }
+
+install__packages() {
+    echo "[*] Installing packages..."
+    package_list=(
+        curl
+        gh
+        jq
+        make
+        python3-pip
+        python3-venv
+        shellcheck
+        tree
+        vim
+        wget
+    )
+    sudo apt -y install "${package_list[@]}"
+}
+
+install_signal() {
+    echo "[*] Installing Signal..."
+    $FETCH_CMD "/tmp/signal.sh" "$URL_INSTALL_SIGNAL"
+    sudo bash /tmp/signal.sh
+    echo "[*] Signal installation complete."
+    rm -f /tmp/signal.sh
+}   
 
 install__terraform() {
     echo "[*] Installing Terraform..."
-    if command -v terraform &> /dev/null; then
-        echo "[!] Terraform already installed. Skipping installation."
-    else
-        $FETCH_CMD "/tmp/terraform.sh" "$URL_INSTALL_TERRAFORM"
-        sudo bash /tmp/terraform.sh
-        echo "[*] Terraform installation complete."
-        rm -f /tmp/terraform.sh
-    fi
+    $FETCH_CMD "/tmp/terraform.sh" "$URL_INSTALL_TERRAFORM"
+    sudo bash /tmp/terraform.sh
+    echo "[*] Terraform installation complete."
+    rm -f /tmp/terraform.sh
 }
 
 install__vscode() {
@@ -251,9 +302,12 @@ URL_CONFIG_TMUX_CONF="$BASE_URL/config/tmux/tmux.conf"
 URL_CONFIG_TMUX_CER="$BASE_URL/config/tmux/cer"
 URL_CONFIG_TMUX_HOME="$BASE_URL/config/tmux/home"
 URL_INSTALL_DOCKER="$BASE_URL/install/docker.sh"
+URL_INSTALL_GHIDRA="$BASE_URL/install/ghidra.sh"
 URL_INSTALL_GOLANG="$BASE_URL/install/golang.sh"
 URL_INSTALL_HUGO="$BASE_URL/install/hugo.sh"
+URL_INSTALL_JAVA="$BASE_URL/install/java.sh"
 URL_INSTALL_MITMPROXY="$BASE_URL/install/mitmproxy.sh"
+URL_INSTALL_SIGNAL="$BASE_URL/install/signal.sh"
 URL_INSTALL_TERRAFORM="$BASE_URL/install/terraform.sh"
 URL_INSTALL_VSCODE="$BASE_URL/install/vscode.sh"
 
@@ -269,7 +323,13 @@ else
     exit 1
 fi
 
-valid_subcommands=("version" "update" "remove" "config" "install")
+valid_subcommands=(
+    version
+    update
+    remove
+    config
+    install
+)
 
 # Check a valid subcommand was passed
 subcommand=$1
