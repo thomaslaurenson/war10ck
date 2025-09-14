@@ -107,15 +107,13 @@ config__tmux() {
 }
 
 config__nuke() {
-
     echo "[*] Nuking configuration..."
     rm "$HOME/.rundmc"
-
-    # Remove the RUNDMC block (from '# RUNDMC' to the 'fi')
+    # Remove the RUNDMC block from ~/.bashrc
+    # This deletes from '# RUNDMC' to the first 'fi'
     if [ -f "$HOME/.bashrc" ]; then
         sed -i '/# RUNDMC/,/fi/d' "$HOME/.bashrc"
     fi
-
     rm "$HOME/.aliases"
     rm "$HOME/.functions"
     rm "$HOME/.gitconfig"
