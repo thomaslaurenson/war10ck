@@ -134,6 +134,7 @@ install() {
             golang
             hugo
             java
+            jira
             mitmproxy
             nvm
             packages
@@ -192,6 +193,14 @@ install__java() {
     sudo bash /tmp/java.sh
     echo "[*] Java installation complete."
     rm -f /tmp/java.sh
+}
+
+install__jira() {
+    echo "[*] Installing Jira CLI..."
+    $FETCH_CMD "/tmp/jira.sh" "$URL_INSTALL_JIRA"
+    sudo bash /tmp/jira.sh
+    echo "[*] Jira CLI installation complete."
+    rm -f /tmp/jira.sh
 }
 
 install__mitmproxy() {
