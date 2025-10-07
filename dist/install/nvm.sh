@@ -4,6 +4,7 @@
 NVM_VERSION="0.40.3"
 wget -qO- "https://raw.githubusercontent.com/nvm-sh/nvm/v$NVM_VERSION/install.sh" | bash
 
+# shellcheck disable=SC1091
 . "$HOME/.nvm/nvm.sh"
 nvm install 18
 nvm install 20
