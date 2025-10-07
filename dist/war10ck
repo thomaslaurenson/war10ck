@@ -54,6 +54,17 @@ nuke() {
 config() {
     echo "[*] CONFIG..."
     local subcommand=$1; shift
+    
+    # If no subcommand provided, run all config functions
+    if [ -z "$subcommand" ]; then
+        config__rundmc
+        config__aliases
+        config__functions
+        config__git
+        config__tmux
+        return
+    fi
+    
     # Check if the subcommand is a valid function and call it
     if type "config__$subcommand" >/dev/null 2>&1; then
         "config__$subcommand" "$@"
@@ -72,14 +83,6 @@ config() {
         done
         exit 1
     fi
-}
-
-config() {
-    config__rundmc
-    config__aliases
-    config__functions
-    config__git
-    config__tmux
 }
 
 config__rundmc() {
