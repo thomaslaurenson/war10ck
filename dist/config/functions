@@ -1,10 +1,10 @@
 # CUSTOM FUNCTIONS
 
-# function: tmuxxx
-tmuxxx () {
+# function: war10ck_tmuxxx
+war10ck_tmuxxx () {
     # If no argument is passed, print the help message
     if [ -z "$1" ]; then
-        echo "Usage: tmuxxx <session-name>";
+        echo "Usage: war10ck_tmuxxx <session-name>";
         echo "Sessions: cer,home";
         return;
     fi
@@ -21,8 +21,8 @@ tmuxxx () {
     tmux attach-session -t $1
 }
 
-# function: github_clone_user_repositories
-github_clone_user_repositories() {
+# function: war10ck_github_clone_user_repositories
+war10ck_github_clone_user_repositories() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
 
@@ -48,8 +48,8 @@ github_clone_user_repositories() {
     done
 }
 
-# function: github_disable_project_for_user
-github_disable_project_for_user() {
+# function: war10ck_github_disable_project_for_user
+war10ck_github_disable_project_for_user() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
 
@@ -71,8 +71,8 @@ github_disable_project_for_user() {
     done
 }
 
-# function: github_disable_wiki_for_user
-github_disable_wiki_for_user() {
+# function: war10ck_github_disable_wiki_for_user
+war10ck_github_disable_wiki_for_user() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
 
@@ -91,4 +91,39 @@ github_disable_wiki_for_user() {
             gh repo edit "$nameWithOwner" --enable-wiki=false
         fi
     done
+}
+
+# function: war10ck_sshfs_mount
+war10ck_sshfs_mount() {
+    # Get list of Host entries and prompt user to select one
+    HOSTS=$(grep -E '^Host\s+' "$CONFIG" | grep -v '*' | awk '{print $2}')
+    echo "Available SSH Hosts:"
+    select HOST in $HOSTS; do
+        if [ -n "$HOST" ]; then
+            break
+        fi
+    done
+
+    # Extract details from config
+    HOSTNAME=$(awk "/Host $HOST/{f=1} f && /HostName/{print \$2; exit}" "$CONFIG")
+    PORT=$(awk "/Host $HOST/{f=1} f && /Port/{print \$2; exit}" "$CONFIG")
+    USER=$(awk "/Host $HOST/{f=1} f && /User/{print \$2; exit}" "$CONFIG")
+    echo "[*] HostName: $HOSTNAME"
+    echo "[*] Port: ${PORT}"
+    echo "[*] User: ${USER}"
+
+    # Set mount point, and create if it doesn't exist
+    LOCAL_MOUNT_POINT="$HOME/sshfs"
+    if [ ! -d "$LOCAL_MOUNT_POINT" ]; then
+        mkdir -p "$LOCAL_MOUNT_POINT"
+    fi
+
+    # Mount using sshfs
+    sshfs "$HOST":"/home/$USER" "$LOCAL_MOUNT_POINT" 
+}
+
+# function: war10ck_sshfs_unmount
+war10ck_sshfs_unmount() {
+    LOCAL_MOUNT_POINT="$HOME/sshfs"
+    umount "$LOCAL_MOUNT_POINT"
 }
