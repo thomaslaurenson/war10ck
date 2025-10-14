@@ -1,10 +1,10 @@
 # CUSTOM FUNCTIONS
 
-# function: war10ck_tmuxxx
-war10ck_tmuxxx () {
+# function: wf_tmuxxx
+wf_tmuxxx () {
     # If no argument is passed, print the help message
     if [ -z "$1" ]; then
-        echo "Usage: war10ck_tmuxxx <session-name>";
+        echo "Usage: wf_tmuxxx <session-name>";
         echo "Sessions: cer,home";
         return;
     fi
@@ -21,8 +21,8 @@ war10ck_tmuxxx () {
     tmux attach-session -t $1
 }
 
-# function: war10ck_github_clone_user_repositories
-war10ck_github_clone_user_repositories() {
+# function: wf_github_clone_user_repositories
+wf_github_clone_user_repositories() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
 
@@ -48,8 +48,8 @@ war10ck_github_clone_user_repositories() {
     done
 }
 
-# function: war10ck_github_disable_project_for_user
-war10ck_github_disable_project_for_user() {
+# function: wf_github_disable_project_for_user
+wf_github_disable_project_for_user() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
 
@@ -71,8 +71,8 @@ war10ck_github_disable_project_for_user() {
     done
 }
 
-# function: war10ck_github_disable_wiki_for_user
-war10ck_github_disable_wiki_for_user() {
+# function: wf_github_disable_wiki_for_user
+wf_github_disable_wiki_for_user() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
 
@@ -93,8 +93,8 @@ war10ck_github_disable_wiki_for_user() {
     done
 }
 
-# function: war10ck_sshfs_mount
-war10ck_sshfs_mount() {
+# function: wf_sshfs_mount
+wf_sshfs_mount() {
     # Get list of Host entries and prompt user to select one
     HOSTS=$(grep -E '^Host\s+' "$CONFIG" | grep -v '*' | awk '{print $2}')
     echo "Available SSH Hosts:"
@@ -122,8 +122,8 @@ war10ck_sshfs_mount() {
     sshfs "$HOST":"/home/$USER" "$LOCAL_MOUNT_POINT" 
 }
 
-# function: war10ck_sshfs_unmount
-war10ck_sshfs_unmount() {
+# function: wf_sshfs_umount
+wf_sshfs_umount() {
     LOCAL_MOUNT_POINT="$HOME/sshfs"
     umount "$LOCAL_MOUNT_POINT"
 }
