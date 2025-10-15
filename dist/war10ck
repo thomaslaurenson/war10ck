@@ -239,7 +239,7 @@ install__packages() {
     sudo apt -y install "${package_list[@]}"
 }
 
-install_signal() {
+install__signal() {
     echo "[*] Installing Signal..."
     $FETCH_CMD "/tmp/signal.sh" "$URL_INSTALL_SIGNAL"
     sudo bash /tmp/signal.sh
