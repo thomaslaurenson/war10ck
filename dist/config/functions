@@ -127,3 +127,47 @@ wf_sshfs_umount() {
     LOCAL_MOUNT_POINT="$HOME/sshfs"
     umount "$LOCAL_MOUNT_POINT"
 }
+
+# function: wf_ramdisk
+wf_ramdisk () {
+    ramdisk_path="$HOME/ramdisk"
+    if [ ! -d "$ramdisk_path" ]; then
+        echo "Creating RAM disk directory..."
+        mkdir $ramdisk_path
+    fi
+    if [[ "$1" = "mount" ]]; then
+        echo "Mounting RAM disk..."
+        sudo mount -t tmpfs -o size=2048M tmpfs $ramdisk_path
+    elif [[ "$1" = "umount" ]]; then
+        echo "Unmounting RAM disk..."
+        sudo umount $ramdisk_path
+    else
+        echo "Usage:"
+        echo "ramdisk mount -- mounts RAM disk"
+        echo "ramdisk umount -- unmounts RAM disk"
+    fi
+}
+
+# function: wf_transmission_bind
+wf_transmission_bind () {
+    # Kill transmission-daemon if it is running
+    transmission_da_pids=$(pgrep transmission-da)
+    if [ "$transmission_da_pids" ]; then
+        echo "Killing transmission-daemon processes..."
+        sudo pkill transmission-da
+    fi
+
+    # Get VPN IP to bind to
+    # bind_address=$(ip -br addr show moz0 | awk '{print $3}')
+    bind_address=$(curl http://ipecho.net/plain; echo)
+
+    # If IP wasn't found then quit
+    if [ -z $bind_address ]; then
+        echo "VPN doesn't seem to be up. Will not start transmission-daemon"
+        exit 1
+    fi
+
+    # Start transmission-daemon
+    transmission-daemon --rpc-bind-address=127.0.0.1 --bind-address-ipv4=$bind_address
+    echo "transmission-daemon started and bound to address $bind_address"
+}
