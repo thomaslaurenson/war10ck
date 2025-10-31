@@ -96,6 +96,12 @@ wf_github_disable_wiki_for_user() {
 # function: wf_sshfs_mount
 wf_sshfs_mount() {
     # Get list of Host entries and prompt user to select one
+    CONFIG="$HOME/.ssh/config"
+    if [ ! -f "$CONFIG" ]; then
+        echo "[!] SSH config not found at $CONFIG"
+        return 1
+    fi
+
     HOSTS=$(grep -E '^Host\s+' "$CONFIG" | grep -v '*' | awk '{print $2}')
     echo "Available SSH Hosts:"
     select HOST in $HOSTS; do
@@ -112,14 +118,20 @@ wf_sshfs_mount() {
     echo "[*] Port: ${PORT}"
     echo "[*] User: ${USER}"
 
-    # Set mount point, and create if it doesn't exist
+    # Determine remote target directory (argument 1), default to remote user's home
+    REMOTE_TARGET_DIR="$1"
+    if [ -z "$REMOTE_TARGET_DIR" ]; then
+        REMOTE_TARGET_DIR="/home/$USER"
+    fi
+
+    # Set local mount point, and create if it doesn't exist
     LOCAL_MOUNT_POINT="$HOME/sshfs"
     if [ ! -d "$LOCAL_MOUNT_POINT" ]; then
         mkdir -p "$LOCAL_MOUNT_POINT"
     fi
 
     # Mount using sshfs
-    sshfs "$HOST":"/home/$USER" "$LOCAL_MOUNT_POINT" 
+    sshfs "$HOST":"$REMOTE_TARGET_DIR" "$LOCAL_MOUNT_POINT"
 }
 
 # function: wf_sshfs_umount
