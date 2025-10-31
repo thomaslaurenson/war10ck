@@ -12,11 +12,11 @@ echo "[*] Proposed version: $VERSION"
 
 read -rp "[*] Tag and Release? (y/N) " yn
 case $yn in
-	y ) git tag v"$VERSION";
+    y ) git tag v"$VERSION";
         git push --tags;
         exit 0;;
-	n ) echo "[*] Exiting...";
-		exit 0;;
-	* ) echo "[*] Invalid response... Exiting";
+    n ) echo "[*] Exiting...";
+        exit 0;;
+    * ) echo "[*] Invalid response... Exiting";
         exit 1;;
 esac
