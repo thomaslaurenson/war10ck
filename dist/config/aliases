@@ -62,5 +62,7 @@ alias osi="openstack image"
 alias k="kubectl"
 
 # Jira
-alias jira_issues='jira issue list -s~Done -a$(jira me)'
-alias jira_epics='jira issue list -tEpic -a$(jira me)'
+if command -v jira >/dev/null 2>&1; then
+    alias jira_issues='jira issue list -s~Done -a$(jira me)'
+    alias jira_epics='jira issue list -tEpic -a$(jira me)'
+fi
