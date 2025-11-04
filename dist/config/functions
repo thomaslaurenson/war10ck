@@ -21,6 +21,62 @@ wf_tmuxxx () {
     tmux attach-session -t $1
 }
 
+# function: wf_github_repository_properties
+wf_github_repository_properties() {
+    local current_dir=$(pwd)
+    local target="${1:-.}"
+    local dir repo branch status ahead behind dirty
+
+    (
+        echo "[*] Fetching latest changes from remotes..."
+        max_jobs=8
+        job_count=0
+
+        for dir in "$target"/*; do
+            [ -d "$dir/.git" ] || continue
+            (
+                cd "$dir" || exit
+                git fetch origin >/dev/null 2>&1
+            ) &
+            ((job_count++))
+            if (( job_count % max_jobs == 0 )); then
+                wait
+            fi
+        done
+        wait
+        echo "[*] Fetch complete."
+    )
+
+    # Print a pretty header
+    printf "%-30s %-30s %-10s %-10s %-10s\n" "Repository" "Branch" "Ahead" "Behind" "Dirty"
+    printf "%-30s %-30s %-10s %-10s %-10s\n" "----------" "------" "-----" "------" "-----"
+
+    for dir in "$target"/*; do
+        [ -d "$dir/.git" ] || continue
+        cd "$dir" || continue
+        repo=$(basename "$dir")
+        branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+        # Check for uncommitted changes
+        if ! git diff --quiet || ! git diff --cached --quiet; then
+            dirty="yes"
+        else
+            dirty="no"
+        fi
+
+        # Check remote tracking status (if any)
+        ahead=0
+        behind=0
+        if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
+            read ahead behind < <(git rev-list --left-right --count @{u}...HEAD 2>/dev/null)
+        fi
+
+        printf "%-30s %-30s %-10s %-10s %-10s\n" "$repo" "$branch" "$ahead" "$behind" "$dirty"
+    done
+
+    cd "$current_dir" >/dev/null || true
+}
+
 # function: wf_github_clone_user_repositories
 wf_github_clone_user_repositories() {
     echo -n "[*] Enter GitHub user/org name: "
