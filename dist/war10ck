@@ -139,6 +139,7 @@ install() {
             java
             jira
             mitmproxy
+            mpqeditor
             nvm
             packages
             signal
@@ -214,9 +215,17 @@ install__mitmproxy() {
     rm -f /tmp/mitmproxy.sh
 }
 
+install__mpqeditor() {
+    echo "[*] Installing MPQ Editor..."
+    $FETCH_CMD "/tmp/mpqeditor.sh" "$URL_INSTALL_MPQEDITOR"
+    sudo bash /tmp/mpqeditor.sh
+    echo "[*] MPQ Editor installation complete."
+    rm -f /tmp/mpqeditor.sh
+}
+
 install__nvm() {
     echo "[*] Installing nvm..."
-    $FETCH_CMD "/tmp/nvm.sh" "$URL_INSTALL_MITMPROXY"
+    $FETCH_CMD "/tmp/nvm.sh" "$URL_INSTALL_NVM"
     sudo bash /tmp/nvm.sh
     echo "[*] nvm installation complete."
     rm -f /tmp/nvm.sh
@@ -317,6 +326,8 @@ URL_INSTALL_HUGO="$BASE_URL/install/hugo.sh"
 URL_INSTALL_JAVA="$BASE_URL/install/java.sh"
 URL_INSTALL_JIRA="$BASE_URL/install/jira.sh"
 URL_INSTALL_MITMPROXY="$BASE_URL/install/mitmproxy.sh"
+URL_INSTALL_MPQEDITOR="$BASE_URL/install/mpqeditor.sh"
+URL_INSTALL_NVM="$BASE_URL/install/nvm.sh"
 URL_INSTALL_SIGNAL="$BASE_URL/install/signal.sh"
 URL_INSTALL_TERRAFORM="$BASE_URL/install/terraform.sh"
 URL_INSTALL_VSCODE="$BASE_URL/install/vscode.sh"
