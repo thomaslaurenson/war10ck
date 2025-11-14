@@ -157,20 +157,19 @@ wf_sshfs_mount() {
         echo "[!] SSH config not found at $CONFIG"
         return 1
     fi
-
     HOSTS=$(grep -E '^Host\s+' "$CONFIG" | grep -v '*' | awk '{print $2}')
-    echo "Available SSH Hosts:"
+    echo "[*] Available SSH Hosts:"
     select HOST in $HOSTS; do
         if [ -n "$HOST" ]; then
             break
         fi
     done
 
-    # Extract details from config
+    # Extract details from SSH config
     HOSTNAME=$(awk "/Host $HOST/{f=1} f && /HostName/{print \$2; exit}" "$CONFIG")
     PORT=$(awk "/Host $HOST/{f=1} f && /Port/{print \$2; exit}" "$CONFIG")
     USER=$(awk "/Host $HOST/{f=1} f && /User/{print \$2; exit}" "$CONFIG")
-    echo "[*] HostName: $HOSTNAME"
+    echo "[*] Host: $HOST"
     echo "[*] Port: ${PORT}"
     echo "[*] User: ${USER}"
 
@@ -180,20 +179,73 @@ wf_sshfs_mount() {
         REMOTE_TARGET_DIR="/home/$USER"
     fi
 
-    # Set local mount point, and create if it doesn't exist
-    LOCAL_MOUNT_POINT="$HOME/sshfs"
-    if [ ! -d "$LOCAL_MOUNT_POINT" ]; then
-        mkdir -p "$LOCAL_MOUNT_POINT"
+    # Set base mount directory
+    BASE_MOUNT_DIR="$HOME/sshfs"
+    if [ ! -d "$BASE_MOUNT_DIR" ]; then
+        mkdir -p "$BASE_MOUNT_DIR"
     fi
+    # Use SSH host name as mount point subdirectory
+    LOCAL_MOUNT_POINT="$BASE_MOUNT_DIR/$HOST"
+    
+    # Check if already mounted
+    if mountpoint -q "$LOCAL_MOUNT_POINT" 2>/dev/null; then
+        echo "[!] $HOST is already mounted at $LOCAL_MOUNT_POINT"
+        return 1
+    fi
+    mkdir -p "$LOCAL_MOUNT_POINT"
 
     # Mount using sshfs
-    sshfs "$HOST":"$REMOTE_TARGET_DIR" "$LOCAL_MOUNT_POINT"
+    if sshfs "$HOST":"$REMOTE_TARGET_DIR" "$LOCAL_MOUNT_POINT"; then
+        echo "[*] Successfully mounted to: $LOCAL_MOUNT_POINT"
+        echo "[*] Remote: $HOST:$REMOTE_TARGET_DIR"
+    else
+        echo "[!] Failed to mount"
+        rmdir "$LOCAL_MOUNT_POINT" 2>/dev/null
+        return 1
+    fi
 }
 
 # function: wf_sshfs_umount
 wf_sshfs_umount() {
-    LOCAL_MOUNT_POINT="$HOME/sshfs"
-    umount "$LOCAL_MOUNT_POINT"
+    BASE_MOUNT_DIR="$HOME/sshfs"
+    
+    # Find all active mounts
+    ACTIVE_MOUNTS=()
+    MOUNT_NAMES=()
+    for dir in "$BASE_MOUNT_DIR"/*; do
+        if [ -d "$dir" ] && mountpoint -q "$dir"; then
+            ACTIVE_MOUNTS+=("$dir")
+            MOUNT_NAMES+=("$(basename "$dir")")
+        fi
+    done
+
+    # Check if there are any active mounts
+    if [ ${#ACTIVE_MOUNTS[@]} -eq 0 ]; then
+        echo "[!] No active sshfs mounts found in $BASE_MOUNT_DIR"
+        return 1
+    fi
+
+    # Display active mounts with their info
+    echo "Active SSHFS mounts:"
+    PS3="Select mount to unmount (or 0 to cancel): "
+    select MOUNT_NAME in "${MOUNT_NAMES[@]}"; do
+        if [ -n "$MOUNT_NAME" ]; then
+            MOUNT_POINT="$BASE_MOUNT_DIR/$MOUNT_NAME"
+            echo "[*] Unmounting: $MOUNT_NAME ($MOUNT_POINT)"
+            if fusermount -u "$MOUNT_POINT" 2>/dev/null || umount "$MOUNT_POINT" 2>/dev/null; then
+                echo "[*] Successfully unmounted"
+                rmdir "$MOUNT_POINT"
+                echo "[*] Removed directory: $MOUNT_POINT"
+            else
+                echo "[!] Failed to unmount $MOUNT_POINT"
+                return 1
+            fi
+            break
+        elif [ "$REPLY" -eq 0 ]; then
+            echo "[*] Cancelled"
+            return 0
+        fi
+    done
 }
 
 # function: wf_ramdisk
