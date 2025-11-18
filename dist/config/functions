@@ -8,14 +8,12 @@ wf_tmuxxx () {
         echo "Sessions: cer,home";
         return;
     fi
-
     # Check $1 is a valid session name
     if [ "$1" != "cer" ] && [ "$1" != "home" ]; then
         echo "Invalid session name";
         echo "Sessions: cer,home";
         return;
     fi
-
     # Start the tmux session
     tmux -f "$HOME/.tmux/tmux.conf" start-server \; source-file "$HOME/.tmux/$1"
     tmux attach-session -t $1
@@ -26,7 +24,6 @@ wf_github_repository_properties() {
     local current_dir=$(pwd)
     local target="${1:-.}"
     local dir repo branch status ahead behind dirty
-
     (
         echo "[*] Fetching latest changes from remotes..."
         max_jobs=8
@@ -46,34 +43,28 @@ wf_github_repository_properties() {
         wait
         echo "[*] Fetch complete."
     )
-
     # Print a pretty header
     printf "%-30s %-30s %-10s %-10s %-10s\n" "Repository" "Branch" "Ahead" "Behind" "Dirty"
     printf "%-30s %-30s %-10s %-10s %-10s\n" "----------" "------" "-----" "------" "-----"
-
     for dir in "$target"/*; do
         [ -d "$dir/.git" ] || continue
         cd "$dir" || continue
         repo=$(basename "$dir")
         branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-
         # Check for uncommitted changes
         if ! git diff --quiet || ! git diff --cached --quiet; then
             dirty="yes"
         else
             dirty="no"
         fi
-
         # Check remote tracking status (if any)
         ahead=0
         behind=0
         if git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
             read ahead behind < <(git rev-list --left-right --count @{u}...HEAD 2>/dev/null)
         fi
-
         printf "%-30s %-30s %-10s %-10s %-10s\n" "$repo" "$branch" "$ahead" "$behind" "$dirty"
     done
-
     cd "$current_dir" >/dev/null || true
 }
 
@@ -81,21 +72,16 @@ wf_github_repository_properties() {
 wf_github_clone_user_repositories() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
-
     JSON_FIELDS="name,sshUrl"
     REPO_METADATA=$(gh repo list "$TARGET" -L 100 --no-archived --json "$JSON_FIELDS")
-
     REPO_DIR="/home/$USER/repos/$TARGET"
     mkdir -p "$REPO_DIR"
     cd "$REPO_DIR" || exit 1
-
     # Loop array of repo SSH URLs and clone
     jq -c '.[]' <<< "$REPO_METADATA" | while read -r JSON; do
         name=$(jq -c '.name' <<< "$JSON"  | tr -d '"')
         sshUrl=$(jq -c '.sshUrl' <<< "$JSON"  | tr -d '"')
-
         echo "[*] Processing: $name"
-
         # Check if folder already exists
         if [ ! -d "$REPO_DIR/$name" ]; then
             echo "[*] Cloning: $sshUrl"
@@ -108,22 +94,18 @@ wf_github_clone_user_repositories() {
 wf_github_disable_project_for_user() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
-
     JSON_FIELDS="nameWithOwner,hasProjectsEnabled"
     REPO_METADATA=$(gh repo list "$TARGET" -L 100 --no-archived --json $JSON_FIELDS)
-
     # Loop repos, check for enabled project and disable the project
     jq -c '.[]' <<< "$REPO_METADATA" | while read -r JSON; do
         hasProjectsEnabled=$(jq -c '.hasProjectsEnabled | tostring' <<< "$JSON"  | tr -d '"')
         nameWithOwner=$(jq -c '.nameWithOwner' <<< "$JSON"  | tr -d '"')
         echo "[*] $nameWithOwner | $hasProjectsEnabled"
-
         # Disable the repository wiki if it is enabled
         if [ "$hasProjectsEnabled" = "true" ]; then
             echo "[*] Disabling repository project..."
             gh repo edit "$nameWithOwner" --enable-projects=false
         fi
-
     done
 }
 
@@ -131,7 +113,6 @@ wf_github_disable_project_for_user() {
 wf_github_disable_wiki_for_user() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
-
     JSON_FIELDS="nameWithOwner,hasWikiEnabled"
     REPO_METADATA=$(gh repo list "$TARGET" -L 100 --no-archived --json $JSON_FIELDS)
 
@@ -140,7 +121,6 @@ wf_github_disable_wiki_for_user() {
         hasWikiEnabled=$(jq -c '.hasWikiEnabled | tostring' <<< "$JSON"  | tr -d '"')
         nameWithOwner=$(jq -c '.nameWithOwner' <<< "$JSON"  | tr -d '"')
         echo "[*] $nameWithOwner | $hasWikiEnabled"
-
         # Disable the repository wiki if it is enabled
         if [ "$hasWikiEnabled" = "true" ]; then
             echo "[*] Disabling repository wiki..."
@@ -164,7 +144,6 @@ wf_sshfs_mount() {
             break
         fi
     done
-
     # Extract details from SSH config
     HOSTNAME=$(awk "/Host $HOST/{f=1} f && /HostName/{print \$2; exit}" "$CONFIG")
     PORT=$(awk "/Host $HOST/{f=1} f && /Port/{print \$2; exit}" "$CONFIG")
@@ -172,13 +151,11 @@ wf_sshfs_mount() {
     echo "[*] Host: $HOST"
     echo "[*] Port: ${PORT}"
     echo "[*] User: ${USER}"
-
     # Determine remote target directory (argument 1), default to remote user's home
     REMOTE_TARGET_DIR="$1"
     if [ -z "$REMOTE_TARGET_DIR" ]; then
         REMOTE_TARGET_DIR="/home/$USER"
     fi
-
     # Set base mount directory
     BASE_MOUNT_DIR="$HOME/sshfs"
     if [ ! -d "$BASE_MOUNT_DIR" ]; then
@@ -186,14 +163,12 @@ wf_sshfs_mount() {
     fi
     # Use SSH host name as mount point subdirectory
     LOCAL_MOUNT_POINT="$BASE_MOUNT_DIR/$HOST"
-    
     # Check if already mounted
     if mountpoint -q "$LOCAL_MOUNT_POINT" 2>/dev/null; then
         echo "[!] $HOST is already mounted at $LOCAL_MOUNT_POINT"
         return 1
     fi
     mkdir -p "$LOCAL_MOUNT_POINT"
-
     # Mount using sshfs
     if sshfs "$HOST":"$REMOTE_TARGET_DIR" "$LOCAL_MOUNT_POINT"; then
         echo "[*] Successfully mounted to: $LOCAL_MOUNT_POINT"
@@ -208,7 +183,6 @@ wf_sshfs_mount() {
 # function: wf_sshfs_umount
 wf_sshfs_umount() {
     BASE_MOUNT_DIR="$HOME/sshfs"
-    
     # Find all active mounts
     ACTIVE_MOUNTS=()
     MOUNT_NAMES=()
@@ -218,13 +192,11 @@ wf_sshfs_umount() {
             MOUNT_NAMES+=("$(basename "$dir")")
         fi
     done
-
     # Check if there are any active mounts
     if [ ${#ACTIVE_MOUNTS[@]} -eq 0 ]; then
         echo "[!] No active sshfs mounts found in $BASE_MOUNT_DIR"
         return 1
     fi
-
     # Display active mounts with their info
     echo "Active SSHFS mounts:"
     PS3="Select mount to unmount (or 0 to cancel): "
@@ -276,17 +248,14 @@ wf_transmission_bind () {
         echo "Killing transmission-daemon processes..."
         sudo pkill transmission-da
     fi
-
     # Get VPN IP to bind to
     # bind_address=$(ip -br addr show moz0 | awk '{print $3}')
     bind_address=$(curl http://ipecho.net/plain; echo)
-
     # If IP wasn't found then quit
     if [ -z $bind_address ]; then
         echo "VPN doesn't seem to be up. Will not start transmission-daemon"
         exit 1
     fi
-
     # Start transmission-daemon
     transmission-daemon --rpc-bind-address=127.0.0.1 --bind-address-ipv4=$bind_address
     echo "transmission-daemon started and bound to address $bind_address"
