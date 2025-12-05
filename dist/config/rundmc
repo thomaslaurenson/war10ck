@@ -1,11 +1,21 @@
 # DON'T ASK ME, BECAUSE I DON'T KNOW WHY
 
 # CUSTOM FUNCTIONS
-if [ -f ~/.functions ]; then
-    . ~/.functions
+if [ -f "$HOME/.war10ck/.functions" ]; then
+    . "$HOME/.war10ck/.functions"
+fi
+
+# CUSTOM COMMANDS
+if [ -f "$HOME/.war10ck/.commands" ]; then
+    . "$HOME/.war10ck/.commands"
 fi
 
 # CUSTOM ALIASES
-if [ -f ~/.aliases ]; then
-    . ~/.aliases
+if [ -f "$HOME/.war10ck/.aliases" ]; then
+    . "$HOME/.war10ck/.aliases"
+fi
+
+# BETTER BASH HISTORY
+if [ -f "$HOME/.war10ck/.history" ]; then
+    . "$HOME/.war10ck/.history"
 fi

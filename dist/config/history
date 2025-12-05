@@ -1,0 +1,27 @@
+# BETTER BASH HISTORY
+
+
+# Include timestamps in history (format: YYYY-MM-DD HH:MM:SS)
+export HISTTIMEFORMAT="%F %T "
+
+# Set history size
+export HISTSIZE=500000
+export HISTFILESIZE=1000000
+
+# Ignore duplicates and blank commands
+export HISTCONTROL=ignoredups:erasedups
+
+# Ignore commands that are just one or two characters
+export HISTIGNORE=?:??
+
+# Append history instead of overwriting when shells exit
+shopt -s histappend
+
+# Keep multi-line commands as a single entry with newlines
+shopt -s cmdhist
+shopt -s lithist
+
+# Merge history across concurrent sessions efficiently after each command
+# Append this session's new entries; then read only new entries others wrote
+PROMPT_COMMAND='history -a; history -n;'
+export PROMPT_COMMAND
