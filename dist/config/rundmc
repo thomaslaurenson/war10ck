@@ -1,3 +1,5 @@
+# DON'T ASK ME, BECAUSE I DON'T KNOW WHY
+
 # CUSTOM FUNCTIONS
 if [ -f ~/.functions ]; then
     . ~/.functions

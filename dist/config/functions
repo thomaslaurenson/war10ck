@@ -15,7 +15,7 @@ wf_tmuxxx () {
         return;
     fi
     # Start the tmux session
-    tmux -f "$HOME/.tmux/tmux.conf" start-server \; source-file "$HOME/.tmux/$1"
+    tmux -f "$HOME/.war10ck/.tmux/tmux.conf" start-server \; source-file "$HOME/.war10ck/.tmux/$1"
     tmux attach-session -t $1
 }
 
