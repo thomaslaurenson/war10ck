@@ -57,8 +57,10 @@ config() {
     if [ -z "$subcommand" ]; then
         config__rundmc
         config__aliases
+        config__commands
         config__functions
         config__git
+        config__history
         config__tmux
         return
     fi
@@ -71,8 +73,10 @@ config() {
         valid_args=(
             rundmc
             aliases
+            commands
             functions
             gitconfig
+            history
             tmux
         )
         echo "[!] Valid arguments:"
@@ -102,6 +106,11 @@ config__aliases() {
     $FETCH_CMD "$HOME/.war10ck/.aliases" "$URL_CONFIG_ALIASES"
 }
 
+config__commands() {
+    echo "[*] Configuring commands..."
+    $FETCH_CMD "$HOME/.war10ck/.commands" "$URL_CONFIG_COMMANDS"
+}
+
 config__functions() {
     echo "[*] Configuring functions..."
     $FETCH_CMD "$HOME/.war10ck/.functions" "$URL_CONFIG_FUNCTIONS"
@@ -110,6 +119,11 @@ config__functions() {
 config__git() {
     echo "[*] Configuring git..."
     $FETCH_CMD "$HOME/.war10ck/.gitconfig" "$URL_CONFIG_GITCONFIG"
+}
+
+config__history() {
+    echo "[*] Configuring history..."
+    $FETCH_CMD "$HOME/.war10ck/.history" "$URL_CONFIG_HISTORY"
 }
 
 config__tmux() {
@@ -311,9 +325,11 @@ fi
 
 URL_WARLOCK="$BASE_URL/war10ck"
 URL_CONFIG_RUNDMC="$BASE_URL/config/rundmc"
-URL_CONFIG_FUNCTIONS="$BASE_URL/config/functions"
 URL_CONFIG_ALIASES="$BASE_URL/config/aliases"
+URL_CONFIG_COMMANDS="$BASE_URL/config/commands"
+URL_CONFIG_FUNCTIONS="$BASE_URL/config/functions"
 URL_CONFIG_GITCONFIG="$BASE_URL/config/gitconfig"
+URL_CONFIG_HISTORY="$BASE_URL/config/history"
 URL_CONFIG_TMUX_CONF="$BASE_URL/config/tmux/tmux.conf"
 URL_CONFIG_TMUX_CER="$BASE_URL/config/tmux/cer"
 URL_CONFIG_TMUX_HOME="$BASE_URL/config/tmux/home"
