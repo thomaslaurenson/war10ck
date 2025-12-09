@@ -38,16 +38,14 @@ remove() {
 
 nuke() {
     echo "[*] Nuking configuration..."
-    rm "$HOME/.rundmc"
-    # Remove the RUNDMC block from ~/.bashrc
+    rm "$HOME/.war10ck/.rundmc"
+    # Remove the RUNDMC block from "$HOME/.bashrc"
     # This deletes from '# RUNDMC' to the first 'fi'
     if [ -f "$HOME/.bashrc" ]; then
         sed -i '/# RUNDMC/,/fi/d' "$HOME/.bashrc"
     fi
-    rm "$HOME/.aliases"
-    rm "$HOME/.functions"
-    rm "$HOME/.gitconfig"
-    rm -rf "$HOME/.tmux"
+    rm "$HOME/.war10ck/"
+    echo "[*] Nuke complete."
 }
 
 # Subcommand: config
@@ -87,39 +85,39 @@ config() {
 
 config__rundmc() {
     echo "[*] Configuring rundmc..."
-    $FETCH_CMD "$HOME/.rundmc" "$URL_CONFIG_RUNDMC"
+    $FETCH_CMD "$HOME/.war10ck/.rundmc" "$URL_CONFIG_RUNDMC"
 
-    if ! grep "# RUNDMC" ~/.bashrc > /dev/null; then
+    if ! grep "# RUNDMC" "$HOME/.bashrc" > /dev/null; then
         {
             echo -e "\n# RUNDMC"
-            echo -e "if [ -f ~/.rundmc ]; then"
-            echo -e "    . ~/.rundmc"
+            echo -e "if [ -f $HOME/.war10ck/.rundmc ]; then"
+            echo -e "    . $HOME/.war10ck/.rundmc"
             echo -e "fi"
-        }  >> ~/.bashrc
+        }  >> "$HOME/.bashrc"
     fi
 }
 
 config__aliases() {
     echo "[*] Configuring aliases..."
-    $FETCH_CMD "$HOME/.aliases" "$URL_CONFIG_ALIASES"
+    $FETCH_CMD "$HOME/.war10ck/.aliases" "$URL_CONFIG_ALIASES"
 }
 
 config__functions() {
     echo "[*] Configuring functions..."
-    $FETCH_CMD "$HOME/.functions" "$URL_CONFIG_FUNCTIONS"
+    $FETCH_CMD "$HOME/.war10ck/.functions" "$URL_CONFIG_FUNCTIONS"
 }
 
 config__git() {
     echo "[*] Configuring git..."
-    $FETCH_CMD "$HOME/.gitconfig" "$URL_CONFIG_GITCONFIG"
+    $FETCH_CMD "$HOME/.war10ck/.gitconfig" "$URL_CONFIG_GITCONFIG"
 }
 
 config__tmux() {
     echo "[*] Configuring tmux..."
-    $FETCH_CMD "$HOME/.tmux.conf" "$URL_CONFIG_TMUX_CONF"
-    mkdir -p "$HOME/.tmux"
-    $FETCH_CMD "$HOME/.tmux/cer" "$URL_CONFIG_TMUX_CER"
-    $FETCH_CMD "$HOME/.tmux/home" "$URL_CONFIG_TMUX_HOME"
+    $FETCH_CMD "$HOME/.war10ck/.tmux.conf" "$URL_CONFIG_TMUX_CONF"
+    mkdir -p "$HOME/.war10ck/.tmux"
+    $FETCH_CMD "$HOME/.war10ck/.tmux/cer" "$URL_CONFIG_TMUX_CER"
+    $FETCH_CMD "$HOME/.war10ck/.tmux/home" "$URL_CONFIG_TMUX_HOME"
 }
 
 # Subcommand: install
