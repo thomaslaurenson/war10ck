@@ -1,0 +1,13 @@
+name: Lint
+
+on: workflow_call
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run linter
+        run: |
+          make lint

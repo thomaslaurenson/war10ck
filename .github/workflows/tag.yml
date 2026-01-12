@@ -1,0 +1,13 @@
+name: Tag
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+    lint:
+        uses: ./.github/workflows/lint.yml
+    deploy:
+        uses: ./.github/workflows/deploy.yml
+        secrets: inherit

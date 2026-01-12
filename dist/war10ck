@@ -156,6 +156,7 @@ install() {
             packages
             signal
             terraform
+            uv
             vscode
         )
         echo "[!] Valid arguments:"
@@ -276,6 +277,14 @@ install__terraform() {
     rm -f /tmp/terraform.sh
 }
 
+install_uv() {
+    echo "[*] Installing UV..."
+    $FETCH_CMD "/tmp/uv.sh" "$URL_INSTALL_UV"
+    sudo bash /tmp/uv.sh
+    echo "[*] UV installation complete."
+    rm -f /tmp/uv.sh
+}
+
 install__vscode() {
     echo "[*] Installing Visual Studio Code..."
     if command -v code &> /dev/null; then
@@ -344,6 +353,7 @@ URL_INSTALL_MPQEDITOR="$BASE_URL/install/mpqeditor.sh"
 URL_INSTALL_NVM="$BASE_URL/install/nvm.sh"
 URL_INSTALL_SIGNAL="$BASE_URL/install/signal.sh"
 URL_INSTALL_TERRAFORM="$BASE_URL/install/terraform.sh"
+URL_INSTALL_UV="$BASE_URL/install/uv.sh"
 URL_INSTALL_VSCODE="$BASE_URL/install/vscode.sh"
 
 # Determine fetch command to use
