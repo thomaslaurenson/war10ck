@@ -17,6 +17,6 @@ LATEST_TAG="${LATEST_TAG//v/}"
 
 echo "[*] Latest tag (stripped): $LATEST_TAG"
 
-curl -LsSf https://astral.sh/uv/$UV_VERSION/install.sh | sh
+curl -LsSf https://astral.sh/uv/"$LATEST_TAG"/install.sh | sh
 
 uv self version

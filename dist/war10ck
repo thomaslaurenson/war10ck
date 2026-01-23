@@ -118,7 +118,7 @@ config__functions() {
 
 config__git() {
     echo "[*] Configuring git..."
-    $FETCH_CMD "$HOME/.war10ck/.gitconfig" "$URL_CONFIG_GITCONFIG"
+    $FETCH_CMD "$HOME/.gitconfig" "$URL_CONFIG_GITCONFIG"
 }
 
 config__history() {
