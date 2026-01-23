@@ -39,7 +39,7 @@ alias python="python3"
 alias p="python3"
 alias py="python3"
 alias py_http='python3 -m http.server 8080'
-alias py_venv="python -m venv venv && source ./venv/bin/activate"
+alias uv_shell="source .venv/bin/activate"
 
 # Docker
 alias d="docker"
@@ -47,6 +47,7 @@ alias dr="docker run"
 alias di="docker image"
 alias dv="docker volume"
 alias dc="docker compose"
+alias dp="docker system prune -af && docker image prune -af && docker volume prune -af"
 
 # Terraform
 alias tf="terraform"
