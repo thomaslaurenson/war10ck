@@ -40,6 +40,7 @@ alias p="python3"
 alias py="python3"
 alias py_http='python3 -m http.server 8080'
 alias uv_shell="source .venv/bin/activate"
+alias uv-shell="source .venv/bin/activate"
 
 # Docker
 alias d="docker"
