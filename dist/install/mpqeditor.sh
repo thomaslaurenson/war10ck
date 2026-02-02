@@ -11,11 +11,12 @@ mkdir -p "$HOME/.local/share/applications"
 cat > "$HOME/.local/share/applications/mpqeditor.desktop" <<EOF
 [Desktop Entry]
 Name=MPQ Editor
-Exec=wine "/opt/mpqeditor/MPQEditor.exe"
+Exec=wine "/opt/mpqeditor/MPQEditor.exe" %U
 Type=Application
 StartupNotify=true
 Icon=wine
-Categories=Utility;
+Categories=Utility;GTK;
+MimeType=application/octet-stream;
 EOF
 
 rm -f /tmp/mpqeditor.zip
