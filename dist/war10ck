@@ -277,7 +277,7 @@ install__terraform() {
     rm -f /tmp/terraform.sh
 }
 
-install_uv() {
+install__uv() {
     echo "[*] Installing UV..."
     $FETCH_CMD "/tmp/uv.sh" "$URL_INSTALL_UV"
     sudo bash /tmp/uv.sh

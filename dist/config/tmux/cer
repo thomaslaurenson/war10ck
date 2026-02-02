@@ -1,6 +1,6 @@
 new-session -d -s cer -n local
 new-window -n os \
-  'cd ~/repos/UoA-eResearch/poetry_openstack; exec bash'
+  'cd ~/repos/UoA-eResearch/uvos; exec bash'
 new-window -n tunnel
 new-window -n prod
 new-window -n vpn
