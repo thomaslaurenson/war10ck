@@ -5,8 +5,8 @@
 export HISTTIMEFORMAT="%F %T "
 
 # Set history size
-export HISTSIZE=500000
-export HISTFILESIZE=1000000
+export HISTSIZE=10000
+export HISTFILESIZE=50000
 
 # Ignore duplicates and blank commands
 export HISTCONTROL=ignoredups:erasedups
@@ -21,7 +21,6 @@ shopt -s histappend
 shopt -s cmdhist
 shopt -s lithist
 
-# Merge history across concurrent sessions efficiently after each command
-# Append this session's new entries; then read only new entries others wrote
-PROMPT_COMMAND='history -a; history -n;'
+# Merge history across sessions efficiently after each command
+PROMPT_COMMAND='history -a;'
 export PROMPT_COMMAND
