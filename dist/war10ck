@@ -24,7 +24,7 @@ update() {
         exit 1
     fi
 
-    if [ "$VERSION" = "$latest_version" ]; then
+    if [ "$VERSION" = "v$latest_version" ]; then
         echo "[*] Already up to date."
         return
     fi
