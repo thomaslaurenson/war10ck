@@ -349,24 +349,23 @@ _is_valid_subcommand() {
 # If sourced (not executed directly), register bash completion and return
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     _war10ck_completions() {
-        local cur prev
+        local cur
         COMPREPLY=()
         cur="${COMP_WORDS[COMP_CWORD]}"
-        prev="${COMP_WORDS[COMP_CWORD-1]}"
 
         # Top-level subcommands
         if [[ $COMP_CWORD -eq 1 ]]; then
-            COMPREPLY=( $(compgen -W "${VALID_SUBCOMMANDS[*]}" -- "$cur") )
+            mapfile -t COMPREPLY < <(compgen -W "${VALID_SUBCOMMANDS[*]}" -- "$cur")
             return
         fi
 
         # Second-level subcommands
         case "${COMP_WORDS[1]}" in
             config)
-                COMPREPLY=( $(compgen -W "${VALID_CONFIG_ARGS[*]}" -- "$cur") )
+                mapfile -t COMPREPLY < <(compgen -W "${VALID_CONFIG_ARGS[*]}" -- "$cur")
                 ;;
             install)
-                COMPREPLY=( $(compgen -W "${VALID_INSTALL_ARGS[*]}" -- "$cur") )
+                mapfile -t COMPREPLY < <(compgen -W "${VALID_INSTALL_ARGS[*]}" -- "$cur")
                 ;;
         esac
     }
