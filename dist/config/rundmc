@@ -1,5 +1,10 @@
 # DON'T ASK ME, BECAUSE I DON'T KNOW WHY
 
+# WAR10CK BASH COMPLETION
+if [ -f "/usr/local/bin/war10ck" ]; then
+    . /usr/local/bin/war10ck
+fi
+
 # CUSTOM FUNCTIONS
 if [ -f "$HOME/.war10ck/.functions" ]; then
     . "$HOME/.war10ck/.functions"

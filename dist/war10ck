@@ -1,5 +1,41 @@
 #!/bin/bash
 
+VALID_SUBCOMMANDS=(
+    version
+    update
+    config
+    install
+    remove
+    nuke
+)
+
+VALID_CONFIG_ARGS=(
+    rundmc
+    aliases
+    bashrcd
+    commands
+    functions
+    gitconfig
+    history
+    tmux
+)
+
+VALID_INSTALL_ARGS=(
+    docker
+    ghidra
+    golang
+    hugo
+    java
+    jira
+    mitmproxy
+    mpqeditor
+    nvm
+    packages
+    signal
+    terraform
+    uv
+    vscode
+)
 
 # Subcommand: version
 version() {
@@ -71,14 +107,9 @@ config() {
     
     # If no subcommand provided, run all config functions
     if [ -z "$subcommand" ]; then
-        config__rundmc
-        config__aliases
-        config__bashrcd
-        config__commands
-        config__functions
-        config__git
-        config__history
-        config__tmux
+        for arg in "${VALID_CONFIG_ARGS[@]}"; do
+            "config__$arg"
+        done
         return
     fi
     
@@ -87,18 +118,8 @@ config() {
         "config__$subcommand" "$@"
     else
         echo "[!] Invalid subcommand argument: $subcommand. Exiting."
-        valid_args=(
-            rundmc
-            aliases
-            bashrcd
-            commands
-            functions
-            gitconfig
-            history
-            tmux
-        )
         echo "[!] Valid arguments:"
-        for arg in "${valid_args[@]}"; do
+        for arg in "${VALID_CONFIG_ARGS[@]}"; do
             echo "    $arg"
         done
         exit 1
@@ -140,7 +161,7 @@ config__functions() {
     $FETCH_CMD "$HOME/.war10ck/.functions" "$URL_CONFIG_FUNCTIONS"
 }
 
-config__git() {
+config__gitconfig() {
     echo "[*] Configuring git..."
     $FETCH_CMD "$HOME/.gitconfig" "$URL_CONFIG_GITCONFIG"
 }
@@ -167,24 +188,8 @@ install() {
         "install__$subcommand" "$@"
     else
         echo "[!] Invalid subcommand argument: $subcommand. Exiting."
-        valid_args=(
-            docker
-            ghidra
-            golang
-            hugo
-            java
-            jira
-            mitmproxy
-            mpqeditor
-            nvm
-            packages
-            signal
-            terraform
-            uv
-            vscode
-        )
         echo "[!] Valid arguments:"
-        for arg in "${valid_args[@]}"; do
+        for arg in "${VALID_INSTALL_ARGS[@]}"; do
             echo "    $arg"
         done
         exit 1
@@ -331,7 +336,7 @@ _bcp() {
 # Function to check if an element is in an array
 _is_valid_subcommand() {
     local subcommand=$1
-    for valid_subcommand in "${valid_subcommands[@]}"; do
+    for valid_subcommand in "${VALID_SUBCOMMANDS[@]}"; do
         if [[ "$valid_subcommand" == "$subcommand" ]]; then
             return 0
         fi
@@ -341,9 +346,33 @@ _is_valid_subcommand() {
 
 # ENTRYPOINT
 
-# Check last argument is not the script itself
-# If it is, then we are being sourced, so just load functions and return
-[[ $_ != "$0" ]] && return
+# If sourced (not executed directly), register bash completion and return
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    _war10ck_completions() {
+        local cur prev
+        COMPREPLY=()
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+        # Top-level subcommands
+        if [[ $COMP_CWORD -eq 1 ]]; then
+            COMPREPLY=( $(compgen -W "${VALID_SUBCOMMANDS[*]}" -- "$cur") )
+            return
+        fi
+
+        # Second-level subcommands
+        case "${COMP_WORDS[1]}" in
+            config)
+                COMPREPLY=( $(compgen -W "${VALID_CONFIG_ARGS[*]}" -- "$cur") )
+                ;;
+            install)
+                COMPREPLY=( $(compgen -W "${VALID_INSTALL_ARGS[*]}" -- "$cur") )
+                ;;
+        esac
+    }
+    complete -F _war10ck_completions war10ck
+    return
+fi
 
 VERSION=""
 
@@ -392,20 +421,11 @@ else
     exit 1
 fi
 
-valid_subcommands=(
-    version
-    update
-    config
-    install
-    remove
-    nuke
-)
-
 # Check a valid subcommand was passed
 subcommand=$1
 if ! _is_valid_subcommand "$subcommand"; then
     echo "[!] Invalid subcommand: $subcommand"
-    echo "[!] Valid subcommands: ${valid_subcommands[*]}"
+    echo "[!] Valid subcommands: ${VALID_SUBCOMMANDS[*]}"
     echo "[!] Exiting."
     exit 1
 fi
