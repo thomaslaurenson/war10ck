@@ -73,6 +73,7 @@ config() {
     if [ -z "$subcommand" ]; then
         config__rundmc
         config__aliases
+        config__bashrcd
         config__commands
         config__functions
         config__git
@@ -89,6 +90,7 @@ config() {
         valid_args=(
             rundmc
             aliases
+            bashrcd
             commands
             functions
             gitconfig
@@ -120,6 +122,12 @@ config__rundmc() {
 config__aliases() {
     echo "[*] Configuring aliases..."
     $FETCH_CMD "$HOME/.war10ck/.aliases" "$URL_CONFIG_ALIASES"
+}
+
+config__bashrcd() {
+    echo "[*] Configuring bashrc.d..."
+    mkdir -p "$HOME/.war10ck/bashrc.d"
+    chmod 700 "$HOME/.war10ck/bashrc.d"
 }
 
 config__commands() {

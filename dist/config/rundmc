@@ -19,3 +19,10 @@ fi
 if [ -f "$HOME/.war10ck/.history" ]; then
     . "$HOME/.war10ck/.history"
 fi
+
+# BASHRC.D
+if [ -d "$HOME/.war10ck/bashrc.d" ]; then
+    for file in "$HOME/.war10ck/bashrc.d/"*; do
+        [ -r "$file" ] && . "$file"
+    done
+fi
