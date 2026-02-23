@@ -28,4 +28,4 @@ tar -xzf "mitmproxy-$LATEST_TAG.tar.gz"
 # Remove tarball
 rm "mitmproxy-$LATEST_TAG.tar.gz"
 
-mv mitm* "/usr/local/bin/"
+sudo mv mitm* "/usr/local/bin/"

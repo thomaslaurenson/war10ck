@@ -268,7 +268,7 @@ install__mpqeditor() {
 install__nvm() {
     echo "[*] Installing nvm..."
     $FETCH_CMD "/tmp/nvm.sh" "$URL_INSTALL_NVM"
-    sudo bash /tmp/nvm.sh
+    bash /tmp/nvm.sh
     echo "[*] nvm installation complete."
     rm -f /tmp/nvm.sh
 }
@@ -309,7 +309,7 @@ install__terraform() {
 install__uv() {
     echo "[*] Installing UV..."
     $FETCH_CMD "/tmp/uv.sh" "$URL_INSTALL_UV"
-    sudo bash /tmp/uv.sh
+    bash /tmp/uv.sh
     echo "[*] UV installation complete."
     rm -f /tmp/uv.sh
 }
