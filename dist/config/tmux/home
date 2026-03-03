@@ -1,5 +1,0 @@
-new-session -d -s home -n local
-new-window -n undercity \
-  'ssh undercity'
-new-window -n orgrimmar \
-  'ssh orgrimmar'
