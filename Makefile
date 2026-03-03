@@ -1,5 +1,8 @@
+bundle:
+	@bash bundle.sh
+
 # INSTALL
-install_locally:
+install_locally: bundle
 	@cd dist && \
 	sed -i "s/^IS_LOCAL=.*/IS_LOCAL=true/" install.sh && \
 	./install.sh && \
@@ -7,14 +10,8 @@ install_locally:
 
 # LINTING
 lint:
-	find -type f -name "*.sh" | xargs shellcheck
-	find -type f -name "war10ck" | xargs shellcheck
-
-# DOCS
-docs:
-	@echo "[*] Building docs..."
-	@mkdir -p dist
-	pandoc --standalone --metadata title="war10ck" --from=markdown --to=html5 --output=dist/index.html dist/README.md
+	shellcheck bundle.sh install.sh
+	shellcheck src/main.sh src/lib/*.sh src/install/*.sh
 
 # RELEASE
 release:
