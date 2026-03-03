@@ -1,0 +1,20 @@
+# CUSTOM COMMANDS
+
+# command: shredder
+shredder () {
+    # If no argument is passed, print the help message
+    if [ -z "$1" ]; then
+        echo "Usage: shredder -r <target-directory>";
+        return;
+    fi
+    # Check $1 is a valid target directory
+    if [ ! -d "$2" ]; then
+        echo "Invalid target directory";
+        echo "Usage: shredder -r <target-directory>";
+        return;
+    fi
+    # Shred all files in the target directory recursively
+    find "$2" -type f -exec shred -v -u -z -n 3 {} \;
+    # Optionally, remove empty directories
+    find "$2" -type d -empty -delete
+}

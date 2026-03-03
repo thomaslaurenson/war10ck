@@ -1,0 +1,33 @@
+# DON'T ASK ME, BECAUSE I DON'T KNOW WHY
+
+# WAR10CK BASH COMPLETION
+if [ -f "/usr/local/bin/war10ck" ]; then
+    . /usr/local/bin/war10ck
+fi
+
+# CUSTOM FUNCTIONS
+if [ -f "$HOME/.war10ck/.functions" ]; then
+    . "$HOME/.war10ck/.functions"
+fi
+
+# CUSTOM COMMANDS
+if [ -f "$HOME/.war10ck/.commands" ]; then
+    . "$HOME/.war10ck/.commands"
+fi
+
+# CUSTOM ALIASES
+if [ -f "$HOME/.war10ck/.aliases" ]; then
+    . "$HOME/.war10ck/.aliases"
+fi
+
+# BETTER BASH HISTORY
+if [ -f "$HOME/.war10ck/.history" ]; then
+    . "$HOME/.war10ck/.history"
+fi
+
+# BASHRC.D
+if [ -d "$HOME/.war10ck/bashrc.d" ]; then
+    for file in "$HOME/.war10ck/bashrc.d/"*; do
+        [ -r "$file" ] && . "$file"
+    done
+fi
