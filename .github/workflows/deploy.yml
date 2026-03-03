@@ -5,15 +5,14 @@ on: workflow_call
 jobs:
   upload:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v6
 
+      - name: Bundle
+        run: bash bundle.sh
+
       - name: Update with latest tag
-        run: |
-          LATEST_TAG=${{ github.ref_name }}
-          sed -i "s/^VERSION=.*/VERSION=$LATEST_TAG/" dist/war10ck
+        run: sed -i "s/^VERSION=.*/VERSION=${{ github.ref_name }}/" dist/war10ck
 
       - name: Generate basic HTML index page
         uses: docker://pandoc/core:3.5
