@@ -28,6 +28,7 @@ config() {
 config__rundmc() {
     echo "[*] Configuring rundmc..."
     $FETCH_CMD "$HOME/.war10ck/.rundmc" "$BASE_URL/config/rundmc"
+    _verify_from_manifest "$HOME/.war10ck/.rundmc" "config/rundmc"
 
     if ! grep "# RUNDMC" "$HOME/.bashrc" > /dev/null; then
         {
@@ -42,6 +43,7 @@ config__rundmc() {
 config__aliases() {
     echo "[*] Configuring aliases..."
     $FETCH_CMD "$HOME/.war10ck/.aliases" "$BASE_URL/config/aliases"
+    _verify_from_manifest "$HOME/.war10ck/.aliases" "config/aliases"
 }
 
 config__bashrcd() {
@@ -53,27 +55,34 @@ config__bashrcd() {
 config__commands() {
     echo "[*] Configuring commands..."
     $FETCH_CMD "$HOME/.war10ck/.commands" "$BASE_URL/config/commands"
+    _verify_from_manifest "$HOME/.war10ck/.commands" "config/commands"
 }
 
 config__functions() {
     echo "[*] Configuring functions..."
     $FETCH_CMD "$HOME/.war10ck/.functions" "$BASE_URL/config/functions"
+    _verify_from_manifest "$HOME/.war10ck/.functions" "config/functions"
 }
 
 config__gitconfig() {
     echo "[*] Configuring git..."
     $FETCH_CMD "$HOME/.gitconfig" "$BASE_URL/config/gitconfig"
+    _verify_from_manifest "$HOME/.gitconfig" "config/gitconfig"
 }
 
 config__history() {
     echo "[*] Configuring history..."
     $FETCH_CMD "$HOME/.war10ck/.history" "$BASE_URL/config/history"
+    _verify_from_manifest "$HOME/.war10ck/.history" "config/history"
 }
 
 config__tmux() {
     echo "[*] Configuring tmux..."
     $FETCH_CMD "$HOME/.war10ck/.tmux.conf" "$BASE_URL/config/tmux/tmux.conf"
+    _verify_from_manifest "$HOME/.war10ck/.tmux.conf" "config/tmux/tmux.conf"
     mkdir -p "$HOME/.war10ck/.tmux"
     $FETCH_CMD "$HOME/.war10ck/.tmux/cer" "$BASE_URL/config/tmux/cer"
+    _verify_from_manifest "$HOME/.war10ck/.tmux/cer" "config/tmux/cer"
     $FETCH_CMD "$HOME/.war10ck/.tmux/home" "$BASE_URL/config/tmux/home"
+    _verify_from_manifest "$HOME/.war10ck/.tmux/home" "config/tmux/home"
 }

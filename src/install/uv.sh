@@ -1,22 +1,29 @@
 #!/bin/bash
 
+set -euo pipefail
 
-URL_API_LATEST="https://api.github.com/repos/astral-sh/uv/releases/latest"
+# Update UV_SHA256 when bumping UV_VERSION.
+# To get the hash: curl -fsSL "https://astral.sh/uv/VERSION/install.sh" | sha256sum
+UV_VERSION="0.10.7"
+UV_SHA256="bcada2f4ddb9d0196fcf33510633a1a892b948fc0d0a8dc7650ddb67f074b6c6"
 
-# Fetch the latest release from GitHub API
-LATEST_TAG=$(curl -s "$URL_API_LATEST" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+UV_INSTALLER_URL="https://astral.sh/uv/${UV_VERSION}/install.sh"
+echo "[*] Downloading uv v${UV_VERSION} installer..."
 
-# Check if the fetch was successful
-if [ -z "$LATEST_TAG" ]; then
-    echo "[!] Failed to fetch the latest tag release"
+_tmpinstaller=$(mktemp --suffix=-uv-install.sh)
+curl -fsSL -o "$_tmpinstaller" "$UV_INSTALLER_URL"
+
+actual=$(sha256sum "$_tmpinstaller" | cut -d' ' -f1)
+if [[ "$actual" != "$UV_SHA256" ]]; then
+    echo "[!] uv installer checksum mismatch"
+    echo "[!]   expected: $UV_SHA256"
+    echo "[!]   actual:   $actual"
+    rm -f "$_tmpinstaller"
     exit 1
 fi
+echo "[*] uv installer checksum OK"
 
-# Remove "v" from the tag
-LATEST_TAG="${LATEST_TAG//v/}"
-
-echo "[*] Latest tag (stripped): $LATEST_TAG"
-
-curl -LsSf https://astral.sh/uv/"$LATEST_TAG"/install.sh | sh
+bash "$_tmpinstaller"
+rm -f "$_tmpinstaller"
 
 uv self version

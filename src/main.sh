@@ -4,21 +4,30 @@
 # Toggle to use local files for testing
 IS_LOCAL=false
 if [ "$IS_LOCAL" = true ]; then
-    cd "$(dirname "$0")" || exit 1
-    BASE_URL="."
+    _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    # Only switch to local-file mode if the support directories exist next to
+    # this script (i.e. we are running directly from dist/, not from an
+    # installed path like /usr/local/bin/ that has no config/ or install/).
+    if [[ -d "$_SCRIPT_DIR/config" && -d "$_SCRIPT_DIR/install" ]]; then
+        cd "$_SCRIPT_DIR" || exit 1
+        BASE_URL="."
+    fi
 fi
 
 # Determine fetch command to use
-if [ "$IS_LOCAL" = true ]; then
+if [ "$IS_LOCAL" = true ] && [[ "${BASE_URL}" == "." ]]; then
     FETCH_CMD="_bcp"
 elif command -v curl &> /dev/null; then
-    FETCH_CMD="curl -s -o"
+    FETCH_CMD="curl -fsSL -o"
 elif command -v wget &> /dev/null; then
     FETCH_CMD="wget -q -O"
 else
     echo "[!] No fetch command found. Exiting."
     exit 1
 fi
+
+# Fetch and verify the remote manifest before any network operations
+_load_manifest
 
 # Validate and dispatch subcommand
 subcommand=$1

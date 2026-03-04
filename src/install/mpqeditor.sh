@@ -1,7 +1,17 @@
 #!/bin/bash
 
-curl -L -o /tmp/mpqeditor.zip http://www.zezula.net/download/mpqeditor_en.zip
-unzip -j /tmp/mpqeditor.zip x64/MPQEditor.exe -d /tmp
+set -euo pipefail
+
+MPQEDITOR_URL="http://www.zezula.net/download/mpqeditor_en.zip"
+
+_tmpzip=$(mktemp --suffix=-mpqeditor.zip)
+curl -fL -o "$_tmpzip" "$MPQEDITOR_URL"
+
+echo "[*] MPQ Editor archive SHA256: $(sha256sum "$_tmpzip" | cut -d' ' -f1)"
+echo "[*] Verify this hash against https://www.zezula.net/en/mpq/download.html"
+
+unzip -j "$_tmpzip" x64/MPQEditor.exe -d /tmp
+rm -f "$_tmpzip"
 
 sudo mkdir -p /opt/mpqeditor
 sudo mv /tmp/MPQEditor.exe /opt/mpqeditor/MPQEditor.exe
@@ -18,5 +28,3 @@ Icon=wine
 Categories=Utility;GTK;
 MimeType=application/octet-stream;
 EOF
-
-rm -f /tmp/mpqeditor.zip

@@ -17,81 +17,78 @@ install() {
     fi
 }
 
+# Helper: fetch an install script from the remote, verify it against the manifest,
+# then execute it with the supplied privilege prefix (e.g. "sudo" or "").
+_install__fetch_and_run() {
+    local manifest_key=$1  # e.g. "install/docker.sh"
+    local privilege=$2     # e.g. "sudo" or ""
+    local script_name
+    script_name=$(basename "$manifest_key")
+    local _tmpfile
+    _tmpfile=$(mktemp --suffix="-${script_name}")
+    $FETCH_CMD "$_tmpfile" "$BASE_URL/$manifest_key"
+    _verify_from_manifest "$_tmpfile" "$manifest_key"
+    ${privilege:+$privilege} bash "$_tmpfile"
+    rm -f "$_tmpfile"
+}
+
 install__docker() {
     echo "[*] Installing Docker..."
     if [ -f "/usr/bin/docker" ]; then
         echo "[!] Docker already installed. Skipping installation."
     else
-        $FETCH_CMD "/tmp/docker.sh" "$BASE_URL/install/docker.sh"
-        sudo bash /tmp/docker.sh
+        _install__fetch_and_run "install/docker.sh" "sudo"
         echo "[*] Docker installation complete."
         echo "[*] Please log out and back in to apply group changes."
-        rm -f /tmp/docker.sh
     fi
 }
 
 install__ghidra() {
     echo "[*] Installing Ghidra..."
-    $FETCH_CMD "/tmp/ghidra.sh" "$BASE_URL/install/ghidra.sh"
-    sudo bash /tmp/ghidra.sh
+    _install__fetch_and_run "install/ghidra.sh" "sudo"
     echo "[*] Ghidra installation complete."
-    rm -f /tmp/ghidra.sh
 }
 
 install__golang() {
     echo "[*] Installing Go..."
-    $FETCH_CMD "/tmp/golang.sh" "$BASE_URL/install/golang.sh"
-    sudo bash /tmp/golang.sh
+    _install__fetch_and_run "install/golang.sh" "sudo"
     echo "[*] Go installation complete."
-    rm -f /tmp/golang.sh
 }
 
 install__hugo() {
     echo "[*] Installing Hugo..."
-    $FETCH_CMD "/tmp/hugo.sh" "$BASE_URL/install/hugo.sh"
-    sudo bash /tmp/hugo.sh
+    _install__fetch_and_run "install/hugo.sh" "sudo"
     echo "[*] Hugo installation complete."
-    rm -f /tmp/hugo.sh
 }
 
 install__java() {
     echo "[*] Installing Java..."
-    $FETCH_CMD "/tmp/java.sh" "$BASE_URL/install/java.sh"
-    sudo bash /tmp/java.sh
+    _install__fetch_and_run "install/java.sh" "sudo"
     echo "[*] Java installation complete."
-    rm -f /tmp/java.sh
 }
 
 install__jira() {
     echo "[*] Installing Jira CLI..."
-    $FETCH_CMD "/tmp/jira.sh" "$BASE_URL/install/jira.sh"
-    sudo bash /tmp/jira.sh
+    _install__fetch_and_run "install/jira.sh" "sudo"
     echo "[*] Jira CLI installation complete."
-    rm -f /tmp/jira.sh
 }
 
 install__mitmproxy() {
     echo "[*] Installing mitmproxy..."
-    $FETCH_CMD "/tmp/mitmproxy.sh" "$BASE_URL/install/mitmproxy.sh"
-    sudo bash /tmp/mitmproxy.sh
+    _install__fetch_and_run "install/mitmproxy.sh" "sudo"
     echo "[*] mitmproxy installation complete."
-    rm -f /tmp/mitmproxy.sh
 }
 
 install__mpqeditor() {
     echo "[*] Installing MPQ Editor..."
-    $FETCH_CMD "/tmp/mpqeditor.sh" "$BASE_URL/install/mpqeditor.sh"
-    sudo bash /tmp/mpqeditor.sh
+    _install__fetch_and_run "install/mpqeditor.sh" "sudo"
     echo "[*] MPQ Editor installation complete."
-    rm -f /tmp/mpqeditor.sh
 }
 
 install__nvm() {
     echo "[*] Installing nvm..."
-    $FETCH_CMD "/tmp/nvm.sh" "$BASE_URL/install/nvm.sh"
-    bash /tmp/nvm.sh
+    _install__fetch_and_run "install/nvm.sh" ""
     echo "[*] nvm installation complete."
-    rm -f /tmp/nvm.sh
 }
 
 install__packages() {
@@ -113,26 +110,20 @@ install__packages() {
 
 install__signal() {
     echo "[*] Installing Signal..."
-    $FETCH_CMD "/tmp/signal.sh" "$BASE_URL/install/signal.sh"
-    sudo bash /tmp/signal.sh
+    _install__fetch_and_run "install/signal.sh" "sudo"
     echo "[*] Signal installation complete."
-    rm -f /tmp/signal.sh
 }
 
 install__terraform() {
     echo "[*] Installing Terraform..."
-    $FETCH_CMD "/tmp/terraform.sh" "$BASE_URL/install/terraform.sh"
-    sudo bash /tmp/terraform.sh
+    _install__fetch_and_run "install/terraform.sh" "sudo"
     echo "[*] Terraform installation complete."
-    rm -f /tmp/terraform.sh
 }
 
 install__uv() {
     echo "[*] Installing UV..."
-    $FETCH_CMD "/tmp/uv.sh" "$BASE_URL/install/uv.sh"
-    bash /tmp/uv.sh
+    _install__fetch_and_run "install/uv.sh" ""
     echo "[*] UV installation complete."
-    rm -f /tmp/uv.sh
 }
 
 install__vscode() {
@@ -140,9 +131,7 @@ install__vscode() {
     if command -v code &> /dev/null; then
         echo "[!] Visual Studio Code already installed. Skipping installation."
     else
-        $FETCH_CMD "/tmp/vscode.sh" "$BASE_URL/install/vscode.sh"
-        sudo bash /tmp/vscode.sh
+        _install__fetch_and_run "install/vscode.sh" "sudo"
         echo "[*] Visual Studio Code installation complete."
-        rm -f /tmp/vscode.sh
     fi
 }

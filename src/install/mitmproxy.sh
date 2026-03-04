@@ -1,31 +1,33 @@
 #!/bin/bash
 
+set -euo pipefail
 
 URL_API_LATEST="https://api.github.com/repos/mitmproxy/mitmproxy/releases/latest"
 
-# Fetch the latest release from GitHub API
-LATEST_TAG=$(curl -s "$URL_API_LATEST" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-
-# Check if the fetch was successful
-if [ -z "$LATEST_TAG" ]; then
+LATEST_TAG=$(curl -fsSL "$URL_API_LATEST" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+if [[ -z "$LATEST_TAG" ]]; then
     echo "[!] Failed to fetch the latest tag release"
     exit 1
 fi
-
-# Remove "v" from the tag
 LATEST_TAG="${LATEST_TAG//v/}"
-
-echo "[*] Latest tag: $LATEST_TAG"
 echo "[*] Latest tag (stripped): $LATEST_TAG"
 
-# Set download link
-URL_DOWNLOAD="https://downloads.mitmproxy.org/$LATEST_TAG/mitmproxy-$LATEST_TAG-linux-x86_64.tar.gz"
-curl -L -o "mitmproxy-$LATEST_TAG.tar.gz" "$URL_DOWNLOAD"
+ARCHIVE="mitmproxy-${LATEST_TAG}-linux-x86_64.tar.gz"
+URL_DOWNLOAD="https://downloads.mitmproxy.org/${LATEST_TAG}/${ARCHIVE}"
+echo "[*] Downloading: $URL_DOWNLOAD"
 
-# Extract the tarball
-tar -xzf "mitmproxy-$LATEST_TAG.tar.gz"
+_tmparchive=$(mktemp --suffix=-"$ARCHIVE")
+curl -fsSL -o "$_tmparchive" "$URL_DOWNLOAD"
 
-# Remove tarball
-rm "mitmproxy-$LATEST_TAG.tar.gz"
+# mitmproxy does not publish a standalone checksum file.
+# Log the SHA256 of the downloaded archive for audit purposes.
+ACTUAL_SHA256=$(sha256sum "$_tmparchive" | cut -d' ' -f1)
+echo "[*] mitmproxy archive SHA256: $ACTUAL_SHA256"
+echo "[*] Verify against: https://mitmproxy.org/downloads/"
 
-sudo mv mitm* "/usr/local/bin/"
+_tmpdir=$(mktemp -d --suffix=-mitmproxy)
+tar -xzf "$_tmparchive" -C "$_tmpdir"
+rm -f "$_tmparchive"
+
+sudo mv "$_tmpdir"/mitm* /usr/local/bin/
+rm -rf "$_tmpdir"

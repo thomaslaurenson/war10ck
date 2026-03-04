@@ -51,4 +51,21 @@ echo "[*] Copied: $DIST/install.sh"
 sed '1{/^#/d}' README.md > "$DIST/README.md"
 echo "[*] Copied: $DIST/README.md"
 
+# Generate checksums.txt for all files that war10ck downloads at runtime.
+# Paths are stored relative to $DIST so they match the manifest_key used in the scripts.
+echo "[*] Generating checksums.txt..."
+(
+    cd "$DIST"
+    # Collect install scripts, config files, and the self-installer
+    find install config -type f | sort | xargs sha256sum > checksums.txt
+    sha256sum install.sh >> checksums.txt
+)
+echo "[*] Generated: $DIST/checksums.txt"
+
+# Embed the SHA256 of checksums.txt into the bundled war10ck script so it can
+# verify the manifest on fetch before trusting any of its entries.
+CHECKSUMS_SHA256=$(sha256sum "$DIST/checksums.txt" | cut -d' ' -f1)
+sed -i "s/^CHECKSUMS_SHA256=.*/CHECKSUMS_SHA256=\"$CHECKSUMS_SHA256\"/" "$DIST/war10ck"
+echo "[*] Embedded CHECKSUMS_SHA256=$CHECKSUMS_SHA256"
+
 echo "[*] Bundle complete."

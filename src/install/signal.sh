@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -euo pipefail
 
 sudo wget -O- https://updates.signal.org/desktop/apt/keys.asc \
     | gpg --dearmor \

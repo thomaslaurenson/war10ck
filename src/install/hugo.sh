@@ -1,28 +1,44 @@
 #!/bin/bash
 
+set -euo pipefail
 
 URL_API_LATEST="https://api.github.com/repos/gohugoio/hugo/releases/latest"
 
-# Fetch the latest release from GitHub API
-LATEST_TAG=$(curl -s "$URL_API_LATEST" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-
-# Check if the fetch was successful
-if [ -z "$LATEST_TAG" ]; then
+LATEST_TAG=$(curl -fsSL "$URL_API_LATEST" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+if [[ -z "$LATEST_TAG" ]]; then
     echo "[!] Failed to fetch the latest tag release"
     exit 1
 fi
-
-# Remove "v" from the tag
 LATEST_TAG="${LATEST_TAG//v/}"
-
 echo "[*] Latest tag (stripped): $LATEST_TAG"
 
-# Set download link
-URL_DOWNLOAD="https://github.com/gohugoio/hugo/releases/download/v$LATEST_TAG/hugo_extended_${LATEST_TAG}_linux-amd64.deb"
-curl -L -o "hugo_extended_${LATEST_TAG}_linux-amd64.deb" "$URL_DOWNLOAD"
+ARCHIVE="hugo_extended_${LATEST_TAG}_linux-amd64.deb"
+URL_DOWNLOAD="https://github.com/gohugoio/hugo/releases/download/v${LATEST_TAG}/${ARCHIVE}"
+URL_CHECKSUMS="https://github.com/gohugoio/hugo/releases/download/v${LATEST_TAG}/hugo_${LATEST_TAG}_checksums.txt"
 
-# Install the downloaded .deb package
-sudo dpkg -i "hugo_extended_${LATEST_TAG}_linux-amd64.deb"
+echo "[*] Downloading: $URL_DOWNLOAD"
+_tmpdeb=$(mktemp --suffix=-"$ARCHIVE")
+_tmpchecksums=$(mktemp --suffix=-hugo-checksums.txt)
+curl -fsSL -o "$_tmpdeb" "$URL_DOWNLOAD"
+curl -fsSL -o "$_tmpchecksums" "$URL_CHECKSUMS"
 
-# Clean up the downloaded file
-rm "hugo_extended_${LATEST_TAG}_linux-amd64.deb"
+expected=$(grep "$ARCHIVE" "$_tmpchecksums" | cut -d' ' -f1)
+if [[ -z "$expected" ]]; then
+    echo "[!] No checksum entry found for $ARCHIVE in checksums.txt"
+    rm -f "$_tmpdeb" "$_tmpchecksums"
+    exit 1
+fi
+
+actual=$(sha256sum "$_tmpdeb" | cut -d' ' -f1)
+if [[ "$actual" != "$expected" ]]; then
+    echo "[!] Hugo package checksum mismatch"
+    echo "[!]   expected: $expected"
+    echo "[!]   actual:   $actual"
+    rm -f "$_tmpdeb" "$_tmpchecksums"
+    exit 1
+fi
+echo "[*] Hugo package checksum OK"
+rm -f "$_tmpchecksums"
+
+sudo dpkg -i "$_tmpdeb"
+rm -f "$_tmpdeb"
