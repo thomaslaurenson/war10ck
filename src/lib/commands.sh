@@ -48,7 +48,7 @@ update() {
     _verify_checksum "$bin_tmp" "$expected_hash"
 
     sudo mv "$bin_tmp" /usr/local/bin/war10ck
-    sudo chmod +x /usr/local/bin/war10ck
+    sudo chmod 755 /usr/local/bin/war10ck
     sudo chown root:root /usr/local/bin/war10ck
     echo "[*] Updated to version $latest_version"
 }
