@@ -59,15 +59,20 @@ echo "[*] Generating checksums.txt..."
     # Collect install scripts, config files, and the self-installer
     find install config -type f | sort | xargs sha256sum > checksums.txt
     sha256sum install.sh >> checksums.txt
-    # Add the war10ck binary itself for update verification
-    sha256sum war10ck >> checksums.txt
 )
-echo "[*] Generated: $DIST/checksums.txt"
+echo "[*] Generated: $DIST/checksums.txt (without war10ck)"
 
 # Embed the SHA256 of checksums.txt into the bundled war10ck script so it can
 # verify the manifest on fetch before trusting any of its entries.
 CHECKSUMS_SHA256=$(sha256sum "$DIST/checksums.txt" | cut -d' ' -f1)
 sed -i "s/^CHECKSUMS_SHA256=.*/CHECKSUMS_SHA256=\"$CHECKSUMS_SHA256\"/" "$DIST/war10ck"
 echo "[*] Embedded CHECKSUMS_SHA256=$CHECKSUMS_SHA256"
+
+# Now add the war10ck binary hash to checksums.txt (after embedding modified it)
+(
+    cd "$DIST"
+    sha256sum war10ck >> checksums.txt
+)
+echo "[*] Added war10ck hash to checksums.txt"
 
 echo "[*] Bundle complete."
