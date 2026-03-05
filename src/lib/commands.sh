@@ -36,25 +36,18 @@ update() {
     echo "[*] Updated to version $latest_version"
 }
 
-remove() {
-    echo "[*] REMOVE..."
-    if [ -f "/usr/local/bin/war10ck" ]; then
-        echo "[*] Removing war10ck... requires sudo!"
-        sudo rm -f "/usr/local/bin/war10ck"
-    else
-        echo "[!] Could not find /usr/local/bin/war10ck. Exiting."
-        exit 1
-    fi
-}
-
 nuke() {
+    echo "[*] Nuking war10ck..."
     echo "[*] Nuking configuration..."
-    rm "$HOME/.war10ck/.rundmc"
     # Remove the RUNDMC block from "$HOME/.bashrc"
     # This deletes from '# RUNDMC' to the first 'fi'
     if [ -f "$HOME/.bashrc" ]; then
         sed -i '/# RUNDMC/,/fi/d' "$HOME/.bashrc"
     fi
-    rm "$HOME/.war10ck/"
+    rm -rf "$HOME/.war10ck/"
+    echo "[*] Nuking binary... (requires sudo)"
+    if [ -f "/usr/local/bin/war10ck" ]; then
+        sudo rm -f "/usr/local/bin/war10ck"
+    fi
     echo "[*] Nuke complete."
 }
