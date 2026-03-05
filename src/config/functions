@@ -161,48 +161,164 @@ wf_github_disable_wiki_for_user() {
 
 # function: wf_sshfs_mount
 wf_sshfs_mount() {
-    # Get list of Host entries and prompt user to select one
-    CONFIG="$HOME/.ssh/config"
+    local SSHFS_CONFIG_DIR="$HOME/.war10ck"
+    local SSHFS_RECENT="$SSHFS_CONFIG_DIR/.sshfs_recent"
+    local SSHFS_FAVORITES="$SSHFS_CONFIG_DIR/.sshfs_favorites"
+    
+    # Ensure config directory exists
+    mkdir -p "$SSHFS_CONFIG_DIR"
+    touch "$SSHFS_RECENT" "$SSHFS_FAVORITES"
+    
+    # Get SSH config
+    local CONFIG="$HOME/.ssh/config"
     if [ ! -f "$CONFIG" ]; then
         echo "[!] SSH config not found at $CONFIG"
         return 1
     fi
-    HOSTS=$(grep -E '^Host\s+' "$CONFIG" | grep -v '*' | awk '{print $2}')
+    
+    # Select host
+    local HOSTS=$(grep -E '^Host\s+' "$CONFIG" | grep -v '*' | awk '{print $2}')
     echo "[*] Available SSH Hosts:"
+    local HOST
+    PS3="[*] Select host: "
     select HOST in $HOSTS; do
         if [ -n "$HOST" ]; then
             break
         fi
     done
-    # Extract details from SSH config
-    HOSTNAME=$(awk "/Host $HOST/{f=1} f && /HostName/{print \$2; exit}" "$CONFIG")
-    PORT=$(awk "/Host $HOST/{f=1} f && /Port/{print \$2; exit}" "$CONFIG")
-    USER=$(awk "/Host $HOST/{f=1} f && /User/{print \$2; exit}" "$CONFIG")
-    echo "[*] Host: $HOST"
-    echo "[*] Port: ${PORT}"
-    echo "[*] User: ${USER}"
-    # Determine remote target directory (argument 1), default to remote user's home
-    REMOTE_TARGET_DIR="$1"
+    
+    # Extract SSH details
+    local HOSTNAME=$(awk "/Host $HOST/{f=1} f && /HostName/{print \$2; exit}" "$CONFIG")
+    local PORT=$(awk "/Host $HOST/{f=1} f && /Port/{print \$2; exit}" "$CONFIG")
+    local USER=$(awk "/Host $HOST/{f=1} f && /User/{print \$2; exit}" "$CONFIG")
+    
+    # Determine remote directory
+    local REMOTE_TARGET_DIR="$1"
+    
     if [ -z "$REMOTE_TARGET_DIR" ]; then
-        REMOTE_TARGET_DIR="/home/$USER"
+        echo ""
+        echo "[*] Select remote directory:"
+        
+        # Build directory options
+        local dir_options=()
+        dir_options+=("Home directory (~)")
+        dir_options+=("Root directory (/)")
+        
+        # Add favorites for this host
+        local fav_count=0
+        while IFS='|' read -r fav_host fav_path fav_label; do
+            if [ "$fav_host" = "$HOST" ]; then
+                dir_options+=("Favorite: $fav_label ($fav_path)")
+                ((fav_count++))
+            fi
+        done < "$SSHFS_FAVORITES"
+        
+        # Add recent paths for this host
+        local recent_count=0
+        while IFS='|' read -r recent_host recent_path; do
+            if [ "$recent_host" = "$HOST" ] && [ "$recent_count" -lt 3 ]; then
+                dir_options+=("Recent: $recent_path")
+                ((recent_count++))
+            fi
+        done < <(tac "$SSHFS_RECENT" | awk '!seen[$0]++')
+        
+        dir_options+=("Custom path")
+        dir_options+=("Cancel")
+        
+        PS3="[*] Select directory (1-${#dir_options[@]}): "
+        select dir_choice in "${dir_options[@]}"; do
+            case "$dir_choice" in
+                "Home directory (~)")
+                    REMOTE_TARGET_DIR="~"
+                    break
+                    ;;
+                "Root directory (/)")
+                    REMOTE_TARGET_DIR="/"
+                    break
+                    ;;
+                "Custom path")
+                    echo -n "[?] Enter remote path: "
+                    read -r REMOTE_TARGET_DIR
+                    break
+                    ;;
+                "Cancel")
+                    echo "[*] Cancelled"
+                    return 0
+                    ;;
+                Favorite:*)
+                    REMOTE_TARGET_DIR=$(echo "$dir_choice" | sed 's/Favorite: .* (\(.*\))/\1/')
+                    break
+                    ;;
+                Recent:*)
+                    REMOTE_TARGET_DIR=$(echo "$dir_choice" | sed 's/Recent: //')
+                    break
+                    ;;
+                *)
+                    if [ -n "$dir_choice" ]; then
+                        break
+                    fi
+                    echo "[!] Invalid selection"
+                    ;;
+            esac
+        done
     fi
-    # Set base mount directory
-    BASE_MOUNT_DIR="$HOME/sshfs"
-    if [ ! -d "$BASE_MOUNT_DIR" ]; then
-        mkdir -p "$BASE_MOUNT_DIR"
+    
+    # Mount options
+    local mount_opts="reconnect,compression=yes,follow_symlinks"
+    
+    # Confirmation
+    echo ""
+    echo "[*] Mount Summary:"
+    echo "    Host:        $HOST"
+    echo "    Remote Path: $REMOTE_TARGET_DIR"
+    echo "    Options:     $mount_opts"
+    echo -n "[?] Proceed with mount? [Y/n]: "
+    read -r confirm
+    if [[ "$confirm" =~ ^[Nn]$ ]]; then
+        echo "[*] Cancelled"
+        return 0
     fi
-    # Use SSH host name as mount point subdirectory
-    LOCAL_MOUNT_POINT="$BASE_MOUNT_DIR/$HOST"
+    
+    # Set up mount directory
+    local BASE_MOUNT_DIR="$HOME/sshfs"
+    mkdir -p "$BASE_MOUNT_DIR"
+    local LOCAL_MOUNT_POINT="$BASE_MOUNT_DIR/$HOST"
+    
     # Check if already mounted
     if mountpoint -q "$LOCAL_MOUNT_POINT" 2>/dev/null; then
         echo "[!] $HOST is already mounted at $LOCAL_MOUNT_POINT"
         return 1
     fi
+    
     mkdir -p "$LOCAL_MOUNT_POINT"
-    # Mount using sshfs
-    if sshfs "$HOST":"$REMOTE_TARGET_DIR" "$LOCAL_MOUNT_POINT"; then
-        echo "[*] Successfully mounted to: $LOCAL_MOUNT_POINT"
-        echo "[*] Remote: $HOST:$REMOTE_TARGET_DIR"
+    
+    # Perform mount
+    echo "[*] Mounting..."
+    if sshfs "$HOST":"$REMOTE_TARGET_DIR" "$LOCAL_MOUNT_POINT" -o "$mount_opts"; then
+        echo "[*] Successfully mounted!"
+        
+        # Save to recent paths (remove duplicates, keep most recent, max 20 entries)
+        grep -v "^${HOST}|${REMOTE_TARGET_DIR}$" "$SSHFS_RECENT" > "$SSHFS_RECENT.tmp" 2>/dev/null || true
+        echo "$HOST|$REMOTE_TARGET_DIR" >> "$SSHFS_RECENT.tmp"
+        tail -n 20 "$SSHFS_RECENT.tmp" > "$SSHFS_RECENT" && rm -f "$SSHFS_RECENT.tmp"
+        
+        # Offer to save as favorite
+        echo ""
+        echo -n "[?] Save this as a favorite? [y/N]: "
+        read -r save_favorite
+        if [[ "$save_favorite" =~ ^[Yy]$ ]]; then
+            echo -n "[?] Enter a label for this favorite: "
+            read -r fav_label
+            if [ -n "$fav_label" ]; then
+                # Check if this exact favorite already exists
+                if grep -q "^${HOST}|${REMOTE_TARGET_DIR}|${fav_label}$" "$SSHFS_FAVORITES" 2>/dev/null; then
+                    echo "[*] This favorite already exists"
+                else
+                    echo "$HOST|$REMOTE_TARGET_DIR|$fav_label" >> "$SSHFS_FAVORITES"
+                    echo "[*] Saved as favorite: $fav_label"
+                fi
+            fi
+        fi
     else
         echo "[!] Failed to mount"
         rmdir "$LOCAL_MOUNT_POINT" 2>/dev/null
