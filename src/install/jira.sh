@@ -1,6 +1,10 @@
 #!/bin/bash
 
 set -euo pipefail
+[[ "${WAR10CK_DEBUG:-0}" == "1" ]] && set -x
+
+# In normal mode all noisy commands are silenced; debug mode streams full output.
+_q() { if [[ "${WAR10CK_DEBUG:-0}" == "1" ]]; then "$@"; else "$@" >/dev/null 2>&1; fi; }
 
 URL_API_LATEST="https://api.github.com/repos/ankitpokhrel/jira-cli/releases/latest"
 
@@ -10,13 +14,11 @@ if [[ -z "$LATEST_TAG" ]]; then
     exit 1
 fi
 LATEST_TAG="${LATEST_TAG//v/}"
-echo "[*] Latest tag (stripped): $LATEST_TAG"
 
 ARCHIVE="jira_${LATEST_TAG}_linux_x86_64.tar.gz"
 URL_DOWNLOAD="https://github.com/ankitpokhrel/jira-cli/releases/download/v${LATEST_TAG}/${ARCHIVE}"
 URL_CHECKSUMS="https://github.com/ankitpokhrel/jira-cli/releases/download/v${LATEST_TAG}/checksums.txt"
 
-echo "[*] Downloading: $URL_DOWNLOAD"
 _tmparchive=$(mktemp --suffix=-"$ARCHIVE")
 _tmpchecksums=$(mktemp --suffix=-jira-checksums.txt)
 curl -fsSL -o "$_tmparchive" "$URL_DOWNLOAD"
@@ -41,8 +43,15 @@ echo "[*] Jira CLI archive checksum OK"
 rm -f "$_tmpchecksums"
 
 _tmpdir=$(mktemp -d --suffix=-jira)
-tar -xzf "$_tmparchive" -C "$_tmpdir"
+_q tar -xzf "$_tmparchive" -C "$_tmpdir"
 rm -f "$_tmparchive"
 
-sudo mv "$_tmpdir/bin/jira" /usr/local/bin/jira
+# The archive extracts into a versioned subdirectory; locate the binary dynamically.
+_jira_bin=$(find "$_tmpdir" -type f -name "jira" | head -1)
+if [[ -z "$_jira_bin" ]]; then
+    echo "[!] Could not locate jira binary in extracted archive"
+    rm -rf "$_tmpdir"
+    exit 1
+fi
+sudo mv "$_jira_bin" /usr/local/bin/jira
 rm -rf "$_tmpdir"

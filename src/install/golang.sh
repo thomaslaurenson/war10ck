@@ -1,6 +1,10 @@
 #!/bin/bash
 
 set -euo pipefail
+[[ "${WAR10CK_DEBUG:-0}" == "1" ]] && set -x
+
+# In normal mode all noisy commands are silenced; debug mode streams full output.
+_q() { if [[ "${WAR10CK_DEBUG:-0}" == "1" ]]; then "$@"; else "$@" >/dev/null 2>&1; fi; }
 
 # Update GO_VERSION and GO_SHA256 together when bumping.
 # SHA256 values: https://go.dev/dl/?mode=json
@@ -21,10 +25,8 @@ if [[ "$actual" != "$GO_SHA256" ]]; then
 fi
 echo "[*] Go tarball checksum OK"
 
-sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf "$_tmpfile"
+_q sudo rm -rf /usr/local/go
+_q sudo tar -C /usr/local -xzf "$_tmpfile"
 rm -f "$_tmpfile"
 
 sudo ln -sf /usr/local/go/bin/go /usr/local/bin/go
-
-go version
