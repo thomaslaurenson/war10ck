@@ -69,18 +69,21 @@ else
     exit 1
 fi
 
-# Fetch the remote checksums.txt manifest, verify it against the hardcoded hash,
-# and export its contents so subsequent calls to _verify_from_manifest can use it.
-if [[ "$IS_LOCAL" == "true" || "${WAR10CK_SKIP_CHECKSUMS:-0}" == "1" ]]; then
-    # Skip remote manifest in local mode or when checksums are disabled
+# Load and verify the remote manifest before any network operations.
+# Skipped for:
+# local mode using "-l" and "--local"
+# checksum skipping mode using "-s" and "--skip"
+# update subcommand which uses TLS for manifest delivery
+if [[ "$IS_LOCAL" == "true" || "${WAR10CK_SKIP_CHECKSUMS:-0}" == "1" || "${_filtered_args[0]:-}" == "update" ]]; then
     export WAR10CK_MANIFEST=""
+else
+    _manifest_tmp=$(mktemp --suffix=.txt)
+    $FETCH_CMD "$_manifest_tmp" "$BASE_URL/checksums.txt"
+    _verify_checksum "$_manifest_tmp" "$CHECKSUMS_SHA256"
+    WAR10CK_MANIFEST=$(cat "$_manifest_tmp")
+    export WAR10CK_MANIFEST
+    rm -f "$_manifest_tmp"
 fi
-manifest_tmp=$(mktemp --suffix=.txt)
-$FETCH_CMD "$manifest_tmp" "$BASE_URL/checksums.txt"
-_verify_checksum "$manifest_tmp" "$CHECKSUMS_SHA256"
-WAR10CK_MANIFEST=$(cat "$manifest_tmp")
-export WAR10CK_MANIFEST
-rm -f "$manifest_tmp"
 
 # Validate and dispatch subcommand
 subcommand=$1
