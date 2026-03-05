@@ -22,7 +22,7 @@ _verify_checksum() {
     local file=$1
     local expected=$2
     if [[ "${WAR10CK_SKIP_CHECKSUMS:-0}" == "1" ]]; then
-        echo "[*] Checksum skipped: $(basename "$file")"
+        [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && echo "[*] Checksum skipped: $(basename "$file")"
         return 0
     fi
     local actual
@@ -34,7 +34,8 @@ _verify_checksum() {
         rm -f "$file"
         exit 1
     fi
-    echo "[*] Checksum OK: $(basename "$file")"
+    [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && echo "[*] Checksum OK: $(basename "$file")"
+    return 0
 }
 
 # Load the manifest and verify a file against it.
