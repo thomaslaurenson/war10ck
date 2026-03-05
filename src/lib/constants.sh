@@ -12,7 +12,6 @@ VALID_SUBCOMMANDS=(
     update
     config
     install
-    remove
     nuke
 )
 
