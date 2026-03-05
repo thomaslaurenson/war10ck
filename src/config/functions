@@ -1,22 +1,52 @@
 # CUSTOM FUNCTIONS
 
-# function: wf_tmuxxx
-wf_tmuxxx () {
-    # If no argument is passed, print the help message
-    if [ -z "$1" ]; then
-        echo "Usage: wf_tmuxxx <session-name>";
-        echo "Sessions: cer,home";
-        return;
+# function: wf_tmux
+wf_tmux () {
+    local session_name="$1"
+    local tmux_dir="$HOME/.war10ck/.tmux"
+    
+    # If no argument is passed, show interactive selection
+    if [ -z "$session_name" ]; then
+        # Check if tmux directory exists
+        if [ ! -d "$tmux_dir" ]; then
+            echo "[!] Tmux configuration directory not found at $tmux_dir"
+            return 1
+        fi
+        
+        # Get list of available session files
+        local sessions=()
+        while IFS= read -r -d '' file; do
+            sessions+=("$(basename "$file")")
+        done < <(find "$tmux_dir" -maxdepth 1 -type f -print0 2>/dev/null)
+        
+        # Check if any sessions were found
+        if [ ${#sessions[@]} -eq 0 ]; then
+            echo "[!] No tmux session files found in $tmux_dir"
+            return 1
+        fi
+        
+        # Display selection menu
+        echo "[*] Available tmux sessions:"
+        PS3="[*] Select session (1-${#sessions[@]}): "
+        select session_name in "${sessions[@]}"; do
+            if [ -n "$session_name" ]; then
+                break
+            else
+                echo "[!] Invalid selection. Please try again."
+            fi
+        done
     fi
-    # Check $1 is a valid session name
-    if [ "$1" != "cer" ] && [ "$1" != "home" ]; then
-        echo "Invalid session name";
-        echo "Sessions: cer,home";
-        return;
+    
+    # Verify the session file exists
+    if [ ! -f "$tmux_dir/$session_name" ]; then
+        echo "[!] Session file not found: $tmux_dir/$session_name"
+        return 1
     fi
+    
     # Start the tmux session
-    tmux -f "$HOME/.war10ck/.tmux.conf" start-server \; source-file "$HOME/.war10ck/.tmux/$1"
-    tmux attach-session -t $1
+    echo "[*] Starting tmux session: $session_name"
+    tmux -f "$HOME/.war10ck/.tmux.conf" start-server \; source-file "$tmux_dir/$session_name"
+    tmux attach-session -t "$session_name"
 }
 
 # function: wf_github_repository_properties
