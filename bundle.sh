@@ -59,6 +59,8 @@ echo "[*] Generating checksums.txt..."
     # Collect install scripts, config files, and the self-installer
     find install config -type f | sort | xargs sha256sum > checksums.txt
     sha256sum install.sh >> checksums.txt
+    # Add the war10ck binary itself for update verification
+    sha256sum war10ck >> checksums.txt
 )
 echo "[*] Generated: $DIST/checksums.txt"
 
