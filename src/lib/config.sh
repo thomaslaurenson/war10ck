@@ -81,7 +81,7 @@ config__gitconfig() {
     # Fetch the base gitconfig template to a temporary location
     local temp_gitconfig
     temp_gitconfig=$(mktemp)
-    echo $BASE_URL/config/gitconfig
+    echo "$BASE_URL/config/gitconfig"
     $FETCH_CMD "$temp_gitconfig" "$BASE_URL/config/gitconfig"
     _verify_from_manifest "$temp_gitconfig" "config/gitconfig"
     
@@ -122,8 +122,7 @@ config__gitconfig() {
     
     if [ -n "$git_signingkey" ]; then
         # Escape forward slashes in the path for sed
-        local escaped_key
-        escaped_key=$(echo "$git_signingkey" | sed 's|/|\\/|g')
+        local escaped_key="${git_signingkey//\//\\/}"
         sed -i "s|signingkey = .*|signingkey = $escaped_key|" "$temp_gitconfig"
     fi
     
