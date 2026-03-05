@@ -1,0 +1,601 @@
+#!/bin/bash
+
+VERSION=v0.4.6
+
+BASE_URL="https://war10ck.thomaslaurenson.com"
+
+# SHA256 of the remote checksums.txt manifest. Replaced at bundle time by bundle.sh.
+CHECKSUMS_SHA256="593c7cd36d916f0f58a4cb8747e20f9c9d513b96210f6574ac06296da795d438"
+
+VALID_SUBCOMMANDS=(
+    version
+    update
+    config
+    install
+    nuke
+)
+
+VALID_CONFIG_ARGS=(
+    rundmc
+    aliases
+    bashrcd
+    commands
+    functions
+    gitconfig
+    history
+    tmux
+)
+
+VALID_INSTALL_ARGS=(
+    docker
+    ghidra
+    golang
+    hugo
+    java
+    jira
+    mitmproxy
+    mpqeditor
+    nvm
+    packages
+    signal
+    terraform
+    uv
+    vscode
+)
+
+
+# Copy with reversed argument order (destination, source) to match fetch command conventions
+_bcp() {
+    cp "$2" "$1"
+}
+
+# Return 0 if the given string is a valid top-level subcommand
+_is_valid_subcommand() {
+    local subcommand=$1
+    for valid_subcommand in "${VALID_SUBCOMMANDS[@]}"; do
+        if [[ "$valid_subcommand" == "$subcommand" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Verify a file's SHA256 against an expected hash. Removes the file and exits on mismatch.
+# Skipped entirely when WAR10CK_SKIP_CHECKSUMS=1.
+_verify_checksum() {
+    local file=$1
+    local expected=$2
+    if [[ "${WAR10CK_SKIP_CHECKSUMS:-0}" == "1" ]]; then
+        [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && echo "[*] Checksum skipped: $(basename "$file")"
+        return 0
+    fi
+    local actual
+    actual=$(sha256sum "$file" | cut -d' ' -f1)
+    if [[ "$actual" != "$expected" ]]; then
+        echo "[!] Checksum mismatch: $file"
+        echo "[!]   expected: $expected"
+        echo "[!]   actual:   $actual"
+        rm -f "$file"
+        exit 1
+    fi
+    [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && echo "[*] Checksum OK: $(basename "$file")"
+    return 0
+}
+
+# Load the manifest and verify a file against it.
+# Usage: _verify_from_manifest <file> <manifest_key>
+# manifest_key is the relative path as it appears in checksums.txt (e.g. "install/docker.sh")
+# Skipped entirely when WAR10CK_LOCAL=1 or WAR10CK_SKIP_CHECKSUMS=1.
+_verify_from_manifest() {
+    local file=$1
+    local manifest_key=$2
+    if [[ "${WAR10CK_LOCAL:-0}" == "1" || "${WAR10CK_SKIP_CHECKSUMS:-0}" == "1" ]]; then
+        return 0
+    fi
+    if [[ -z "${WAR10CK_MANIFEST:-}" ]]; then
+        echo "[!] Manifest not loaded. Cannot verify $manifest_key"
+        exit 1
+    fi
+    local expected
+    expected=$(echo "$WAR10CK_MANIFEST" | grep " ${manifest_key}$" | cut -d' ' -f1)
+    if [[ -z "$expected" ]]; then
+        echo "[!] No manifest entry found for: $manifest_key"
+        exit 1
+    fi
+    _verify_checksum "$file" "$expected"
+}
+
+
+version() {
+    echo "$VERSION"
+}
+
+update() {
+    echo "[*] UPDATE..."
+    if [ ! -f "/usr/local/bin/war10ck" ]; then
+        echo "[!] Could not find /usr/local/bin/war10ck. Exiting."
+        exit 1
+    fi
+
+    echo "[*] Checking for updates..."
+    local latest_version
+    latest_version=$(curl -fsSL "https://api.github.com/repos/thomaslaurenson/war10ck/tags" | grep -m 1 '"name"' | sed 's/.*"name": *"v\?\([^"]*\)".*/\1/')
+
+    if [ -z "$latest_version" ]; then
+        echo "[!] Could not determine latest version from GitHub. Exiting."
+        exit 1
+    fi
+
+    if [ "$VERSION" = "v$latest_version" ]; then
+        echo "[*] Already up to date."
+        return
+    fi
+
+    # Fetch the new release manifest over TLS. The pinned CHECKSUMS_SHA256 in
+    # the installed binary is stale by definition during an update, so we trust
+    # the TLS channel for manifest delivery and use the manifest to verify the
+    # new binary — the same approach used by apt, Homebrew, etc.
+    local manifest_tmp bin_tmp
+    manifest_tmp=$(mktemp --suffix=.txt)
+    curl -fsSL -o "$manifest_tmp" "$BASE_URL/checksums.txt"
+
+    local expected_hash
+    expected_hash=$(grep ' war10ck$' "$manifest_tmp" | cut -d' ' -f1)
+    if [[ -z "$expected_hash" ]]; then
+        echo "[!] Could not find war10ck hash in new manifest. Exiting."
+        rm -f "$manifest_tmp"
+        exit 1
+    fi
+    rm -f "$manifest_tmp"
+
+    echo "[*] Updating war10ck... (requires sudo)"
+    bin_tmp=$(mktemp --suffix=-war10ck)
+    curl -fsSL -o "$bin_tmp" "$BASE_URL/war10ck"
+
+    local actual_hash
+    actual_hash=$(sha256sum "$bin_tmp" | cut -d' ' -f1)
+    if [[ "$actual_hash" != "$expected_hash" ]]; then
+        echo "[!] war10ck binary checksum mismatch"
+        echo "[!]   expected: $expected_hash"
+        echo "[!]   actual:   $actual_hash"
+        rm -f "$bin_tmp"
+        exit 1
+    fi
+
+    sudo mv "$bin_tmp" /usr/local/bin/war10ck
+    sudo chmod +x /usr/local/bin/war10ck
+    sudo chown root:root /usr/local/bin/war10ck
+    echo "[*] Updated to version $latest_version"
+}
+
+nuke() {
+    echo "[*] Nuking war10ck..."
+    echo "[*] Nuking configuration..."
+    # Remove the RUNDMC block from "$HOME/.bashrc"
+    # This deletes from '# RUNDMC' to the first 'fi'
+    if [ -f "$HOME/.bashrc" ]; then
+        sed -i '/# RUNDMC/,/fi/d' "$HOME/.bashrc"
+    fi
+    rm -rf "$HOME/.war10ck/"
+    echo "[*] Nuking binary... (requires sudo)"
+    if [ -f "/usr/local/bin/war10ck" ]; then
+        sudo rm -f "/usr/local/bin/war10ck"
+    fi
+    echo "[*] Nuke complete."
+}
+
+
+config() {
+    local subcommand=$1; shift
+
+    # If no subcommand provided, run all config functions
+    if [ -z "$subcommand" ]; then
+        for arg in "${VALID_CONFIG_ARGS[@]}"; do
+            "config__$arg"
+        done
+        return
+    fi
+
+    # Check if the subcommand is a valid function and call it
+    if type "config__$subcommand" >/dev/null 2>&1; then
+        "config__$subcommand" "$@"
+    else
+        echo "[!] Invalid subcommand argument: $subcommand. Exiting."
+        echo "[!] Valid arguments:"
+        for arg in "${VALID_CONFIG_ARGS[@]}"; do
+            echo "    $arg"
+        done
+        exit 1
+    fi
+}
+
+config__rundmc() {
+    echo "[*] Configuring rundmc..."
+    $FETCH_CMD "$HOME/.war10ck/.rundmc" "$BASE_URL/config/rundmc"
+    _verify_from_manifest "$HOME/.war10ck/.rundmc" "config/rundmc"
+
+    if ! grep "# RUNDMC" "$HOME/.bashrc" > /dev/null; then
+        {
+            echo -e "\n# RUNDMC"
+            echo -e "if [ -f $HOME/.war10ck/.rundmc ]; then"
+            echo -e "    . $HOME/.war10ck/.rundmc"
+            echo -e "fi"
+        } >> "$HOME/.bashrc"
+    fi
+}
+
+config__aliases() {
+    echo "[*] Configuring aliases..."
+    $FETCH_CMD "$HOME/.war10ck/.aliases" "$BASE_URL/config/aliases"
+    _verify_from_manifest "$HOME/.war10ck/.aliases" "config/aliases"
+}
+
+config__bashrcd() {
+    echo "[*] Configuring bashrc.d..."
+    mkdir -p "$HOME/.war10ck/bashrc.d"
+    chmod 700 "$HOME/.war10ck/bashrc.d"
+}
+
+config__commands() {
+    echo "[*] Configuring commands..."
+    $FETCH_CMD "$HOME/.war10ck/.commands" "$BASE_URL/config/commands"
+    _verify_from_manifest "$HOME/.war10ck/.commands" "config/commands"
+}
+
+config__functions() {
+    echo "[*] Configuring functions..."
+    $FETCH_CMD "$HOME/.war10ck/.functions" "$BASE_URL/config/functions"
+    _verify_from_manifest "$HOME/.war10ck/.functions" "config/functions"
+}
+
+config__gitconfig() {
+    echo "[*] Configuring git..."
+
+    # Extract existing user information if .gitconfig exists
+    local existing_name=""
+    local existing_email=""
+    local existing_signingkey=""
+
+    if [ -f "$HOME/.gitconfig" ]; then
+        echo "[*] Found existing .gitconfig, extracting user information..."
+        existing_name=$(git config -f "$HOME/.gitconfig" user.name 2>/dev/null || echo "")
+        existing_email=$(git config -f "$HOME/.gitconfig" user.email 2>/dev/null || echo "")
+        existing_signingkey=$(git config -f "$HOME/.gitconfig" user.signingkey 2>/dev/null || echo "")
+    fi
+
+    # Fetch the base gitconfig template to a temporary location
+    local temp_gitconfig
+    temp_gitconfig=$(mktemp)
+    echo "$BASE_URL/config/gitconfig"
+    $FETCH_CMD "$temp_gitconfig" "$BASE_URL/config/gitconfig"
+    _verify_from_manifest "$temp_gitconfig" "config/gitconfig"
+    
+    # Prompt for user information if not found in existing config
+    local git_name="$existing_name"
+    local git_email="$existing_email"
+    local git_signingkey="$existing_signingkey"
+    
+    if [ -z "$git_name" ]; then
+        echo -n "[?] Enter your Git name: "
+        read -r git_name
+    else
+        echo "[*] Using existing Git name: $git_name"
+    fi
+
+    if [ -z "$git_email" ]; then
+        echo -n "[?] Enter your Git email: "
+        read -r git_email
+    else
+        echo "[*] Using existing Git email: $git_email"
+    fi
+
+    if [ -z "$git_signingkey" ]; then
+        echo -n "[?] Enter your Git signing key path (or press Enter to skip): "
+        read -r git_signingkey
+    else
+        echo "[*] Using existing Git signing key: $git_signingkey"
+    fi
+
+    # Update the template with user-specific values
+    if [ -n "$git_name" ]; then
+        sed -i "s|name = .*|name = $git_name|" "$temp_gitconfig"
+    fi
+
+    if [ -n "$git_email" ]; then
+        sed -i "s|email = .*|email = $git_email|" "$temp_gitconfig"
+    fi
+    
+    if [ -n "$git_signingkey" ]; then
+        # Escape forward slashes in the path for sed
+        local escaped_key="${git_signingkey//\//\\/}"
+        sed -i "s|signingkey = .*|signingkey = $escaped_key|" "$temp_gitconfig"
+    fi
+    
+    # Move the configured file to the final location
+    mv "$temp_gitconfig" "$HOME/.gitconfig"
+    echo "[*] Git configuration updated successfully"
+}
+
+config__history() {
+    echo "[*] Configuring history..."
+    $FETCH_CMD "$HOME/.war10ck/.history" "$BASE_URL/config/history"
+    _verify_from_manifest "$HOME/.war10ck/.history" "config/history"
+}
+
+config__tmux() {
+    echo "[*] Configuring tmux..."
+    $FETCH_CMD "$HOME/.war10ck/.tmux.conf" "$BASE_URL/config/tmux/tmux.conf"
+    _verify_from_manifest "$HOME/.war10ck/.tmux.conf" "config/tmux/tmux.conf"
+    mkdir -p "$HOME/.war10ck/.tmux"
+    $FETCH_CMD "$HOME/.war10ck/.tmux/cer" "$BASE_URL/config/tmux/cer"
+    _verify_from_manifest "$HOME/.war10ck/.tmux/cer" "config/tmux/cer"
+    $FETCH_CMD "$HOME/.war10ck/.tmux/home" "$BASE_URL/config/tmux/home"
+    _verify_from_manifest "$HOME/.war10ck/.tmux/home" "config/tmux/home"
+}
+
+
+install() {
+    local subcommand=$1; shift
+
+    # Check if the subcommand is a valid function and call it
+    if type "install__$subcommand" >/dev/null 2>&1; then
+        "install__$subcommand" "$@"
+    else
+        echo "[!] Invalid subcommand argument: $subcommand. Exiting."
+        echo "[!] Valid arguments:"
+        for arg in "${VALID_INSTALL_ARGS[@]}"; do
+            echo "    $arg"
+        done
+        exit 1
+    fi
+}
+
+# Helper: fetch an install script from the remote, verify it against the manifest,
+# then execute it with the supplied privilege prefix (e.g. "sudo" or "").
+_install__fetch_and_run() {
+    local manifest_key=$1  # e.g. "install/docker.sh"
+    local privilege=$2     # e.g. "sudo" or ""
+    local script_name
+    script_name=$(basename "$manifest_key")
+    local _tmpfile
+    _tmpfile=$(mktemp --suffix="-${script_name}")
+    $FETCH_CMD "$_tmpfile" "$BASE_URL/$manifest_key"
+    _verify_from_manifest "$_tmpfile" "$manifest_key"
+    ${privilege:+$privilege} bash "$_tmpfile"
+    rm -f "$_tmpfile"
+}
+
+install__docker() {
+    echo "[*] Installing Docker..."
+    if [ -f "/usr/bin/docker" ]; then
+        echo "[!] Docker already installed. Skipping installation."
+    else
+        _install__fetch_and_run "install/docker.sh" "sudo"
+        echo "[*] Docker installation complete."
+        echo "[*] Please log out and back in to apply group changes."
+    fi
+}
+
+install__ghidra() {
+    echo "[*] Installing Ghidra..."
+    _install__fetch_and_run "install/ghidra.sh" "sudo"
+    echo "[*] Ghidra installation complete."
+}
+
+install__golang() {
+    echo "[*] Installing Go..."
+    _install__fetch_and_run "install/golang.sh" "sudo"
+    echo "[*] Go installation complete."
+}
+
+install__hugo() {
+    echo "[*] Installing Hugo..."
+    _install__fetch_and_run "install/hugo.sh" "sudo"
+    echo "[*] Hugo installation complete."
+}
+
+install__java() {
+    echo "[*] Installing Java..."
+    _install__fetch_and_run "install/java.sh" "sudo"
+    echo "[*] Java installation complete."
+}
+
+install__jira() {
+    echo "[*] Installing Jira CLI..."
+    _install__fetch_and_run "install/jira.sh" "sudo"
+    echo "[*] Jira CLI installation complete."
+}
+
+install__mitmproxy() {
+    echo "[*] Installing mitmproxy..."
+    _install__fetch_and_run "install/mitmproxy.sh" "sudo"
+    echo "[*] mitmproxy installation complete."
+}
+
+install__mpqeditor() {
+    echo "[*] Installing MPQ Editor..."
+    _install__fetch_and_run "install/mpqeditor.sh" "sudo"
+    echo "[*] MPQ Editor installation complete."
+}
+
+install__nvm() {
+    echo "[*] Installing nvm..."
+    _install__fetch_and_run "install/nvm.sh" ""
+    echo "[*] nvm installation complete."
+}
+
+install__packages() {
+    echo "[*] Installing packages..."
+    local package_list=(
+        curl
+        gh
+        jq
+        make
+        python3-pip
+        python3-venv
+        shellcheck
+        tree
+        vim
+        wget
+    )
+    sudo apt -y install "${package_list[@]}"
+}
+
+install__signal() {
+    echo "[*] Installing Signal..."
+    _install__fetch_and_run "install/signal.sh" "sudo"
+    echo "[*] Signal installation complete."
+}
+
+install__terraform() {
+    echo "[*] Installing Terraform..."
+    _install__fetch_and_run "install/terraform.sh" "sudo"
+    echo "[*] Terraform installation complete."
+}
+
+install__uv() {
+    echo "[*] Installing UV..."
+    _install__fetch_and_run "install/uv.sh" ""
+    echo "[*] UV installation complete."
+}
+
+install__vscode() {
+    echo "[*] Installing Visual Studio Code..."
+    if command -v code &> /dev/null; then
+        echo "[!] Visual Studio Code already installed. Skipping installation."
+    else
+        _install__fetch_and_run "install/vscode.sh" "sudo"
+        echo "[*] Visual Studio Code installation complete."
+    fi
+}
+
+
+# If sourced (not executed directly), register bash completion and return
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    _war10ck_completions() {
+        local cur
+        COMPREPLY=()
+        cur="${COMP_WORDS[COMP_CWORD]}"
+
+        # Top-level subcommands
+        if [[ $COMP_CWORD -eq 1 ]]; then
+            mapfile -t COMPREPLY < <(compgen -W "${VALID_SUBCOMMANDS[*]}" -- "$cur")
+            return
+        fi
+
+        # Second-level subcommands
+        case "${COMP_WORDS[1]}" in
+            config)
+                mapfile -t COMPREPLY < <(compgen -W "${VALID_CONFIG_ARGS[*]}" -- "$cur")
+                ;;
+            install)
+                mapfile -t COMPREPLY < <(compgen -W "${VALID_INSTALL_ARGS[*]}" -- "$cur")
+                ;;
+        esac
+    }
+    complete -F _war10ck_completions war10ck
+    return
+fi
+
+
+_print_help() {
+    cat <<'EOF'
+Usage: war10ck [flags] <subcommand> [args]
+
+Flags:
+  -d, --debug   Enable debug output and command tracing (set -x) in install scripts
+  -l, --local   Source scripts from the local dist/ directory instead of the remote URL
+  -s, --skip    Skip manifest checksum verification (useful with --local)
+  -h, --help    Show this help message
+
+Subcommands:
+  version       Print the current war10ck version
+  update        Update war10ck to the latest release
+  config        Apply dotfile and shell configuration (aliases, gitconfig, tmux, etc.)
+  install       Install a tool or package (e.g. war10ck install golang)
+  nuke          Remove all war10ck configuration and installed tools
+
+EOF
+}
+
+# Global flag parsing — must run before IS_LOCAL / FETCH_CMD setup so that
+# -l/--local can influence both. All recognised flags are stripped from $@
+# before subcommand dispatch. Exported vars are inherited by install scripts.
+WAR10CK_DEBUG=0
+WAR10CK_LOCAL=0
+WAR10CK_SKIP_CHECKSUMS=0
+_filtered_args=()
+for _arg in "$@"; do
+    case "$_arg" in
+        -d|--debug)  WAR10CK_DEBUG=1 ;;
+        -l|--local)  WAR10CK_LOCAL=1 ;;
+        -s|--skip)   WAR10CK_SKIP_CHECKSUMS=1 ;;
+        -h|--help)   _print_help; exit 0 ;;
+        *)           _filtered_args+=("$_arg") ;;
+    esac
+done
+export WAR10CK_DEBUG WAR10CK_LOCAL WAR10CK_SKIP_CHECKSUMS
+if (( ${#_filtered_args[@]} )); then
+    set -- "${_filtered_args[@]}"
+else
+    set --
+fi
+
+# Resolve fetch command and base URL.
+# -l/--local: look for a dist/ directory near $PWD (repo-root usage) or fall
+# back to $PWD itself (running from inside dist/).
+IS_LOCAL=false
+if [[ "$WAR10CK_LOCAL" == "1" ]]; then
+    IS_LOCAL=true
+    if [[ -d "$PWD/dist/install" ]]; then
+        BASE_URL="$PWD/dist"
+    elif [[ -d "$PWD/install" ]]; then
+        BASE_URL="$PWD"
+    else
+        echo "[!] Local mode: cannot find an install/ directory under $PWD or $PWD/dist"
+        echo "[!] Run from the repository root or from inside the dist/ directory."
+        exit 1
+    fi
+    FETCH_CMD="_bcp"
+elif command -v curl &> /dev/null; then
+    FETCH_CMD="curl -fsSL -o"
+elif command -v wget &> /dev/null; then
+    FETCH_CMD="wget -q -O"
+else
+    echo "[!] No fetch command found. Exiting."
+    exit 1
+fi
+
+# Load and verify the remote manifest before any network operations.
+# Skipped for:
+# local mode using "-l" and "--local"
+# checksum skipping mode using "-s" and "--skip"
+# update subcommand which uses TLS for manifest delivery
+if [[ "$IS_LOCAL" == "true" || "${WAR10CK_SKIP_CHECKSUMS:-0}" == "1" || "${_filtered_args[0]:-}" == "update" ]]; then
+    export WAR10CK_MANIFEST=""
+else
+    _manifest_tmp=$(mktemp --suffix=.txt)
+    $FETCH_CMD "$_manifest_tmp" "$BASE_URL/checksums.txt"
+    _verify_checksum "$_manifest_tmp" "$CHECKSUMS_SHA256"
+    WAR10CK_MANIFEST=$(cat "$_manifest_tmp")
+    export WAR10CK_MANIFEST
+    rm -f "$_manifest_tmp"
+fi
+
+# Validate and dispatch subcommand
+subcommand=$1
+if ! _is_valid_subcommand "$subcommand"; then
+    echo "[!] Invalid subcommand: $subcommand"
+    echo "[!] Valid subcommands: ${VALID_SUBCOMMANDS[*]}"
+    echo "[!] Exiting."
+    exit 1
+fi
+
+if declare -f "$subcommand" > /dev/null 2>&1; then
+    "$@"
+else
+    echo "[!] Invalid subcommand: $subcommand"
+    echo "[!] No matching function."
+    echo "[!] Exiting."
+    exit 1
+fi

@@ -79,7 +79,12 @@ if [[ "$IS_LOCAL" == "true" || "${WAR10CK_SKIP_CHECKSUMS:-0}" == "1" || "${_filt
 else
     _manifest_tmp=$(mktemp --suffix=.txt)
     $FETCH_CMD "$_manifest_tmp" "$BASE_URL/checksums.txt"
-    _verify_checksum "$_manifest_tmp" "$CHECKSUMS_SHA256"
+    # CHECKSUMS_SHA256 covers everything except the war10ck entry (chicken-and-egg).
+    # Strip that line before verifying to get a reproducible digest.
+    _manifest_filtered=$(mktemp --suffix=.txt)
+    grep -v ' war10ck$' "$_manifest_tmp" > "$_manifest_filtered"
+    _verify_checksum "$_manifest_filtered" "$CHECKSUMS_SHA256"
+    rm -f "$_manifest_filtered"
     WAR10CK_MANIFEST=$(cat "$_manifest_tmp")
     export WAR10CK_MANIFEST
     rm -f "$_manifest_tmp"

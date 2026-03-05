@@ -1,6 +1,5 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034  # Variables are used across bundled files
-VERSION="dev"
 
 BASE_URL="https://war10ck.thomaslaurenson.com"
 

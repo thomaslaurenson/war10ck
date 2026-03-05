@@ -11,9 +11,6 @@ jobs:
       - name: Bundle
         run: bash bundle.sh
 
-      - name: Update with latest tag
-        run: sed -i "s/^VERSION=.*/VERSION=${{ github.ref_name }}/" dist/war10ck
-
       - name: Generate basic HTML index page
         uses: docker://pandoc/core:3.5
         with:

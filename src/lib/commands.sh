@@ -13,7 +13,7 @@ update() {
 
     echo "[*] Checking for updates..."
     local latest_version
-    latest_version=$(curl -fsSL "https://api.github.com/repos/thomaslaurenson/war10ck/tags" | grep -m 1 '"name"' | sed 's/.*"name": *"v\?\([^"]*\)".*/\1/')
+    latest_version=$(curl -fsSL 2>/dev/null "https://api.github.com/repos/thomaslaurenson/war10ck/tags" | grep -m 1 '"name"' | sed 's/.*"name": *"v\?\([^"]*\)".*/\1/')
 
     if [ -z "$latest_version" ]; then
         echo "[!] Could not determine latest version from GitHub. Exiting."
@@ -31,7 +31,7 @@ update() {
     # new binary — the same approach used by apt, Homebrew, etc.
     local manifest_tmp bin_tmp
     manifest_tmp=$(mktemp --suffix=.txt)
-    curl -fsSL -o "$manifest_tmp" "$BASE_URL/checksums.txt"
+    $FETCH_CMD "$manifest_tmp" "$BASE_URL/checksums.txt"
 
     local expected_hash
     expected_hash=$(grep ' war10ck$' "$manifest_tmp" | cut -d' ' -f1)
@@ -44,17 +44,8 @@ update() {
 
     echo "[*] Updating war10ck... (requires sudo)"
     bin_tmp=$(mktemp --suffix=-war10ck)
-    curl -fsSL -o "$bin_tmp" "$BASE_URL/war10ck"
-
-    local actual_hash
-    actual_hash=$(sha256sum "$bin_tmp" | cut -d' ' -f1)
-    if [[ "$actual_hash" != "$expected_hash" ]]; then
-        echo "[!] war10ck binary checksum mismatch"
-        echo "[!]   expected: $expected_hash"
-        echo "[!]   actual:   $actual_hash"
-        rm -f "$bin_tmp"
-        exit 1
-    fi
+    $FETCH_CMD "$bin_tmp" "$BASE_URL/war10ck"
+    _verify_checksum "$bin_tmp" "$expected_hash"
 
     sudo mv "$bin_tmp" /usr/local/bin/war10ck
     sudo chmod +x /usr/local/bin/war10ck

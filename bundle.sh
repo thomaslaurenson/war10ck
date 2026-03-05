@@ -17,6 +17,8 @@ strip() { grep -v '^# shellcheck' "$1"; }
 {
     echo "#!/bin/bash"
     echo ""
+    strip "$SRC/lib/version.sh"
+    echo ""
     strip "$SRC/lib/constants.sh"
     echo ""
     strip "$SRC/lib/helpers.sh"
