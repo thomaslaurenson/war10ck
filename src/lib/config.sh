@@ -65,8 +65,71 @@ config__functions() {
 
 config__gitconfig() {
     echo "[*] Configuring git..."
-    $FETCH_CMD "$HOME/.gitconfig" "$BASE_URL/config/gitconfig"
-    _verify_from_manifest "$HOME/.gitconfig" "config/gitconfig"
+
+    # Extract existing user information if .gitconfig exists
+    local existing_name=""
+    local existing_email=""
+    local existing_signingkey=""
+
+    if [ -f "$HOME/.gitconfig" ]; then
+        echo "[*] Found existing .gitconfig, extracting user information..."
+        existing_name=$(git config -f "$HOME/.gitconfig" user.name 2>/dev/null || echo "")
+        existing_email=$(git config -f "$HOME/.gitconfig" user.email 2>/dev/null || echo "")
+        existing_signingkey=$(git config -f "$HOME/.gitconfig" user.signingkey 2>/dev/null || echo "")
+    fi
+
+    # Fetch the base gitconfig template to a temporary location
+    local temp_gitconfig
+    temp_gitconfig=$(mktemp)
+    echo $BASE_URL/config/gitconfig
+    $FETCH_CMD "$temp_gitconfig" "$BASE_URL/config/gitconfig"
+    _verify_from_manifest "$temp_gitconfig" "config/gitconfig"
+    
+    # Prompt for user information if not found in existing config
+    local git_name="$existing_name"
+    local git_email="$existing_email"
+    local git_signingkey="$existing_signingkey"
+    
+    if [ -z "$git_name" ]; then
+        echo -n "[?] Enter your Git name: "
+        read -r git_name
+    else
+        echo "[*] Using existing Git name: $git_name"
+    fi
+
+    if [ -z "$git_email" ]; then
+        echo -n "[?] Enter your Git email: "
+        read -r git_email
+    else
+        echo "[*] Using existing Git email: $git_email"
+    fi
+
+    if [ -z "$git_signingkey" ]; then
+        echo -n "[?] Enter your Git signing key path (or press Enter to skip): "
+        read -r git_signingkey
+    else
+        echo "[*] Using existing Git signing key: $git_signingkey"
+    fi
+
+    # Update the template with user-specific values
+    if [ -n "$git_name" ]; then
+        sed -i "s|name = .*|name = $git_name|" "$temp_gitconfig"
+    fi
+
+    if [ -n "$git_email" ]; then
+        sed -i "s|email = .*|email = $git_email|" "$temp_gitconfig"
+    fi
+    
+    if [ -n "$git_signingkey" ]; then
+        # Escape forward slashes in the path for sed
+        local escaped_key
+        escaped_key=$(echo "$git_signingkey" | sed 's|/|\\/|g')
+        sed -i "s|signingkey = .*|signingkey = $escaped_key|" "$temp_gitconfig"
+    fi
+    
+    # Move the configured file to the final location
+    mv "$temp_gitconfig" "$HOME/.gitconfig"
+    echo "[*] Git configuration updated successfully"
 }
 
 config__history() {
