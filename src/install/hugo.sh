@@ -1,22 +1,24 @@
 #!/bin/bash
 
 set -euo pipefail
+[[ "${WAR10CK_DEBUG:-0}" == "1" ]] && set -x
+
+# In normal mode all noisy commands are silenced; debug mode streams full output.
+_q() { if [[ "${WAR10CK_DEBUG:-0}" == "1" ]]; then "$@"; else "$@" >/dev/null 2>&1; fi; }
 
 URL_API_LATEST="https://api.github.com/repos/gohugoio/hugo/releases/latest"
 
 LATEST_TAG=$(curl -fsSL "$URL_API_LATEST" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 if [[ -z "$LATEST_TAG" ]]; then
-    echo "[!] Failed to fetch the latest tag release"
+    echo "[!] Failed to fetch the latest Hugo release tag"
     exit 1
 fi
 LATEST_TAG="${LATEST_TAG//v/}"
-echo "[*] Latest tag (stripped): $LATEST_TAG"
 
 ARCHIVE="hugo_extended_${LATEST_TAG}_linux-amd64.deb"
 URL_DOWNLOAD="https://github.com/gohugoio/hugo/releases/download/v${LATEST_TAG}/${ARCHIVE}"
 URL_CHECKSUMS="https://github.com/gohugoio/hugo/releases/download/v${LATEST_TAG}/hugo_${LATEST_TAG}_checksums.txt"
 
-echo "[*] Downloading: $URL_DOWNLOAD"
 _tmpdeb=$(mktemp --suffix=-"$ARCHIVE")
 _tmpchecksums=$(mktemp --suffix=-hugo-checksums.txt)
 curl -fsSL -o "$_tmpdeb" "$URL_DOWNLOAD"
@@ -40,5 +42,5 @@ fi
 echo "[*] Hugo package checksum OK"
 rm -f "$_tmpchecksums"
 
-sudo dpkg -i "$_tmpdeb"
+_q sudo dpkg -i "$_tmpdeb"
 rm -f "$_tmpdeb"

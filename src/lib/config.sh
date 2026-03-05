@@ -1,7 +1,6 @@
 # shellcheck shell=bash
 
 config() {
-    echo "[*] CONFIG..."
     local subcommand=$1; shift
 
     # If no subcommand provided, run all config functions

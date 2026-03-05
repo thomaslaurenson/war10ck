@@ -1,7 +1,6 @@
 # shellcheck shell=bash
 
 install() {
-    echo "[*] INSTALL..."
     local subcommand=$1; shift
 
     # Check if the subcommand is a valid function and call it
