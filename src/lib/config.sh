@@ -29,12 +29,13 @@ config__rundmc() {
     $FETCH_CMD "$HOME/.war10ck/.rundmc" "$BASE_URL/config/rundmc"
     _verify_from_manifest "$HOME/.war10ck/.rundmc" "config/rundmc"
 
-    if ! grep "# RUNDMC" "$HOME/.bashrc" > /dev/null; then
+    if ! grep "# war10ck BEGIN" "$HOME/.bashrc" > /dev/null; then
         {
-            echo -e "\n# RUNDMC"
+            echo -e "\n# war10ck BEGIN"
             echo -e "if [ -f $HOME/.war10ck/.rundmc ]; then"
             echo -e "    . $HOME/.war10ck/.rundmc"
             echo -e "fi"
+            echo -e "# war10ck END"
         } >> "$HOME/.bashrc"
     fi
 }

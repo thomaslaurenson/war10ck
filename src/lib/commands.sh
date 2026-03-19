@@ -56,10 +56,10 @@ update() {
 nuke() {
     echo "[*] Nuking war10ck..."
     echo "[*] Nuking configuration..."
-    # Remove the RUNDMC block from "$HOME/.bashrc"
-    # This deletes from '# RUNDMC' to the first 'fi'
+    # Remove the war10ck block from "$HOME/.bashrc"
+    # This deletes from '# war10ck BEGIN' to '# war10ck END'
     if [ -f "$HOME/.bashrc" ]; then
-        sed -i '/# RUNDMC/,/fi/d' "$HOME/.bashrc"
+        sed -i '/# war10ck BEGIN/,/# war10ck END/d' "$HOME/.bashrc"
     fi
     rm -rf "$HOME/.war10ck/"
     echo "[*] Nuking binary... (requires sudo)"
