@@ -26,6 +26,7 @@ config() {
 
 config__rundmc() {
     echo "[*] Configuring rundmc..."
+    mkdir -p "$HOME/.war10ck"
     $FETCH_CMD "$HOME/.war10ck/.rundmc" "$BASE_URL/config/rundmc"
     _verify_from_manifest "$HOME/.war10ck/.rundmc" "config/rundmc"
 
