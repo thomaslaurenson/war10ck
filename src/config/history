@@ -1,5 +1,7 @@
 # BETTER BASH HISTORY
 
+# Explicit history file location
+export HISTFILE="$HOME/.bash_history"
 
 # Include timestamps in history (format: YYYY-MM-DD HH:MM:SS)
 export HISTTIMEFORMAT="%F %T "
@@ -8,11 +10,10 @@ export HISTTIMEFORMAT="%F %T "
 export HISTSIZE=10000
 export HISTFILESIZE=50000
 
-# Ignore duplicates and blank commands
-export HISTCONTROL=ignoredups:erasedups
-
-# Ignore commands that are just one or two characters
-export HISTIGNORE=?:??
+# Ignore consecutive duplicate commands
+# erasedups is intentionally omitted — it silently drops entries written by
+# other sessions when syncing, causing cross-session history loss
+export HISTCONTROL=ignoredups
 
 # Append history instead of overwriting when shells exit
 shopt -s histappend
@@ -21,6 +22,10 @@ shopt -s histappend
 shopt -s cmdhist
 shopt -s lithist
 
-# Merge history across sessions efficiently after each command
-PROMPT_COMMAND='history -a;'
+# Sync history across all open sessions after each command:
+#   history -a  flush this session's new entries to disk
+#   history -n  read back new entries written by other sessions
+# Appends to PROMPT_COMMAND rather than overwriting it so other tools
+# (e.g., virtualenv) are not broken
+PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }history -a; history -n"
 export PROMPT_COMMAND
