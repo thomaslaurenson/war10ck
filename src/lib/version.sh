@@ -3,3 +3,7 @@
 
 # Manually increment VERSION before tagging a new release.
 VERSION="v0.4.11"
+
+version() {
+    echo "$VERSION"
+}

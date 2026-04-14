@@ -1,9 +1,5 @@
 # shellcheck shell=bash
 
-version() {
-    echo "$VERSION"
-}
-
 update() {
     echo "[*] Updating war10ck..."
     echo "[*] Current version: $VERSION"
@@ -53,20 +49,4 @@ update() {
     sudo chmod 755 /usr/local/bin/war10ck
     sudo chown root:root /usr/local/bin/war10ck
     echo "[*] Updated to version $latest_version"
-}
-
-nuke() {
-    echo "[*] Nuking war10ck..."
-    echo "[*] Nuking configuration..."
-    # Remove the war10ck block from "$HOME/.bashrc"
-    # This deletes from '# war10ck BEGIN' to '# war10ck END'
-    if [ -f "$HOME/.bashrc" ]; then
-        sed -i '/# war10ck BEGIN/,/# war10ck END/d' "$HOME/.bashrc"
-    fi
-    rm -rf "$HOME/.war10ck/"
-    echo "[*] Nuking binary... (requires sudo)"
-    if [ -f "/usr/local/bin/war10ck" ]; then
-        sudo rm -f "/usr/local/bin/war10ck"
-    fi
-    echo "[*] Nuke complete."
 }
