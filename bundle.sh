@@ -23,7 +23,7 @@ strip() { grep -v '^# shellcheck' "$1"; }
     echo ""
     strip "$SRC/lib/helpers.sh"
     echo ""
-    strip "$SRC/lib/commands.sh"
+    strip "$SRC/lib/environment.sh"
     echo ""
     strip "$SRC/lib/config.sh"
     echo ""

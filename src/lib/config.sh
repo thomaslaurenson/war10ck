@@ -53,10 +53,10 @@ config__bashrcd() {
     chmod 700 "$HOME/.war10ck/bashrc.d"
 }
 
-config__commands() {
-    echo "[*] Configuring commands..."
-    $FETCH_CMD "$HOME/.war10ck/.commands" "$BASE_URL/config/commands"
-    _verify_from_manifest "$HOME/.war10ck/.commands" "config/commands"
+config__environment() {
+    echo "[*] Configuring environment..."
+    $FETCH_CMD "$HOME/.war10ck/.environment" "$BASE_URL/config/environment"
+    _verify_from_manifest "$HOME/.war10ck/.environment" "config/environment"
 }
 
 config__functions() {
