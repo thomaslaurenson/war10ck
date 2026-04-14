@@ -19,16 +19,3 @@ install_locally: bundle
 lint:
 	shellcheck bundle.sh install.sh
 	shellcheck src/main.sh src/lib/*.sh src/install/*.sh
-
-# RELEASE
-release:
-	@LATEST_TAG=$$(git tag --sort=-v:refname | head -n 1); \
-	echo "[*] Existing tag: $$LATEST_TAG"; \
-	read -p "[*] Enter new tag: v" VERSION; \
-	echo "[*] Proposed version: $$VERSION"; \
-	read -p "[*] Tag and Release? (y/N) " yn; \
-	case $$yn in \
-		y ) git tag v$$VERSION && git push --tags && echo "[*] Released v$$VERSION";; \
-		n ) echo "[*] Exiting...";; \
-		* ) echo "[*] Invalid response... Exiting"; exit 1;; \
-	esac
