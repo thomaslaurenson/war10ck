@@ -49,6 +49,83 @@ wf_tmux () {
     tmux attach-session -t "$session_name"
 }
 
+# function: wf_git_tag
+w_git_tag() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "[!] Not inside a git repository"
+        return 1
+    fi
+    # Block on detached HEAD — a tag should be rooted to a named branch
+    local branch
+    if ! branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"; then
+        echo "[!] Detached HEAD — check out a branch before tagging"
+        return 1
+    fi
+    local repo_name
+    repo_name="$(basename "$(git rev-parse --show-toplevel)")"
+    local remote="origin"
+    local remote_url
+    remote_url="$(git remote get-url "$remote" 2>/dev/null || true)"
+    local latest_tag
+    latest_tag="$(git tag --sort=-v:refname 2>/dev/null | head -n 1)"
+    echo "[*] Repository : $repo_name"
+    echo "[*] Branch     : $branch"
+    echo "[*] Remote     : $remote"
+    [ -n "$remote_url" ] && echo "[*] Remote URL : $remote_url"
+    [ -n "$latest_tag" ] && echo "[*] Latest tag : $latest_tag" || echo "[*] Latest tag : <none>"
+    echo
+    # Warn on dirty tracked files (modified/staged); untracked files are ignored
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+        echo "[!] Working tree is dirty:"
+        git status --short --untracked-files=no
+        echo
+        read -rp "[?] Continue with tag anyway? (y/N) " dirty_confirm
+        case "$dirty_confirm" in
+            y|Y) ;;
+            *)
+                echo "[*] Aborted"
+                return 0
+                ;;
+        esac
+        echo
+    fi
+    read -rp "[*] Enter new version (without 'v' prefix): " version
+    if [[ -z "$version" ]]; then
+        echo "[!] Version cannot be empty"
+        return 1
+    fi
+    local tag="v$version"
+    if git rev-parse "$tag" >/dev/null 2>&1; then
+        echo "[!] Tag '$tag' already exists"
+        return 1
+    fi
+    echo
+    echo "[*] About to create and push tag:"
+    echo "    Tag        : $tag"
+    echo "    Repository : $repo_name"
+    echo "    Branch     : $branch"
+    [ -n "$latest_tag" ] && echo "    Previous   : $latest_tag"
+    echo
+    read -rp "[?] Proceed with tagging and push? (y/N) " confirm
+    case "$confirm" in
+        y|Y) ;;
+        *)
+            echo "[*] Aborted"
+            return 0
+            ;;
+    esac
+    if ! git tag -a "$tag" -m "Release $tag"; then
+        echo "[!] Failed to create tag '$tag'"
+        return 1
+    fi
+    if ! git push "$remote" "$tag"; then
+        echo "[!] Push failed — tag '$tag' exists locally but was not pushed"
+        echo "[!] To retry: git push $remote $tag"
+        return 1
+    fi
+    echo "Tag '$tag' created and pushed successfully"
+}
+
 # function: wf_github_repository_properties
 wf_github_repository_properties() {
     local current_dir=$(pwd)
