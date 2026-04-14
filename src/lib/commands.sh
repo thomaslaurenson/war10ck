@@ -5,7 +5,9 @@ version() {
 }
 
 update() {
-    echo "[*] UPDATE..."
+    echo "[*] Updating war10ck..."
+    echo "[*] Current version: $VERSION"
+
     if [ ! -f "/usr/local/bin/war10ck" ]; then
         echo "[!] Could not find /usr/local/bin/war10ck. Exiting."
         exit 1
