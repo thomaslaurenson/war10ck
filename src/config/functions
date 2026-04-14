@@ -169,15 +169,38 @@ wf_sshfs_mount() {
     mkdir -p "$SSHFS_CONFIG_DIR"
     touch "$SSHFS_RECENT" "$SSHFS_FAVORITES"
     
-    # Get SSH config
+    # Get SSH config, following Include directives recursively
     local CONFIG="$HOME/.ssh/config"
     if [ ! -f "$CONFIG" ]; then
         echo "[!] SSH config not found at $CONFIG"
         return 1
     fi
-    
+
+    # Collect all SSH config files by following Include directives
+    _wf_sshfs_collect_configs() {
+        local file="$1"
+        [ -f "$file" ] || return
+        echo "$file"
+        while IFS= read -r line; do
+            [[ "$line" =~ ^[[:space:]]*[Ii]nclude[[:space:]]+(.+)$ ]] || continue
+            local pattern="${BASH_REMATCH[1]}"
+            pattern="${pattern/#\~/$HOME}"
+            for inc in $pattern; do
+                [ -f "$inc" ] && _wf_sshfs_collect_configs "$inc"
+            done
+        done < "$file"
+    }
+
+    # Collect all hosts across all config files (deduplicated)
+    local ALL_CONFIGS
+    ALL_CONFIGS=$(_wf_sshfs_collect_configs "$CONFIG")
+    local HOSTS
+    HOSTS=$(grep -h -E '^Host[[:space:]]+' $ALL_CONFIGS 2>/dev/null \
+        | grep -v '[*?]' \
+        | awk '{for(i=2;i<=NF;i++) print $i}' \
+        | sort -u)
+
     # Select host
-    local HOSTS=$(grep -E '^Host\s+' "$CONFIG" | grep -v '*' | awk '{print $2}')
     echo "[*] Available SSH Hosts:"
     local HOST
     PS3="[*] Select host: "
@@ -186,11 +209,12 @@ wf_sshfs_mount() {
             break
         fi
     done
-    
-    # Extract SSH details
-    local HOSTNAME=$(awk "/Host $HOST/{f=1} f && /HostName/{print \$2; exit}" "$CONFIG")
-    local PORT=$(awk "/Host $HOST/{f=1} f && /Port/{print \$2; exit}" "$CONFIG")
-    local USER=$(awk "/Host $HOST/{f=1} f && /User/{print \$2; exit}" "$CONFIG")
+
+    # Extract SSH details (search all config files)
+    local HOSTNAME PORT USER
+    HOSTNAME=$(ssh -G "$HOST" 2>/dev/null | awk '/^hostname / {print $2; exit}')
+    PORT=$(ssh -G "$HOST" 2>/dev/null | awk '/^port / {print $2; exit}')
+    USER=$(ssh -G "$HOST" 2>/dev/null | awk '/^user / {print $2; exit}')
     
     # Determine remote directory
     local REMOTE_TARGET_DIR="$1"
