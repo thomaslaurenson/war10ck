@@ -53,10 +53,10 @@ config__bashrcd() {
     chmod 700 "$HOME/.war10ck/bashrc.d"
 }
 
-config__commands() {
-    echo "[*] Configuring commands..."
-    $FETCH_CMD "$HOME/.war10ck/.commands" "$BASE_URL/config/commands"
-    _verify_from_manifest "$HOME/.war10ck/.commands" "config/commands"
+config__environment() {
+    echo "[*] Configuring environment..."
+    $FETCH_CMD "$HOME/.war10ck/.environment" "$BASE_URL/config/environment"
+    _verify_from_manifest "$HOME/.war10ck/.environment" "config/environment"
 }
 
 config__functions() {
@@ -74,7 +74,7 @@ config__gitconfig() {
     local existing_signingkey=""
 
     if [ -f "$HOME/.gitconfig" ]; then
-        echo "[*] Found existing .gitconfig, extracting user information..."
+        echo "    [*] Found existing .gitconfig, extracting user information..."
         existing_name=$(git config -f "$HOME/.gitconfig" user.name 2>/dev/null || echo "")
         existing_email=$(git config -f "$HOME/.gitconfig" user.email 2>/dev/null || echo "")
         existing_signingkey=$(git config -f "$HOME/.gitconfig" user.signingkey 2>/dev/null || echo "")
@@ -83,7 +83,6 @@ config__gitconfig() {
     # Fetch the base gitconfig template to a temporary location
     local temp_gitconfig
     temp_gitconfig=$(mktemp)
-    echo "$BASE_URL/config/gitconfig"
     $FETCH_CMD "$temp_gitconfig" "$BASE_URL/config/gitconfig"
     _verify_from_manifest "$temp_gitconfig" "config/gitconfig"
     
@@ -96,21 +95,21 @@ config__gitconfig() {
         echo -n "[?] Enter your Git name: "
         read -r git_name
     else
-        echo "[*] Using existing Git name: $git_name"
+        echo "    [*] Using existing Git name: $git_name"
     fi
 
     if [ -z "$git_email" ]; then
         echo -n "[?] Enter your Git email: "
         read -r git_email
     else
-        echo "[*] Using existing Git email: $git_email"
+        echo "    [*] Using existing Git email: $git_email"
     fi
 
     if [ -z "$git_signingkey" ]; then
         echo -n "[?] Enter your Git signing key path (or press Enter to skip): "
         read -r git_signingkey
     else
-        echo "[*] Using existing Git signing key: $git_signingkey"
+        echo "    [*] Using existing Git signing key: $git_signingkey"
     fi
 
     # Update the template with user-specific values
@@ -130,7 +129,7 @@ config__gitconfig() {
     
     # Move the configured file to the final location
     mv "$temp_gitconfig" "$HOME/.gitconfig"
-    echo "[*] Git configuration updated successfully"
+    echo "    [*] Git configuration updated successfully"
 }
 
 config__history() {

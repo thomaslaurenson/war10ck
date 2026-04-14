@@ -18,7 +18,7 @@ VALID_CONFIG_ARGS=(
     rundmc
     aliases
     bashrcd
-    commands
+    environment
     functions
     gitconfig
     history

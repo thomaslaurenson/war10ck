@@ -10,9 +10,9 @@ if [ -f "$HOME/.war10ck/.functions" ]; then
     . "$HOME/.war10ck/.functions"
 fi
 
-# CUSTOM COMMANDS
-if [ -f "$HOME/.war10ck/.commands" ]; then
-    . "$HOME/.war10ck/.commands"
+# CUSTOM ENVIRONMENT
+if [ -f "$HOME/.war10ck/.environment" ]; then
+    . "$HOME/.war10ck/.environment"
 fi
 
 # CUSTOM ALIASES
