@@ -28,4 +28,3 @@ shopt -s lithist
 # Appends to PROMPT_COMMAND rather than overwriting it so other tools
 # (e.g., virtualenv) are not broken
 PROMPT_COMMAND="${PROMPT_COMMAND:+${PROMPT_COMMAND%;}; }history -a; history -n"
-export PROMPT_COMMAND

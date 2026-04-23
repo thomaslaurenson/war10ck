@@ -238,22 +238,7 @@ w_github_disable_wiki_for_user() {
 
 # function: w_sshfs_mount
 w_sshfs_mount() {
-    local SSHFS_CONFIG_DIR="$HOME/.war10ck"
-    local SSHFS_RECENT="$SSHFS_CONFIG_DIR/.sshfs_recent"
-    local SSHFS_FAVORITES="$SSHFS_CONFIG_DIR/.sshfs_favorites"
-    
-    # Ensure config directory exists
-    mkdir -p "$SSHFS_CONFIG_DIR"
-    touch "$SSHFS_RECENT" "$SSHFS_FAVORITES"
-    
-    # Get SSH config, following Include directives recursively
-    local CONFIG="$HOME/.ssh/config"
-    if [ ! -f "$CONFIG" ]; then
-        echo "[!] SSH config not found at $CONFIG"
-        return 1
-    fi
-
-    # Collect all SSH config files by following Include directives
+    # Helper defined inline and auto-removed on function exit — never leaks to shell
     _w_sshfs_collect_configs() {
         local file="$1"
         [ -f "$file" ] || return
@@ -267,65 +252,81 @@ w_sshfs_mount() {
             done
         done < "$file"
     }
+    trap 'unset -f _w_sshfs_collect_configs' RETURN
 
-    # Collect all hosts across all config files (deduplicated)
-    local ALL_CONFIGS
-    ALL_CONFIGS=$(_w_sshfs_collect_configs "$CONFIG")
-    local HOSTS
-    HOSTS=$(grep -h -E '^Host[[:space:]]+' $ALL_CONFIGS 2>/dev/null \
-        | grep -v '[*?]' \
-        | awk '{for(i=2;i<=NF;i++) print $i}' \
-        | sort -u)
+    local SSHFS_CONFIG_DIR="$HOME/.war10ck"
+    local SSHFS_FAVORITES="$SSHFS_CONFIG_DIR/.sshfs_favorites"
 
-    # Select host
-    echo "[*] Available SSH Hosts:"
-    local HOST
-    PS3="[*] Select host: "
-    select HOST in $HOSTS; do
-        if [ -n "$HOST" ]; then
-            break
+    # Ensure config directory and favourites file exist
+    mkdir -p "$SSHFS_CONFIG_DIR"
+    touch "$SSHFS_FAVORITES"
+
+    local HOST REMOTE_TARGET_DIR
+
+    # Favourites fast-path: if any favourites exist, offer them upfront
+    if [ -s "$SSHFS_FAVORITES" ]; then
+        echo "[*] Saved favourites:"
+        local fav_labels=() fav_hosts=() fav_paths=()
+        while IFS='|' read -r fav_host fav_path fav_label; do
+            fav_labels+=("$fav_label ($fav_host:$fav_path)")
+            fav_hosts+=("$fav_host")
+            fav_paths+=("$fav_path")
+        done < "$SSHFS_FAVORITES"
+        fav_labels+=("New mount")
+
+        local fav_choice
+        PS3="[*] Select favourite or new mount: "
+        select fav_choice in "${fav_labels[@]}"; do
+            if [ -n "$fav_choice" ]; then
+                break
+            fi
+            echo "[!] Invalid selection"
+        done
+
+        if [ "$fav_choice" != "New mount" ]; then
+            local idx
+            for idx in "${!fav_labels[@]}"; do
+                if [ "${fav_labels[$idx]}" = "$fav_choice" ]; then
+                    HOST="${fav_hosts[$idx]}"
+                    REMOTE_TARGET_DIR="${fav_paths[$idx]}"
+                    break
+                fi
+            done
         fi
-    done
+    fi
 
-    # Extract SSH details (search all config files)
-    local HOSTNAME PORT USER
-    HOSTNAME=$(ssh -G "$HOST" 2>/dev/null | awk '/^hostname / {print $2; exit}')
-    PORT=$(ssh -G "$HOST" 2>/dev/null | awk '/^port / {print $2; exit}')
-    USER=$(ssh -G "$HOST" 2>/dev/null | awk '/^user / {print $2; exit}')
-    
-    # Determine remote directory
-    local REMOTE_TARGET_DIR="$1"
-    
-    if [ -z "$REMOTE_TARGET_DIR" ]; then
-        echo ""
+    # If no favourite was selected, do full host + directory selection
+    if [ -z "$HOST" ]; then
+        local CONFIG="$HOME/.ssh/config"
+        if [ ! -f "$CONFIG" ]; then
+            echo "[!] SSH config not found at $CONFIG"
+            return 1
+        fi
+
+        # Collect all hosts across all config files (deduplicated)
+        local -a ALL_CONFIGS
+        mapfile -t ALL_CONFIGS < <(_w_sshfs_collect_configs "$CONFIG")
+        local HOSTS
+        HOSTS=$(grep -h -E '^Host[[:space:]]+' "${ALL_CONFIGS[@]}" 2>/dev/null \
+            | grep -v '[*?]' \
+            | awk '{for(i=2;i<=NF;i++) print $i}' \
+            | sort -u)
+
+        echo "[*] Available SSH Hosts:"
+        PS3="[*] Select host: "
+        select HOST in $HOSTS; do
+            if [ -n "$HOST" ]; then
+                break
+            fi
+        done
+
         echo "[*] Select remote directory:"
-        
-        # Build directory options
         local dir_options=()
         dir_options+=("Home directory (~)")
         dir_options+=("Root directory (/)")
-        
-        # Add favorites for this host
-        local fav_count=0
-        while IFS='|' read -r fav_host fav_path fav_label; do
-            if [ "$fav_host" = "$HOST" ]; then
-                dir_options+=("Favorite: $fav_label ($fav_path)")
-                ((fav_count++))
-            fi
-        done < "$SSHFS_FAVORITES"
-        
-        # Add recent paths for this host
-        local recent_count=0
-        while IFS='|' read -r recent_host recent_path; do
-            if [ "$recent_host" = "$HOST" ] && [ "$recent_count" -lt 3 ]; then
-                dir_options+=("Recent: $recent_path")
-                ((recent_count++))
-            fi
-        done < <(tac "$SSHFS_RECENT" | awk '!seen[$0]++')
-        
         dir_options+=("Custom path")
         dir_options+=("Cancel")
-        
+
         PS3="[*] Select directory (1-${#dir_options[@]}): "
         select dir_choice in "${dir_options[@]}"; do
             case "$dir_choice" in
@@ -346,29 +347,17 @@ w_sshfs_mount() {
                     echo "[*] Cancelled"
                     return 0
                     ;;
-                Favorite:*)
-                    REMOTE_TARGET_DIR=$(echo "$dir_choice" | sed 's/Favorite: .* (\(.*\))/\1/')
-                    break
-                    ;;
-                Recent:*)
-                    REMOTE_TARGET_DIR=$(echo "$dir_choice" | sed 's/Recent: //')
-                    break
-                    ;;
                 *)
-                    if [ -n "$dir_choice" ]; then
-                        break
-                    fi
                     echo "[!] Invalid selection"
                     ;;
             esac
         done
     fi
-    
+
     # Mount options
     local mount_opts="reconnect,compression=yes,follow_symlinks"
-    
+
     # Confirmation
-    echo ""
     echo "[*] Mount Summary:"
     echo "    Host:        $HOST"
     echo "    Remote Path: $REMOTE_TARGET_DIR"
@@ -379,44 +368,37 @@ w_sshfs_mount() {
         echo "[*] Cancelled"
         return 0
     fi
-    
+
     # Set up mount directory
     local BASE_MOUNT_DIR="$HOME/sshfs"
     mkdir -p "$BASE_MOUNT_DIR"
     local LOCAL_MOUNT_POINT="$BASE_MOUNT_DIR/$HOST"
-    
+
     # Check if already mounted
     if mountpoint -q "$LOCAL_MOUNT_POINT" 2>/dev/null; then
         echo "[!] $HOST is already mounted at $LOCAL_MOUNT_POINT"
         return 1
     fi
-    
+
     mkdir -p "$LOCAL_MOUNT_POINT"
-    
+
     # Perform mount
     echo "[*] Mounting..."
     if sshfs "$HOST":"$REMOTE_TARGET_DIR" "$LOCAL_MOUNT_POINT" -o "$mount_opts"; then
-        echo "[*] Successfully mounted!"
-        
-        # Save to recent paths (remove duplicates, keep most recent, max 20 entries)
-        grep -v "^${HOST}|${REMOTE_TARGET_DIR}$" "$SSHFS_RECENT" > "$SSHFS_RECENT.tmp" 2>/dev/null || true
-        echo "$HOST|$REMOTE_TARGET_DIR" >> "$SSHFS_RECENT.tmp"
-        tail -n 20 "$SSHFS_RECENT.tmp" > "$SSHFS_RECENT" && rm -f "$SSHFS_RECENT.tmp"
-        
-        # Offer to save as favorite
-        echo ""
-        echo -n "[?] Save this as a favorite? [y/N]: "
-        read -r save_favorite
-        if [[ "$save_favorite" =~ ^[Yy]$ ]]; then
-            echo -n "[?] Enter a label for this favorite: "
+        echo "[*] Successfully mounted $HOST:$REMOTE_TARGET_DIR at $LOCAL_MOUNT_POINT"
+
+        # Offer to save as favourite
+        echo -n "[?] Save this as a favourite? [y/N]: "
+        read -r save_favourite
+        if [[ "$save_favourite" =~ ^[Yy]$ ]]; then
+            echo -n "[?] Enter a label for this favourite: "
             read -r fav_label
             if [ -n "$fav_label" ]; then
-                # Check if this exact favorite already exists
                 if grep -q "^${HOST}|${REMOTE_TARGET_DIR}|${fav_label}$" "$SSHFS_FAVORITES" 2>/dev/null; then
-                    echo "[*] This favorite already exists"
+                    echo "[*] This favourite already exists"
                 else
                     echo "$HOST|$REMOTE_TARGET_DIR|$fav_label" >> "$SSHFS_FAVORITES"
-                    echo "[*] Saved as favorite: $fav_label"
+                    echo "[*] Saved as favourite: $fav_label"
                 fi
             fi
         fi
@@ -429,27 +411,24 @@ w_sshfs_mount() {
 
 # function: w_sshfs_umount
 w_sshfs_umount() {
-    BASE_MOUNT_DIR="$HOME/sshfs"
-    # Find all active mounts
-    ACTIVE_MOUNTS=()
-    MOUNT_NAMES=()
+    local BASE_MOUNT_DIR="$HOME/sshfs"
+    local -a ACTIVE_MOUNTS=()
+    local -a MOUNT_NAMES=()
     for dir in "$BASE_MOUNT_DIR"/*; do
         if [ -d "$dir" ] && mountpoint -q "$dir"; then
             ACTIVE_MOUNTS+=("$dir")
             MOUNT_NAMES+=("$(basename "$dir")")
         fi
     done
-    # Check if there are any active mounts
     if [ ${#ACTIVE_MOUNTS[@]} -eq 0 ]; then
         echo "[!] No active sshfs mounts found in $BASE_MOUNT_DIR"
         return 1
     fi
-    # Display active mounts with their info
-    echo "Active SSHFS mounts:"
-    PS3="Select mount to unmount (or 0 to cancel): "
+    echo "[*] Active SSHFS mounts:"
+    PS3="[*] Select mount to unmount (or 0 to cancel): "
     select MOUNT_NAME in "${MOUNT_NAMES[@]}"; do
         if [ -n "$MOUNT_NAME" ]; then
-            MOUNT_POINT="$BASE_MOUNT_DIR/$MOUNT_NAME"
+            local MOUNT_POINT="$BASE_MOUNT_DIR/$MOUNT_NAME"
             echo "[*] Unmounting: $MOUNT_NAME ($MOUNT_POINT)"
             if fusermount -u "$MOUNT_POINT" 2>/dev/null || umount "$MOUNT_POINT" 2>/dev/null; then
                 echo "[*] Successfully unmounted"
@@ -460,7 +439,7 @@ w_sshfs_umount() {
                 return 1
             fi
             break
-        elif [ "$REPLY" -eq 0 ]; then
+        elif [[ "$REPLY" == "0" ]]; then
             echo "[*] Cancelled"
             return 0
         fi

@@ -2,7 +2,7 @@
 # shellcheck disable=SC2034  # Variables are used across bundled files
 
 # Manually increment VERSION before tagging a new release.
-VERSION="v0.4.11"
+VERSION="v0.4.12"
 
 version() {
     echo "$VERSION"
