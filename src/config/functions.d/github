@@ -1,5 +1,5 @@
-# function: w_github_repository_properties
-w_github_repository_properties() {
+# function: w_gh_repository_properties
+w_gh_repository_properties() {
     local current_dir=$(pwd)
     local target="${1:-.}"
     local dir repo branch status ahead behind dirty
@@ -47,8 +47,8 @@ w_github_repository_properties() {
     cd "$current_dir" >/dev/null || true
 }
 
-# function: w_github_clone_user_repositories
-w_github_clone_user_repositories() {
+# function: w_gh_clone_user_repositories
+w_gh_clone_user_repositories() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
     JSON_FIELDS="name,sshUrl"
@@ -69,8 +69,8 @@ w_github_clone_user_repositories() {
     done
 }
 
-# function: w_github_disable_project_for_user
-w_github_disable_project_for_user() {
+# function: w_gh_disable_project_for_user
+w_gh_disable_project_for_user() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
     JSON_FIELDS="nameWithOwner,hasProjectsEnabled"
@@ -88,8 +88,8 @@ w_github_disable_project_for_user() {
     done
 }
 
-# function: w_github_disable_wiki_for_user
-w_github_disable_wiki_for_user() {
+# function: w_gh_disable_wiki_for_user
+w_gh_disable_wiki_for_user() {
     echo -n "[*] Enter GitHub user/org name: "
     read -r TARGET
     JSON_FIELDS="nameWithOwner,hasWikiEnabled"

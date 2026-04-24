@@ -74,3 +74,19 @@ w_git_tag() {
     fi
     echo "Tag '$tag' created and pushed successfully"
 }
+
+# function: w_git_verbs_commit
+w_git_verbs_commit() {
+    echo "------------------------------------------------------------------------"
+    printf "%-10s %s\n" "feat:" "Add a brand new feature or functionality."
+    printf "%-10s %s\n" "fix:" "Fix a bug or resolve an issue."
+    printf "%-10s %s\n" "chore:" "Routine maintenance, dependency updates, or minor tasks."
+    printf "%-10s %s\n" "docs:" "Changes to documentation like READMEs or comments."
+    printf "%-10s %s\n" "style:" "Formatting changes that don't affect logic (e.g., linting)."
+    printf "%-10s %s\n" "refactor:" "Restructure code without changing external behavior."
+    printf "%-10s %s\n" "test:" "Add missing tests or correct existing ones."
+    printf "%-10s %s\n" "perf:" "A code change that specifically improves performance."
+    printf "%-10s %s\n" "build:" "Changes affecting the build system or dependencies."
+    printf "%-10s %s\n" "ci:" "Changes to CI/CD configuration files and scripts."
+    echo "------------------------------------------------------------------------"
+}
