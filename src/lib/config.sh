@@ -61,8 +61,11 @@ config__environment() {
 
 config__functions() {
     echo "[*] Configuring functions..."
-    $FETCH_CMD "$HOME/.war10ck/.functions" "$BASE_URL/config/functions"
-    _verify_from_manifest "$HOME/.war10ck/.functions" "config/functions"
+    mkdir -p "$HOME/.war10ck/functions.d"
+    for f in git github sshfs general; do
+        $FETCH_CMD "$HOME/.war10ck/functions.d/$f" "$BASE_URL/config/functions.d/$f"
+        _verify_from_manifest "$HOME/.war10ck/functions.d/$f" "config/functions.d/$f"
+    done
 }
 
 config__gitconfig() {

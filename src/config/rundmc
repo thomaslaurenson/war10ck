@@ -6,8 +6,10 @@ if [ -f "/usr/local/bin/war10ck" ]; then
 fi
 
 # CUSTOM FUNCTIONS
-if [ -f "$HOME/.war10ck/.functions" ]; then
-    . "$HOME/.war10ck/.functions"
+if [ -d "$HOME/.war10ck/functions.d" ]; then
+    for file in "$HOME/.war10ck/functions.d/"*; do
+        [ -r "$file" ] && . "$file"
+    done
 fi
 
 # CUSTOM ENVIRONMENT

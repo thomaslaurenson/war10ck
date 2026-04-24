@@ -1,0 +1,89 @@
+# function: w_ramdisk
+w_ramdisk () {
+    ramdisk_path="$HOME/ramdisk"
+    if [ ! -d "$ramdisk_path" ]; then
+        echo "Creating RAM disk directory..."
+        mkdir $ramdisk_path
+    fi
+    if [[ "$1" = "mount" ]]; then
+        echo "Mounting RAM disk..."
+        sudo mount -t tmpfs -o size=2048M tmpfs $ramdisk_path
+    elif [[ "$1" = "umount" ]]; then
+        echo "Unmounting RAM disk..."
+        sudo umount $ramdisk_path
+    else
+        echo "Usage:"
+        echo "ramdisk mount -- mounts RAM disk"
+        echo "ramdisk umount -- unmounts RAM disk"
+    fi
+}
+
+# function: w_tmux
+w_tmux () {
+    local session_name="$1"
+    local tmux_dir="$HOME/.war10ck/.tmux"
+
+    # If no argument is passed, show interactive selection
+    if [ -z "$session_name" ]; then
+        # Check if tmux directory exists
+        if [ ! -d "$tmux_dir" ]; then
+            echo "[!] Tmux configuration directory not found at $tmux_dir"
+            return 1
+        fi
+
+        # Get list of available session files
+        local sessions=()
+        while IFS= read -r -d '' file; do
+            sessions+=("$(basename "$file")")
+        done < <(find "$tmux_dir" -maxdepth 1 -type f -print0 2>/dev/null)
+
+        # Check if any sessions were found
+        if [ ${#sessions[@]} -eq 0 ]; then
+            echo "[!] No tmux session files found in $tmux_dir"
+            return 1
+        fi
+
+        # Display selection menu
+        echo "[*] Available tmux sessions:"
+        PS3="[*] Select session (1-${#sessions[@]}): "
+        select session_name in "${sessions[@]}"; do
+            if [ -n "$session_name" ]; then
+                break
+            else
+                echo "[!] Invalid selection. Please try again."
+            fi
+        done
+    fi
+
+    # Verify the session file exists
+    if [ ! -f "$tmux_dir/$session_name" ]; then
+        echo "[!] Session file not found: $tmux_dir/$session_name"
+        return 1
+    fi
+
+    # Start the tmux session
+    echo "[*] Starting tmux session: $session_name"
+    tmux -f "$HOME/.war10ck/.tmux.conf" start-server \; source-file "$tmux_dir/$session_name"
+    tmux attach-session -t "$session_name"
+}
+
+# function: w_transmission_bind
+w_transmission_bind () {
+    # Kill transmission-daemon if it is running
+    transmission_da_pids=$(pgrep transmission-da)
+    if [ "$transmission_da_pids" ]; then
+        echo "Killing transmission-daemon processes..."
+        sudo pkill transmission-da
+    fi
+    # Get VPN IP to bind to
+    # bind_address=$(ip -br addr show moz0 | awk '{print $3}')
+    bind_address=$(curl http://ipecho.net/plain; echo)
+    # If IP wasn't found then quit
+    if [ -z $bind_address ]; then
+        echo "VPN doesn't seem to be up. Will not start transmission-daemon"
+        exit 1
+    fi
+    # Start transmission-daemon
+    transmission-daemon --rpc-bind-address=127.0.0.1 --bind-address-ipv4=$bind_address
+    echo "transmission-daemon started and bound to address $bind_address"
+}
