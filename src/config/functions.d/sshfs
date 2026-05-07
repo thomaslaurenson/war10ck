@@ -149,10 +149,10 @@ w_sshfs_mount() {
     if sshfs "$HOST":"$REMOTE_TARGET_DIR" "$LOCAL_MOUNT_POINT" -o "$mount_opts"; then
         echo "[*] Successfully mounted $HOST:$REMOTE_TARGET_DIR at $LOCAL_MOUNT_POINT"
 
-        # Offer to save as favourite
-        echo -n "[?] Save this as a favourite? [y/N]: "
-        read -r save_favourite
-        if [[ "$save_favourite" =~ ^[Yy]$ ]]; then
+        # Offer to save as favourite (skip if host+path combo already saved)
+        if grep -q "^${HOST}|${REMOTE_TARGET_DIR}|" "$SSHFS_FAVORITES" 2>/dev/null; then
+            echo "[*] Already saved as a favourite"
+        elif echo -n "[?] Save this as a favourite? [y/N]: " && read -r save_favourite && [[ "$save_favourite" =~ ^[Yy]$ ]]; then
             echo -n "[?] Enter a label for this favourite: "
             read -r fav_label
             if [ -n "$fav_label" ]; then
