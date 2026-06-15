@@ -2,6 +2,18 @@
 
 # If sourced (not executed directly), register bash completion and return
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    # Discover available modules by calling 'war10ck list'. Results are cached
+    # in _WAR10CK_MODULE_CACHE for the lifetime of the shell session to avoid
+    # repeated network calls on every Tab press.
+    _war10ck_get_modules() {
+        if [[ -z "${_WAR10CK_MODULE_CACHE:-}" ]]; then
+            local modules
+            modules=$(war10ck list 2>/dev/null | awk '/^  - /{print $2}')
+            [[ -n "$modules" ]] && _WAR10CK_MODULE_CACHE="$modules"
+        fi
+        echo "${_WAR10CK_MODULE_CACHE:-}"
+    }
+
     _war10ck_completions() {
         local cur
         COMPREPLY=()
@@ -13,13 +25,10 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
             return
         fi
 
-        # Second-level subcommands
+        # Second-level: module name for all module-based subcommands
         case "${COMP_WORDS[1]}" in
-            config)
-                mapfile -t COMPREPLY < <(compgen -W "${VALID_CONFIG_ARGS[*]}" -- "$cur")
-                ;;
-            install)
-                mapfile -t COMPREPLY < <(compgen -W "${VALID_INSTALL_ARGS[*]}" -- "$cur")
+            install|config|setup|launch)
+                mapfile -t COMPREPLY < <(compgen -W "$(_war10ck_get_modules)" -- "$cur")
                 ;;
         esac
     }

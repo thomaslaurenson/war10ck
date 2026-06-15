@@ -8,14 +8,9 @@ checksums: bundle
 
 # INSTALL
 install_locally: bundle
-	@cd dist && \
-	sed -i "s/^IS_LOCAL=.*/IS_LOCAL=true/" war10ck && \
-	sed -i "s/^IS_LOCAL=.*/IS_LOCAL=true/" install.sh && \
-	./install.sh && \
-	sed -i "s/^IS_LOCAL=.*/IS_LOCAL=false/" install.sh && \
-	sed -i "s/^IS_LOCAL=.*/IS_LOCAL=false/" war10ck
+	@echo "[*] Bundle ready. Run: dist/war10ck -l <subcommand>"
 
 # LINTING
 lint:
 	shellcheck bundle.sh install.sh
-	shellcheck src/main.sh src/lib/*.sh src/install/*.sh
+	shellcheck src/main.sh src/lib/*.sh src/modules/**/*.sh

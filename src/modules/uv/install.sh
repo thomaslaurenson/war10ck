@@ -8,8 +8,8 @@ _q() { if [[ "${WAR10CK_DEBUG:-0}" == "1" ]]; then "$@"; else "$@" >/dev/null 2>
 
 # Update UV_SHA256 when bumping UV_VERSION.
 # To get the hash: curl -fsSL "https://astral.sh/uv/VERSION/install.sh" | sha256sum
-UV_VERSION="0.10.7"
-UV_SHA256="bcada2f4ddb9d0196fcf33510633a1a892b948fc0d0a8dc7650ddb67f074b6c6"
+UV_VERSION="0.11.21"
+UV_SHA256="053045e1e69ec77358fd44f2ef2cacb768a22d50f433e213624f0157ffbbc883"
 
 UV_INSTALLER_URL="https://astral.sh/uv/${UV_VERSION}/install.sh"
 

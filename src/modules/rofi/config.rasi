@@ -1,0 +1,142 @@
+configuration {
+    modi: "combi,drun,window";
+    combi-modi: "window,drun";
+    show-icons: true;
+    display-combi: ">";
+    display-drun: "";
+    display-run: "";
+    display-window: "";
+    window-format: "{t}";
+    drun-display-format: "{name}";
+    font: "monospace 11";
+}
+
+* {
+    /* rgba(Red, Green, Blue, Alpha/Opacity) */
+    bg: rgba(10, 10, 10, 0.85);  
+    bg-alt: rgba(26, 26, 26, 0.85);  
+    fg: #f8f8f8;
+    fg-dim: #666666;
+    accent: #00FF00;                 
+    border-col: rgba(0, 255, 0, 0.4);    
+    urgent: #ff0000;
+}
+
+window {
+    transparency: "real";
+    location: center;
+    anchor: center;
+    fullscreen: false;
+    width: 800px;
+    x-offset: 0px;
+    y-offset: -80px;
+    border-radius: 12px;
+    border: 1px solid;
+    border-color: @border-col;
+    background-color: @bg;
+    cursor: "default";
+}
+
+mainbox {
+    spacing: 0;
+    background-color: transparent;
+    orientation: vertical;
+    children: [ "inputbar", "listview", "textbox-help" ];
+}
+
+inputbar {
+    spacing: 0;
+    padding: 14px 16px;
+    background-color: transparent;
+    text-color: @fg;
+    border-radius: 12px 12px 0px 0px;
+    border: 0px 0px 1px 0px;
+    border-color: @border-col;
+    children: [ "prompt", "entry" ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color: @accent;
+    padding: 0px 8px 0px 0px;
+    content: ">";
+}
+
+entry {
+    background-color: transparent;
+    text-color: @fg;
+    cursor: text;
+    placeholder: "Search or switch windows...";
+    placeholder-color: @fg-dim;
+}
+
+listview {
+    columns: 1;
+    lines: 8;
+    cycle: true;
+    dynamic: true;
+    scrollbar: false;
+    layout: vertical;
+    spacing: 4px;
+    padding: 8px;
+    background-color: @bg-alt;
+    border-radius: 0px 0px 12px 12px;
+    cursor: "default";
+}
+
+element {
+    spacing: 12px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background-color: transparent;
+    text-color: @fg;
+    cursor: pointer;
+    orientation: horizontal;
+    /* Added "element-icon" back into the layout */
+    children: [ "element-icon", "element-text" ]; 
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+element selected.normal {
+    background-color: rgba(0, 255, 0, 0.1);
+    text-color: @accent;
+    border: 0px 0px 0px 3px;
+    border-color: @accent;
+}
+
+element normal.urgent,
+element selected.urgent {
+    background-color: @urgent;
+    text-color: @fg;
+}
+
+/* Restored the icon sizing block */
+element-icon {
+    size: 24px;
+    cursor: inherit;
+    background-color: transparent;
+    text-color: inherit;
+}
+
+element-text {
+    vertical-align: 0.5;
+    cursor: inherit;
+    background-color: transparent;
+    text-color: inherit;
+}
+
+textbox-help {
+    expand: false;
+    content: " [ Alt + 1-9 ] Quick Select";
+    text-color: @fg-dim;
+    background-color: transparent;
+    vertical-align: 0.5;
+    horizontal-align: 0.5;
+    padding: 8px;
+    border: 1px 0px 0px 0px;
+    border-color: @border-col;
+}

@@ -11,33 +11,8 @@ VALID_SUBCOMMANDS=(
     update
     config
     install
+    setup
+    launch
+    list
     nuke
-)
-
-VALID_CONFIG_ARGS=(
-    rundmc
-    aliases
-    bashrcd
-    environment
-    functions
-    gitconfig
-    history
-    tmux
-)
-
-VALID_INSTALL_ARGS=(
-    docker
-    ghidra
-    golang
-    hugo
-    java
-    jira
-    mitmproxy
-    mpqeditor
-    nvm
-    packages
-    signal
-    terraform
-    uv
-    vscode
 )
