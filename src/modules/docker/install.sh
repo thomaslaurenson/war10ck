@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && set -x

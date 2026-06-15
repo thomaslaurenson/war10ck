@@ -17,13 +17,13 @@ strip() { grep -v '^# shellcheck' "$1"; }
     echo ""
     strip "$SRC/lib/constants.sh"
     echo ""
-    strip "$SRC/lib/helpers.sh"
+    strip "$SRC/lib/private.sh"
+    echo ""
+    strip "$SRC/lib/public.sh"
     echo ""
     strip "$SRC/lib/update.sh"
     echo ""
     strip "$SRC/lib/modules.sh" 
-    echo ""
-    strip "$SRC/lib/nuke.sh"
     echo ""
     strip "$SRC/lib/completion.sh"
     echo ""
@@ -36,6 +36,10 @@ rm -rf "$DIST/modules"
 cp -r "$SRC/modules" "$DIST/modules"
 echo "[*] Copied: $DIST/modules/"
 
+rm -rf "$DIST/profiles"
+cp -r "$SRC/profiles" "$DIST/profiles"
+echo "[*] Copied: $DIST/profiles/"
+
 # Copy the self-installer
 cp "install.sh" "$DIST/install.sh"
 echo "[*] Copied: $DIST/install.sh"
@@ -46,8 +50,8 @@ echo "[*] Copied: $DIST/README.md"
 echo "[*] Generating checksums.txt..."
 (
     cd "$DIST"
-    # Find files inside modules/
-    find modules -type f | sort | xargs sha256sum > checksums.txt
+    # Find files inside modules/ and profiles/
+    find modules profiles -type f | sort | xargs sha256sum > checksums.txt
     sha256sum install.sh >> checksums.txt
 )
 echo "[*] Generated: $DIST/checksums.txt (without war10ck)"
@@ -55,6 +59,9 @@ echo "[*] Generated: $DIST/checksums.txt (without war10ck)"
 CHECKSUMS_SHA256=$(sha256sum "$DIST/checksums.txt" | cut -d' ' -f1)
 sed -i "s/^CHECKSUMS_SHA256=.*/CHECKSUMS_SHA256=\"$CHECKSUMS_SHA256\"/" "$DIST/war10ck"
 echo "[*] Embedded CHECKSUMS_SHA256=$CHECKSUMS_SHA256"
+
+sed -i 's/^WAR10CK_BUILD=.*/WAR10CK_BUILD="release"/' "$DIST/war10ck"
+echo "[*] Embedded WAR10CK_BUILD=release"
 
 # Now add the war10ck binary hash to checksums.txt (after embedding modified it)
 (

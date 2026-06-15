@@ -1,0 +1,16 @@
+# war10ck managed — base SSH client config
+# Host-specific entries belong in ~/.ssh/config.d/
+# This file is managed by war10ck. Do not edit directly.
+
+# Load all host-specific config from the .d directory.
+# Place your personal host entries in ~/.ssh/config.d/
+Include ~/.ssh/config.d/*
+
+Host *
+    # Add keys to the ssh-agent automatically on first use,
+    # with a 4 hour lifetime. Forces re-auth after idle periods.
+    AddKeysToAgent 4h
+
+    # Keep the connection alive
+    ServerAliveInterval 60
+    ServerAliveCountMax 3

@@ -1,0 +1,3 @@
+NAME="Desktop"
+MODULES="polybar rofi"
+DESCRIPTION="Custom desktop environment"

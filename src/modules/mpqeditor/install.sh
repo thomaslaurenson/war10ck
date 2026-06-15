@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && set -x
@@ -11,7 +11,7 @@ MPQEDITOR_URL="http://www.zezula.net/download/mpqeditor_en.zip"
 _tmpzip=$(mktemp --suffix=-mpqeditor.zip)
 curl -fsSL -o "$_tmpzip" "$MPQEDITOR_URL"
 
-# MPQEditor has no published checksum — print SHA256 for manual audit.
+# MPQEditor has no published checksum - print SHA256 for manual audit.
 echo "[*] MPQ Editor archive SHA256: $(sha256sum "$_tmpzip" | cut -d' ' -f1)"
 echo "[*] Verify against: https://www.zezula.net/en/mpq/download.html"
 
