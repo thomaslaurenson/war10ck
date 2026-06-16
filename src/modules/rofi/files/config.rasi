@@ -114,7 +114,11 @@ element selected.urgent {
     text-color: @fg;
 }
 
-/* Restored the icon sizing block */
+element alternate.normal {
+    background-color: transparent;
+    text-color: @fg;
+}
+
 element-icon {
     size: 24px;
     cursor: inherit;
@@ -131,7 +135,7 @@ element-text {
 
 textbox-help {
     expand: false;
-    content: " [ Alt + 1-9 ] Quick Select";
+    content: " [ Alt + 1-9 ] Select  │  [ Shift + > ] Switch View";
     text-color: @fg-dim;
     background-color: transparent;
     vertical-align: 0.5;
