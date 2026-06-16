@@ -1,0 +1,56 @@
+[window]
+# Adds a little breathing room around the edges
+padding = { x = 8, y = 8 }
+# Optional: Adds slight transparency if your OS/compositor supports it
+opacity = 0.95 
+
+[font]
+size = 12.0
+
+# You can change "monospace" to your preferred font (e.g., "Hack", "Fira Code", "JetBrains Mono")
+[font.normal]
+family = "monospace"
+style = "Regular"
+
+[font.bold]
+family = "monospace"
+style = "Bold"
+
+[font.italic]
+family = "monospace"
+style = "Italic"
+
+[colors.primary]
+background = "#050805" # Very dark, slightly tinted green-black
+foreground = "#16C60C" # Classic phosphor green
+
+[colors.cursor]
+text   = "#050805"
+cursor = "#16C60C"
+
+[colors.selection]
+text       = "#050805"
+background = "#16C60C"
+
+# Standard ANSI colors
+# These are kept relatively standard so your syntax highlighting in Vim/nano 
+# doesn't break, but they are slightly desaturated to fit the hacker vibe.
+[colors.normal]
+black   = "#050805"
+red     = "#C61616"
+green   = "#16C60C"
+yellow  = "#C6C616"
+blue    = "#1616C6"
+magenta = "#C616C6"
+cyan    = "#16C6C6"
+white   = "#CCCCCC"
+
+[colors.bright]
+black   = "#333333"
+red     = "#FF3333"
+green   = "#33FF33"
+yellow  = "#FFFF33"
+blue    = "#3333FF"
+magenta = "#FF33FF"
+cyan    = "#33FFFF"
+white   = "#FFFFFF"

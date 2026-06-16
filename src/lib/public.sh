@@ -243,6 +243,36 @@ w_remove_dir() {
   fi
 }
 
+# Symlink helpers
+
+# Create a symbolic link from source to destination, creating parent
+# directories if needed. Replaces an existing symlink or file at the
+# destination path.
+#
+# Arguments:
+#   $1 - Source path (what the symlink points to)
+#   $2 - Destination path (where the symlink is created)
+w_symlink() {
+  local src=$1
+  local dest=$2
+  mkdir -p "$(dirname "${dest}")"
+  ln -sf "${src}" "${dest}"
+  w_log_info "Symlinked: ${src} -> ${dest}"
+}
+
+# Remove a symbolic link if it exists.
+#
+# Arguments:
+#   $1 - Path to the symlink to remove
+w_remove_symlink() {
+  if [[ -L "$1" ]]; then
+    rm -f "$1"
+    w_log_info "Removed symlink: $1"
+  else
+    w_log_debug "Not a symlink, skipping removal: $1"
+  fi
+}
+
 # User helpers
 
 # Add the current user to a group if not already a member.
@@ -277,4 +307,6 @@ export -f w_deploy_dir
 export -f w_make_executable
 export -f w_remove_file
 export -f w_remove_dir
+export -f w_symlink
+export -f w_remove_symlink
 export -f w_user_add_group
