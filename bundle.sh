@@ -66,11 +66,11 @@ echo "[*] Generating checksums.txt..."
 echo "[*] Generated: $DIST/checksums.txt (without war10ck)"
 
 CHECKSUMS_SHA256=$(sha256sum "$DIST/checksums.txt" | cut -d' ' -f1)
-sed -i "s/^CHECKSUMS_SHA256=.*/CHECKSUMS_SHA256=\"$CHECKSUMS_SHA256\"/" "$DIST/war10ck"
+sed -i "s/^readonly CHECKSUMS_SHA256=.*/readonly CHECKSUMS_SHA256=\"$CHECKSUMS_SHA256\"/" "$DIST/war10ck"
 echo "[*] Embedded CHECKSUMS_SHA256=$CHECKSUMS_SHA256"
 
 if [[ "${BUILD_MODE}" == "release" ]]; then
-  sed -i 's/^WAR10CK_BUILD=.*/WAR10CK_BUILD="release"/' "$DIST/war10ck"
+  sed -i 's/^readonly WAR10CK_BUILD=.*/readonly WAR10CK_BUILD="release"/' "$DIST/war10ck"
   echo "[*] Embedded WAR10CK_BUILD=release"
 else
   echo "[*] Skipped WAR10CK_BUILD override (dev mode)"
