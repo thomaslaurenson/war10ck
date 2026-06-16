@@ -3,31 +3,40 @@ set -euo pipefail
 
 SRC="src"
 DIST="dist"
+BUILD_MODE="${BUILD_MODE:-release}"
+
+_cleanup() {
+  if [[ -d "$DIST" ]]; then
+    printf '[!] Bundle failed — cleaning up %s/\n' "$DIST" >&2
+    rm -rf "$DIST"
+  fi
+}
+trap _cleanup ERR
 
 echo "[*] Bundling war10ck..."
 mkdir -p "$DIST"
 
-strip() { grep -v '^# shellcheck' "$1"; }
+_strip_shellcheck() { grep -v '^# shellcheck' "$1"; }
 
 # Bundle: concatenate lib modules + main entrypoint into a single executable
 {
     echo "#!/bin/bash"
     echo ""
-    strip "$SRC/lib/version.sh"
+    _strip_shellcheck "$SRC/lib/version.sh"
     echo ""
-    strip "$SRC/lib/constants.sh"
+    _strip_shellcheck "$SRC/lib/constants.sh"
     echo ""
-    strip "$SRC/lib/private.sh"
+    _strip_shellcheck "$SRC/lib/private.sh"
     echo ""
-    strip "$SRC/lib/public.sh"
+    _strip_shellcheck "$SRC/lib/public.sh"
     echo ""
-    strip "$SRC/lib/update.sh"
+    _strip_shellcheck "$SRC/lib/update.sh"
     echo ""
-    strip "$SRC/lib/modules.sh" 
+    _strip_shellcheck "$SRC/lib/modules.sh" 
     echo ""
-    strip "$SRC/lib/completion.sh"
+    _strip_shellcheck "$SRC/lib/completion.sh"
     echo ""
-    strip "$SRC/main.sh"
+    _strip_shellcheck "$SRC/main.sh"
 } > "$DIST/war10ck"
 chmod +x "$DIST/war10ck"
 echo "[*] Bundled: $DIST/war10ck"
@@ -60,8 +69,12 @@ CHECKSUMS_SHA256=$(sha256sum "$DIST/checksums.txt" | cut -d' ' -f1)
 sed -i "s/^CHECKSUMS_SHA256=.*/CHECKSUMS_SHA256=\"$CHECKSUMS_SHA256\"/" "$DIST/war10ck"
 echo "[*] Embedded CHECKSUMS_SHA256=$CHECKSUMS_SHA256"
 
-sed -i 's/^WAR10CK_BUILD=.*/WAR10CK_BUILD="release"/' "$DIST/war10ck"
-echo "[*] Embedded WAR10CK_BUILD=release"
+if [[ "${BUILD_MODE}" == "release" ]]; then
+  sed -i 's/^WAR10CK_BUILD=.*/WAR10CK_BUILD="release"/' "$DIST/war10ck"
+  echo "[*] Embedded WAR10CK_BUILD=release"
+else
+  echo "[*] Skipped WAR10CK_BUILD override (dev mode)"
+fi
 
 # Now add the war10ck binary hash to checksums.txt (after embedding modified it)
 (

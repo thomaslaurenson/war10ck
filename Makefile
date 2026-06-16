@@ -13,7 +13,7 @@ bundle: ## Bundle src into a release binary in dist/
 
 .PHONY: dev
 dev: ## Bundle a dev binary (local mode + checksum skip built in)
-	@bash bundle.sh
+	@BUILD_MODE=dev bash bundle.sh
 	@printf '[*] Dev build ready. Run: dist/war10ck <subcommand>\n'
 
 # LINT

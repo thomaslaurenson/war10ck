@@ -5,5 +5,9 @@
 readonly VERSION="v0.4.14"
 
 version() {
-  printf '%s\n' "${VERSION}"
+  local display="${VERSION}"
+  if [[ "${WAR10CK_BUILD:-dev}" == "dev" ]]; then
+    display="${display}-dev"
+  fi
+  printf '%s\n' "${display}"
 }
