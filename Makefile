@@ -1,21 +1,30 @@
-bundle:
+SHELL := /bin/bash
+
+# BUILD
+
+.PHONY: help
+help: ## Show this help message
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
+
+.PHONY: bundle
+bundle: ## Bundle src into a release binary in dist/
 	@bash bundle.sh
 
-# CHECKSUMS: regenerate dist/checksums.txt and embed its hash (runs bundle automatically)
-checksums: bundle
-	@echo "[*] Checksums embedded in dist/war10ck (see CHECKSUMS_SHA256)."
-	@grep "^CHECKSUMS_SHA256=" dist/war10ck
+.PHONY: dev
+dev: ## Bundle a dev binary (local mode + checksum skip built in)
+	@BUILD_MODE=dev bash bundle.sh
+	@printf '[*] Dev build ready. Run: dist/war10ck <subcommand>\n'
 
-# INSTALL
-install_locally: bundle
-	@cd dist && \
-	sed -i "s/^IS_LOCAL=.*/IS_LOCAL=true/" war10ck && \
-	sed -i "s/^IS_LOCAL=.*/IS_LOCAL=true/" install.sh && \
-	./install.sh && \
-	sed -i "s/^IS_LOCAL=.*/IS_LOCAL=false/" install.sh && \
-	sed -i "s/^IS_LOCAL=.*/IS_LOCAL=false/" war10ck
-
-# LINTING
-lint:
-	shellcheck bundle.sh install.sh
-	shellcheck src/main.sh src/lib/*.sh src/install/*.sh
+# LINT
+.PHONY: lint
+lint: ## Run bash -n syntax check and shellcheck on all scripts
+	@printf 'bash -n src/main.sh ... '
+	@bash -n src/main.sh && printf 'ok\n' || { printf 'fail\n'; exit 1; }
+	@printf 'bash -n src/lib/*.sh ... '
+	@for f in src/lib/*.sh; do bash -n "$$f" || { printf 'fail\n'; exit 1; }; done && printf 'ok\n'
+	@printf 'bash -n src/modules/**/*.sh ... '
+	@for f in src/modules/**/*.sh; do bash -n "$$f" || { printf 'fail\n'; exit 1; }; done && printf 'ok\n'
+	@printf 'bash -n src/profiles/**/*.sh ... '
+	@for f in src/profiles/**/*.sh; do bash -n "$$f" || { printf 'fail\n'; exit 1; }; done && printf 'ok\n'
+	shellcheck src/main.sh src/lib/*.sh src/modules/**/*.sh src/profiles/**/*.sh

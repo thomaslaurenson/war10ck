@@ -1,76 +1,80 @@
 #!/bin/bash
-
-
 set -euo pipefail
 
 SRC="src"
 DIST="dist"
+BUILD_MODE="${BUILD_MODE:-release}"
+
+_cleanup() {
+  if [[ -d "$DIST" ]]; then
+    printf '[!] Bundle failed — cleaning up %s/\n' "$DIST" >&2
+    rm -rf "$DIST"
+  fi
+}
+trap _cleanup ERR
 
 echo "[*] Bundling war10ck..."
 mkdir -p "$DIST"
 
-# Strip shellcheck directives from a fragment file — they are for per-file
-# linting only and are redundant (or misleading) in the bundled output.
-strip() { grep -v '^# shellcheck' "$1"; }
+_strip_shellcheck() { grep -v '^# shellcheck' "$1"; }
 
 # Bundle: concatenate lib modules + main entrypoint into a single executable
 {
     echo "#!/bin/bash"
     echo ""
-    strip "$SRC/lib/version.sh"
+    _strip_shellcheck "$SRC/lib/version.sh"
     echo ""
-    strip "$SRC/lib/constants.sh"
+    _strip_shellcheck "$SRC/lib/constants.sh"
     echo ""
-    strip "$SRC/lib/helpers.sh"
+    _strip_shellcheck "$SRC/lib/private.sh"
     echo ""
-    strip "$SRC/lib/update.sh"
+    _strip_shellcheck "$SRC/lib/public.sh"
     echo ""
-    strip "$SRC/lib/config.sh"
+    _strip_shellcheck "$SRC/lib/update.sh"
     echo ""
-    strip "$SRC/lib/install.sh"
+    _strip_shellcheck "$SRC/lib/modules.sh" 
     echo ""
-    strip "$SRC/lib/nuke.sh"
+    _strip_shellcheck "$SRC/lib/completion.sh"
     echo ""
-    strip "$SRC/lib/completion.sh"
-    echo ""
-    strip "$SRC/main.sh"
+    _strip_shellcheck "$SRC/main.sh"
 } > "$DIST/war10ck"
 chmod +x "$DIST/war10ck"
 echo "[*] Bundled: $DIST/war10ck"
 
-# Copy install scripts and config files
-rm -rf "$DIST/install"
-cp -r "$SRC/install" "$DIST/install"
-echo "[*] Copied: $DIST/install/"
+rm -rf "$DIST/modules"
+cp -r "$SRC/modules" "$DIST/modules"
+echo "[*] Copied: $DIST/modules/"
 
-rm -rf "$DIST/config"
-cp -r "$SRC/config" "$DIST/config"
-echo "[*] Copied: $DIST/config/"
+rm -rf "$DIST/profiles"
+cp -r "$SRC/profiles" "$DIST/profiles"
+echo "[*] Copied: $DIST/profiles/"
 
 # Copy the self-installer
 cp "install.sh" "$DIST/install.sh"
 echo "[*] Copied: $DIST/install.sh"
 
-# Build README: strip the H1 title line (pandoc uses --metadata title instead)
 sed '1{/^#/d}' README.md > "$DIST/README.md"
 echo "[*] Copied: $DIST/README.md"
 
-# Generate checksums.txt for all files that war10ck downloads at runtime.
-# Paths are stored relative to $DIST so they match the manifest_key used in the scripts.
 echo "[*] Generating checksums.txt..."
 (
     cd "$DIST"
-    # Collect install scripts, config files, and the self-installer
-    find install config -type f | sort | xargs sha256sum > checksums.txt
+    # Find files inside modules/ and profiles/
+    find modules profiles -type f | sort | xargs sha256sum > checksums.txt
     sha256sum install.sh >> checksums.txt
 )
 echo "[*] Generated: $DIST/checksums.txt (without war10ck)"
 
-# Embed the SHA256 of checksums.txt into the bundled war10ck script so it can
-# verify the manifest on fetch before trusting any of its entries.
 CHECKSUMS_SHA256=$(sha256sum "$DIST/checksums.txt" | cut -d' ' -f1)
 sed -i "s/^CHECKSUMS_SHA256=.*/CHECKSUMS_SHA256=\"$CHECKSUMS_SHA256\"/" "$DIST/war10ck"
 echo "[*] Embedded CHECKSUMS_SHA256=$CHECKSUMS_SHA256"
+
+if [[ "${BUILD_MODE}" == "release" ]]; then
+  sed -i 's/^WAR10CK_BUILD=.*/WAR10CK_BUILD="release"/' "$DIST/war10ck"
+  echo "[*] Embedded WAR10CK_BUILD=release"
+else
+  echo "[*] Skipped WAR10CK_BUILD override (dev mode)"
+fi
 
 # Now add the war10ck binary hash to checksums.txt (after embedding modified it)
 (

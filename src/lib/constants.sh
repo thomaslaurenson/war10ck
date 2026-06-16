@@ -4,40 +4,15 @@
 BASE_URL="https://war10ck.thomaslaurenson.com"
 
 # SHA256 of the remote checksums.txt manifest. Replaced at bundle time by bundle.sh.
-CHECKSUMS_SHA256="dev"
+readonly CHECKSUMS_SHA256="dev"
 
-VALID_SUBCOMMANDS=(
-    version
-    update
-    config
-    install
-    nuke
-)
+# Build type - replaced at bundle time. "dev" enables local mode automatically.
+readonly WAR10CK_BUILD="dev"
 
-VALID_CONFIG_ARGS=(
-    rundmc
-    aliases
-    bashrcd
-    environment
-    functions
-    gitconfig
-    history
-    tmux
-)
-
-VALID_INSTALL_ARGS=(
-    docker
-    ghidra
-    golang
-    hugo
-    java
-    jira
-    mitmproxy
-    mpqeditor
-    nvm
-    packages
-    signal
-    terraform
-    uv
-    vscode
+readonly VALID_SUBCOMMANDS=(
+  version
+  update
+  install
+  config
+  apply
 )
