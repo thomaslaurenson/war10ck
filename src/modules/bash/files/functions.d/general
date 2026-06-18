@@ -20,50 +20,30 @@ w_ramdisk () {
 
 # function: w_tmux
 w_tmux () {
-    local session_name="$1"
-    local tmux_dir="$HOME/.war10ck/.tmux"
+    local tmux_dir="$HOME/.war10ck/tmux"
+    local session_name="${1:-}"
 
-    # If no argument is passed, show interactive selection
-    if [ -z "$session_name" ]; then
-        # Check if tmux directory exists
-        if [ ! -d "$tmux_dir" ]; then
-            echo "[!] Tmux configuration directory not found at $tmux_dir"
-            return 1
-        fi
+    if [[ -z "$session_name" ]]; then
+        [[ -d "$tmux_dir" ]] || { echo "[!] Tmux dir not found: $tmux_dir"; return 1; }
 
-        # Get list of available session files
         local sessions=()
         while IFS= read -r -d '' file; do
             sessions+=("$(basename "$file")")
         done < <(find "$tmux_dir" -maxdepth 1 -type f -print0 2>/dev/null)
 
-        # Check if any sessions were found
-        if [ ${#sessions[@]} -eq 0 ]; then
-            echo "[!] No tmux session files found in $tmux_dir"
-            return 1
-        fi
+        [[ ${#sessions[@]} -gt 0 ]] || { echo "[!] No session files found in $tmux_dir"; return 1; }
 
-        # Display selection menu
-        echo "[*] Available tmux sessions:"
-        PS3="[*] Select session (1-${#sessions[@]}): "
+        PS3="[*] Select session: "
         select session_name in "${sessions[@]}"; do
-            if [ -n "$session_name" ]; then
-                break
-            else
-                echo "[!] Invalid selection. Please try again."
-            fi
+            [[ -n "$session_name" ]] && break
+            echo "[!] Invalid selection."
         done
     fi
 
-    # Verify the session file exists
-    if [ ! -f "$tmux_dir/$session_name" ]; then
-        echo "[!] Session file not found: $tmux_dir/$session_name"
-        return 1
-    fi
+    [[ -f "$tmux_dir/$session_name" ]] || { echo "[!] Session file not found: $tmux_dir/$session_name"; return 1; }
 
-    # Start the tmux session
     echo "[*] Starting tmux session: $session_name"
-    tmux -f "$HOME/.war10ck/.tmux.conf" start-server \; source-file "$tmux_dir/$session_name"
+    tmux start-server \; source-file "$tmux_dir/$session_name"
     tmux attach-session -t "$session_name"
 }
 
