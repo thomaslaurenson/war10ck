@@ -13,3 +13,4 @@ w_deploy_remote_file "modules/tmux/files/home" "$TMUX_DIR/home"
 w_log_info "tmux config installed to $TMUX_DIR"
 
 w_symlink "$TMUX_DIR/tmux.conf" "$HOME/.tmux.conf"
+w_deploy_functions tmux

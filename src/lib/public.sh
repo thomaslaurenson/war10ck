@@ -289,6 +289,28 @@ w_user_add_group() {
   fi
 }
 
+# Bash function helpers
+
+# Deploy a module's bash functions file to ~/.war10ck/functions.d/<module>.
+# Source file must be at modules/<module>/files/functions.bash in the repo.
+#
+# Arguments:
+#   $1 - Module name (e.g. "tmux", "uv")
+w_deploy_functions() {
+  local module=$1
+  w_deploy_remote_file "modules/${module}/files/functions.bash" \
+    "$HOME/.war10ck/functions.d/${module}"
+}
+
+# Remove a module's bash functions from ~/.war10ck/functions.d/<module>.
+#
+# Arguments:
+#   $1 - Module name
+w_remove_functions() {
+  local module=$1
+  w_remove_file "$HOME/.war10ck/functions.d/${module}"
+}
+
 # Export all public functions to child processes (module scripts)
 
 export -f w_log_info
@@ -310,3 +332,5 @@ export -f w_remove_dir
 export -f w_symlink
 export -f w_remove_symlink
 export -f w_user_add_group
+export -f w_deploy_functions
+export -f w_remove_functions

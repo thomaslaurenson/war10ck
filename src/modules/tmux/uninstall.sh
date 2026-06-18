@@ -7,6 +7,7 @@ set -euo pipefail
 TMUX_DIR="$HOME/.war10ck/tmux"
 
 w_remove_symlink "$HOME/.tmux.conf"
+w_remove_functions tmux
 
 w_remove_dir "$TMUX_DIR"
 
