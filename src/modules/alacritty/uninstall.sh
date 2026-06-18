@@ -7,6 +7,7 @@ set -euo pipefail
 ALACRITTY_DIR="$HOME/.war10ck/alacritty"
 
 # Remove the symlink in ~/.config
+w_remove_symlink "$HOME/.config/alacritty/alacritty.yml"
 w_remove_symlink "$HOME/.config/alacritty/alacritty.toml"
 
 # Remove the deployed config directory
