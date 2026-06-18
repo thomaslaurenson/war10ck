@@ -12,7 +12,7 @@ w_deploy_remote_file "modules/bash/files/environment" "$WAR10CK_DIR/.environment
 w_deploy_remote_file "modules/bash/files/history"     "$WAR10CK_DIR/.history"
 
 # Deploy shell functions
-for f in general git github jira sshfs; do
+for f in general git github sshfs; do
   w_deploy_remote_file "modules/bash/files/functions.d/${f}" "$WAR10CK_DIR/functions.d/${f}"
 done
 

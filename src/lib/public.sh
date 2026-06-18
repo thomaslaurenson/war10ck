@@ -12,6 +12,8 @@
 #   w_user_*      user/group management
 #   w_is_*        boolean checks (return 0/1)
 #   w_log_*       logging helpers
+#   w_github_*    GitHub release helpers
+#   w_verify_*    checksum/integrity verification
 
 # Logging
 
@@ -289,6 +291,70 @@ w_user_add_group() {
   fi
 }
 
+# Download and verify helpers
+
+# Fetch the latest release tag from a GitHub repository, with the leading 'v' stripped.
+#
+# Arguments:
+#   $1 - Repository in "owner/repo" format
+# Outputs:
+#   Tag string (e.g. "0.13.2") on stdout; returns 1 on failure
+w_github_latest_tag() {
+  local repo=$1
+  local tag
+  tag=$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" \
+    | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+  if [[ -z "$tag" ]]; then
+    w_log_error "Failed to fetch latest release tag for ${repo}"
+    return 1
+  fi
+  echo "${tag#v}"
+}
+
+# Verify a file's SHA256 checksum against an expected value.
+# Logs the result and returns 1 on mismatch (caller is responsible for cleanup).
+#
+# Arguments:
+#   $1 - Path to the file to verify
+#   $2 - Expected SHA256 hex string
+w_verify_sha256() {
+  local file=$1
+  local expected=$2
+  local actual
+  actual=$(sha256sum "$file" | cut -d' ' -f1)
+  if [[ "$actual" != "$expected" ]]; then
+    w_log_error "Checksum mismatch for $(basename "$file")"
+    w_log_error "  expected: $expected"
+    w_log_error "  actual:   $actual"
+    return 1
+  fi
+  w_log_info "Checksum OK: $(basename "$file")"
+}
+
+# Download a checksums file, extract the expected SHA256 for a named archive,
+# and verify it. Returns 1 on any failure (caller is responsible for cleanup).
+#
+# Arguments:
+#   $1 - Path to the already-downloaded file to verify
+#   $2 - Archive filename to look up in the checksums file
+#   $3 - URL to fetch the checksums file from
+w_github_checksums_verify() {
+  local file=$1
+  local archive_name=$2
+  local checksums_url=$3
+  local _tmpchecksums
+  _tmpchecksums=$(mktemp --suffix=-checksums.txt)
+  curl -fsSL -o "$_tmpchecksums" "$checksums_url"
+  local expected
+  expected=$(grep "$archive_name" "$_tmpchecksums" | cut -d' ' -f1)
+  rm -f "$_tmpchecksums"
+  if [[ -z "$expected" ]]; then
+    w_log_error "No checksum entry found for $archive_name"
+    return 1
+  fi
+  w_verify_sha256 "$file" "$expected"
+}
+
 # Bash function helpers
 
 # Deploy a module's bash functions file to ~/.war10ck/functions.d/<module>.
@@ -334,3 +400,6 @@ export -f w_remove_symlink
 export -f w_user_add_group
 export -f w_deploy_functions
 export -f w_remove_functions
+export -f w_github_latest_tag
+export -f w_verify_sha256
+export -f w_github_checksums_verify

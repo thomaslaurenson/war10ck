@@ -13,15 +13,10 @@ UV_INSTALLER_URL="https://astral.sh/uv/${UV_VERSION}/install.sh"
 _tmpinstaller=$(mktemp --suffix=-uv-install.sh)
 curl -fsSL -o "$_tmpinstaller" "$UV_INSTALLER_URL"
 
-actual=$(sha256sum "$_tmpinstaller" | cut -d' ' -f1)
-if [[ "$actual" != "$UV_SHA256" ]]; then
-    w_log_error "uv installer checksum mismatch"
-    w_log_error "  expected: $UV_SHA256"
-    w_log_error "  actual:   $actual"
+if ! w_verify_sha256 "$_tmpinstaller" "$UV_SHA256"; then
     rm -f "$_tmpinstaller"
     exit 1
 fi
-w_log_info "uv installer checksum OK"
 
 w_q bash "$_tmpinstaller"
 rm -f "$_tmpinstaller"

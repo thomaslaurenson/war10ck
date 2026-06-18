@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
+
 set -euo pipefail
 [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && set -x
 
-w_apt_install openjdk-21-jdk
+w_deploy_functions jira
 
-w_log_info "java module installed."
+w_log_info "jira config installed."

@@ -2,7 +2,7 @@
 # shellcheck disable=SC2034  # Variables are used across bundled files
 
 # Manually increment VERSION before tagging a new release.
-readonly VERSION="v0.5.1"
+readonly VERSION="v0.5.2"
 
 version() {
   local display="${VERSION}"

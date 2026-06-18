@@ -3,20 +3,17 @@
 set -euo pipefail
 [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && set -x
 
-# In normal mode all noisy commands are silenced; debug mode streams full output.
-_q() { if [[ "${WAR10CK_DEBUG:-0}" == "1" ]]; then "$@"; else "$@" >/dev/null 2>&1; fi; }
-
 MPQEDITOR_URL="http://www.zezula.net/download/mpqeditor_en.zip"
 
 _tmpzip=$(mktemp --suffix=-mpqeditor.zip)
 curl -fsSL -o "$_tmpzip" "$MPQEDITOR_URL"
 
 # MPQEditor has no published checksum - print SHA256 for manual audit.
-echo "[*] MPQ Editor archive SHA256: $(sha256sum "$_tmpzip" | cut -d' ' -f1)"
-echo "[*] Verify against: https://www.zezula.net/en/mpq/download.html"
+w_log_info "MPQ Editor archive SHA256: $(sha256sum "$_tmpzip" | cut -d' ' -f1)"
+w_log_info "Verify against: https://www.zezula.net/en/mpq/download.html"
 
 _tmpdir=$(mktemp -d --suffix=-mpqeditor)
-_q unzip -q "$_tmpzip" x64/MPQEditor.exe -d "$_tmpdir"
+w_q unzip -q "$_tmpzip" x64/MPQEditor.exe -d "$_tmpdir"
 rm -f "$_tmpzip"
 
 sudo mkdir -p /opt/mpqeditor
@@ -35,3 +32,5 @@ Icon=wine
 Categories=Utility;GTK;
 MimeType=application/octet-stream;
 EOF
+
+w_log_info "mpqeditor module installed."
