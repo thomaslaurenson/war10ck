@@ -3,6 +3,8 @@
 set -euo pipefail
 [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && set -x
 
+w_apt_install openjdk-21-jdk
+
 GHIDRA_API_URL="https://api.github.com/repos/NationalSecurityAgency/ghidra"
 
 # Fetch latest release metadata once — Ghidra embeds the SHA256 in the release
