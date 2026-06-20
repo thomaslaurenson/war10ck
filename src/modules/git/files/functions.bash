@@ -1,3 +1,67 @@
+# function: w_git_bump_submodule
+w_git_bump_submodule() {
+    local sub_path=$1
+    local target_ref=$2
+
+    if [[ -z "$sub_path" ]]; then
+        echo "Usage: w_git_bump_submodule <path/to/submodule> [tag/commit/branch]"
+        return 1
+    fi
+
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "[!] Not inside a git repository"
+        return 1
+    fi
+
+    if ! git submodule status "$sub_path" >/dev/null 2>&1; then
+        echo "[!] '$sub_path' is not a registered submodule"
+        return 1
+    fi
+
+    read -rp "[*] Bump $sub_path? (y/N) " yn
+    case "$yn" in
+        [yY]* )
+            echo "[*] Initializing $sub_path..."
+            git submodule update --init "$sub_path"
+
+            if [[ -z "$target_ref" ]]; then
+                echo "[*] Updating to the latest remote commit..."
+                # Updates to the latest commit of the branch tracked in .gitmodules
+                git submodule update --remote "$sub_path"
+            else
+                echo "[*] Fetching and checking out specific ref: $target_ref..."
+                (cd "$sub_path" && git fetch --all --tags --prune && git checkout "$target_ref")
+            fi
+            echo "[*] Successfully bumped $sub_path!"
+            ;;
+        * )
+            echo "[*] Skipping $sub_path..."
+            ;;
+    esac
+}
+
+# function: w_git_bump_submodules
+w_git_bump_submodules() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "[!] Not inside a git repository"
+        return 1
+    fi
+
+    local sub_paths=()
+    while IFS= read -r path; do
+        sub_paths+=("$path")
+    done < <(git submodule status | awk '{print $2}')
+
+    if [[ ${#sub_paths[@]} -eq 0 ]]; then
+        echo "[!] No submodules found"
+        return 1
+    fi
+
+    for sub_path in "${sub_paths[@]}"; do
+        w_git_bump_submodule "$sub_path"
+    done
+}
+
 # function: w_git_tag
 w_git_tag() {
     if ! git rev-parse --git-dir >/dev/null 2>&1; then
