@@ -8,7 +8,7 @@ tmux () {
         local sessions=()
         while IFS= read -r -d '' file; do
             sessions+=("$(basename "$file")")
-        done < <(find "$tmux_dir" -maxdepth 1 -type f -print0 2>/dev/null)
+        done < <(find "$tmux_dir" -maxdepth 1 -type f ! -name "*.*" -print0 2>/dev/null)
 
         [[ ${#sessions[@]} -gt 0 ]] || { echo "[!] No session files found in $tmux_dir"; return 1; }
 
@@ -22,6 +22,6 @@ tmux () {
     [[ -f "$tmux_dir/$session_name" ]] || { echo "[!] Session file not found: $tmux_dir/$session_name"; return 1; }
 
     echo "[*] Starting tmux session: $session_name"
-    tmux start-server \; source-file "$tmux_dir/$session_name"
-    tmux attach-session -t "$session_name"
+    command tmux start-server \; source-file "$tmux_dir/$session_name"
+    command tmux attach-session -t "$session_name"
 }
