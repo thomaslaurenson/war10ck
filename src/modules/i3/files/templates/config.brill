@@ -1,3 +1,9 @@
 # Personal laptop (brill) - host-specific overrides
 set $internal eDP-1
 set $external HDMI-1
+
+# Workspace-to-output assignments.
+# i3 falls back to eDP-1 if HDMI-1 is not connected (laptop-only mode).
+workspace 1 output eDP-1
+workspace 2 output HDMI-1
+workspace 3 output HDMI-1

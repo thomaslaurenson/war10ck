@@ -1,34 +1,41 @@
 #!/usr/bin/env bash
 # Runtime display controller - runs on i3 init and every exec_always reload.
-# Detects docked vs laptop-only topology and routes workspaces + applications
-# without restarting i3 or dropping application state.
+# Handles physical monitor topology only. Workspace-to-output assignments are
+# static in the host config template and managed natively by i3.
 
 INTERNAL="eDP-1"
 EXTERNAL=$(xrandr | grep " connected" | grep -v "$INTERNAL" | awk '{print $1}' | head -n 1)
 
+# Returns "true" if a workspace has no open windows.
+ws_is_empty() {
+    local ws_name="$1"
+    i3-msg -t get_tree | python3 -c "
+import json, sys
+def find_ws(node, name):
+    if node.get('type') == 'workspace' and node.get('name') == name:
+        return node
+    for child in node.get('nodes', []) + node.get('floating_nodes', []):
+        result = find_ws(child, name)
+        if result:
+            return result
+    return None
+tree = json.load(sys.stdin)
+ws = find_ws(tree, '$ws_name')
+has_windows = bool(ws and (ws.get('nodes') or ws.get('floating_nodes')))
+print('false' if has_windows else 'true')
+"
+}
+
 if [ -n "$EXTERNAL" ]; then
-    # DOCKED MODE
+    # --- DOCKED MODE ---
+    # Position external as primary, internal to the left.
     xrandr --output "$EXTERNAL" --auto --primary --output "$INTERNAL" --auto --left-of "$EXTERNAL"
 
-    # Workspace output assignments
-    i3-msg "workspace 1 output $INTERNAL"
-    i3-msg "workspace 2 output $EXTERNAL"
-    i3-msg "workspace 3 output $EXTERNAL"
-
-    # Route Firefox to WS2 alongside VS Code
-    i3-msg "for_window [class=\"(?i)firefox\"] move to workspace 2"
-
-    # Apply side-by-side split layout for WS2 (VS Code left, Firefox right)
-    i3-msg "workspace 2; append_layout ~/.config/i3/layouts/docked_ws2.json"
+    # Apply WS2 split layout only on first dock (not on every reload).
+    if [ "$(ws_is_empty '2')" = "true" ]; then
+        i3-msg "workspace 2; append_layout ~/.config/i3/layouts/docked_ws2.json"
+    fi
 else
-    # LAPTOP ONLY MODE
+    # --- LAPTOP ONLY MODE ---
     xrandr --output "$INTERNAL" --auto --primary
-
-    # All workspaces on internal display
-    i3-msg "workspace 1 output $INTERNAL"
-    i3-msg "workspace 2 output $INTERNAL"
-    i3-msg "workspace 3 output $INTERNAL"
-
-    # Teardown docked Firefox rule; route Firefox back to WS3
-    i3-msg "for_window [class=\"(?i)firefox\"] move to workspace 3"
 fi

@@ -1,3 +1,9 @@
 # Work laptop (crossroads) - host-specific overrides
 set $internal eDP-1
 set $external DP-1
+
+# Workspace-to-output assignments.
+# i3 falls back to eDP-1 if DP-1 is not connected (laptop-only mode).
+workspace 1 output eDP-1
+workspace 2 output DP-1
+workspace 3 output DP-1
