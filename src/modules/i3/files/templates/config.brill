@@ -1,0 +1,3 @@
+# Personal laptop (brill) - host-specific overrides
+set $internal eDP-1
+set $external HDMI-1

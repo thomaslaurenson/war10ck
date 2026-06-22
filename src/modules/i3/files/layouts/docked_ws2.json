@@ -1,0 +1,25 @@
+{
+    "layout": "splith",
+    "percent": 1,
+    "type": "con",
+    "nodes": [
+        {
+            "percent": 0.5,
+            "type": "con",
+            "swallows": [
+                {
+                    "class": "^Code$"
+                }
+            ]
+        },
+        {
+            "percent": 0.5,
+            "type": "con",
+            "swallows": [
+                {
+                    "class": "^firefox$"
+                }
+            ]
+        }
+    ]
+}

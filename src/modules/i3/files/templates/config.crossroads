@@ -1,0 +1,3 @@
+# Work laptop (crossroads) - host-specific overrides
+set $internal eDP-1
+set $external DP-1
