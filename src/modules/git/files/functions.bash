@@ -127,7 +127,7 @@ w_git_tag() {
             return 0
             ;;
     esac
-    if ! git tag -a "$tag" -m "Release $tag"; then
+    if ! git tag -s "$tag" -m "Release $tag"; then
         echo "[!] Failed to create tag '$tag'"
         return 1
     fi
