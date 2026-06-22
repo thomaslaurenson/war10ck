@@ -1,6 +1,6 @@
 # i3 config file (v4)
 # Base template - common across all hosts
-# Host-specific template is appended by bundle.sh
+# Compiled with host template by config.sh into ~/.war10ck/i3/config
 
 set $mod Mod4
 
@@ -10,7 +10,7 @@ font pango:monospace 8
 exec --no-startup-id dex --autostart --environment i3
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 exec --no-startup-id nm-applet
-exec_always --no-startup-id ~/.config/i3/scripts/display-setup.sh
+exec_always --no-startup-id ~/.war10ck/i3/scripts/display-setup.sh
 exec_always --no-startup-id ~/.war10ck/polybar/launch.sh
 
 # Volume keys
@@ -125,8 +125,7 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-# --- Window Rules ---
-
+# Window Rules
 # Catch-all: all windows float by default
 for_window [class="^.*$"] floating enable
 

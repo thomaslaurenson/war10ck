@@ -33,7 +33,7 @@ if [ -n "$EXTERNAL" ]; then
 
     # Apply WS2 split layout only on first dock (not on every reload).
     if [ "$(ws_is_empty '2')" = "true" ]; then
-        i3-msg "workspace 2; append_layout ~/.config/i3/layouts/docked_ws2.json"
+        i3-msg "workspace 2; append_layout ~/.war10ck/i3/layouts/docked_ws2.json"
     fi
 else
     # --- LAPTOP ONLY MODE ---
