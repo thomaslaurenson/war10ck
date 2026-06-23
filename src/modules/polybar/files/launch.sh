@@ -28,7 +28,7 @@ if [ -z "$ETH_IFACE" ]; then
     export ETH_IFACE
 fi
 
-# Launch bar defined in config.ini as [bar/top]
-# polybar top -c ~/.war10ck/polybar/config.ini 2>&1 | tee -a /tmp/polybar.log &
-polybar top -c "$DIR/config.ini" 2>&1 | tee -a /tmp/polybar.log
-disown
+# Launch one bar per connected monitor
+while IFS= read -r monitor; do
+    MONITOR="$monitor" polybar top -c "$DIR/config.ini" 2>&1 | tee -a "/tmp/polybar-${monitor}.log" &
+done < <(xrandr --query | grep ' connected' | awk '{print $1}')
