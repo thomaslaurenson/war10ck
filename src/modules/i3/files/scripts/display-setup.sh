@@ -25,6 +25,6 @@ else
     xrandr --output "$INTERNAL" --auto --primary
 fi
 
-# Launch polybar after xrandr has finished configuring all monitors.
-# Polybar must start after this point so it can attach to both outputs.
+# Give xrandr a moment to settle before polybar attaches to outputs.
+sleep 0.5
 ~/.war10ck/polybar/launch.sh

@@ -14,9 +14,6 @@ w_deploy_remote_file "modules/i3/files/templates/config.brill" "$I3_DIR/template
 w_deploy_remote_file "modules/i3/files/scripts/display-setup.sh" "$I3_DIR/scripts/display-setup.sh"
 w_make_executable "$I3_DIR/scripts/display-setup.sh"
 
-# Deploy workspace layout
-w_deploy_remote_file "modules/i3/files/layouts/docked_ws2.json" "$I3_DIR/layouts/docked_ws2.json"
-
 # Bundle: compile base + host template into final config
 HOST=$(hostname)
 if [[ ! -f "$I3_DIR/templates/config.$HOST" ]]; then

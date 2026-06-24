@@ -2,8 +2,10 @@
 set $internal eDP-1
 set $external HDMI-1
 
-# Workspace-to-output assignments.
-# i3 falls back to eDP-1 if HDMI-1 is not connected (laptop-only mode).
-workspace 1 output eDP-1
-workspace 2 output HDMI-1
-workspace 3 output HDMI-1
+# WS 1-3 on laptop, WS 4-6 on external (fall back to laptop if unplugged)
+workspace 1 output $internal
+workspace 2 output $internal
+workspace 3 output $internal
+workspace 4 output $external $internal
+workspace 5 output $external $internal
+workspace 6 output $external $internal
