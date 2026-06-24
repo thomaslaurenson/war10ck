@@ -1,6 +1,6 @@
 # function: w_sshfs_mount
 w_sshfs_mount() {
-    # Helper defined inline and auto-removed on function exit — never leaks to shell
+    # Helper defined inline and auto-removed on function exit - never leaks to shell
     _w_sshfs_collect_configs() {
         local file="$1"
         [ -f "$file" ] || return

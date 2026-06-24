@@ -7,7 +7,7 @@ BUILD_MODE="${BUILD_MODE:-release}"
 
 _cleanup() {
   if [[ -d "$DIST" ]]; then
-    printf '[!] Bundle failed — cleaning up %s/\n' "$DIST" >&2
+    printf '[!] Bundle failed - cleaning up %s/\n' "$DIST" >&2
     rm -rf "$DIST"
   fi
 }

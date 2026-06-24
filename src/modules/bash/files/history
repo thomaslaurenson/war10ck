@@ -11,7 +11,7 @@ export HISTSIZE=10000
 export HISTFILESIZE=50000
 
 # Ignore consecutive duplicate commands
-# erasedups is intentionally omitted — it silently drops entries written by
+# erasedups is intentionally omitted - it silently drops entries written by
 # other sessions when syncing, causing cross-session history loss
 export HISTCONTROL=ignoredups
 

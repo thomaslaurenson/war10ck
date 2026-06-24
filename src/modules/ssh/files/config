@@ -1,4 +1,4 @@
-# war10ck managed — base SSH client config
+# war10ck managed - base SSH client config
 # Host-specific entries belong in ~/.ssh/config.d/
 # This file is managed by war10ck. Do not edit directly.
 

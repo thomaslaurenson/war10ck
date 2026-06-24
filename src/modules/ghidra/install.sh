@@ -7,7 +7,7 @@ w_apt_install openjdk-21-jdk
 
 GHIDRA_API_URL="https://api.github.com/repos/NationalSecurityAgency/ghidra"
 
-# Fetch latest release metadata once — Ghidra embeds the SHA256 in the release
+# Fetch latest release metadata once - Ghidra embeds the SHA256 in the release
 # body rather than publishing a checksums file, so we need the full JSON.
 RELEASE_JSON=$(curl -fsSL "$GHIDRA_API_URL/releases/latest")
 

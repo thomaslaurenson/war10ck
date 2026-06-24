@@ -68,10 +68,10 @@ w_git_tag() {
         echo "[!] Not inside a git repository"
         return 1
     fi
-    # Block on detached HEAD — a tag should be rooted to a named branch
+    # Block on detached HEAD - a tag should be rooted to a named branch
     local branch
     if ! branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"; then
-        echo "[!] Detached HEAD — check out a branch before tagging"
+        echo "[!] Detached HEAD - check out a branch before tagging"
         return 1
     fi
     local repo_name
@@ -132,7 +132,7 @@ w_git_tag() {
         return 1
     fi
     if ! git push "$remote" "$tag"; then
-        echo "[!] Push failed — tag '$tag' exists locally but was not pushed"
+        echo "[!] Push failed - tag '$tag' exists locally but was not pushed"
         echo "[!] To retry: git push $remote $tag"
         return 1
     fi

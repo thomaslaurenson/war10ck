@@ -6,9 +6,15 @@ set $mod Mod4
 
 font pango:monospace 8
 
-# No borders or title bars on any window
-default_border none
-default_floating_border none
+# 2px border on all windows - color makes unfocused ones invisible
+default_border pixel 2
+default_floating_border pixel 2
+
+# class                  border    bg        text      indicator  child_border
+client.focused            #00FF00   #0a0a0a   #f8f8f8   #00FF00    #00FF00
+client.focused_inactive   #0a0a0a   #0a0a0a   #666666   #0a0a0a    #0a0a0a
+client.unfocused          #0a0a0a   #0a0a0a   #666666   #0a0a0a    #0a0a0a
+client.urgent             #ff0000   #0a0a0a   #f8f8f8   #ff0000    #ff0000
 
 # Autostart
 exec --no-startup-id dex --autostart --environment i3
@@ -29,6 +35,7 @@ tiling_drag modifier titlebar
 # Terminal and launcher
 bindsym $mod+Return exec alacritty
 bindsym $mod+d exec --no-startup-id ~/.war10ck/rofi/launch.sh
+bindsym $mod+Shift+slash exec --no-startup-id ~/.war10ck/rofi/i3-cheatsheet.sh
 
 # Kill focused window
 bindsym $mod+Shift+q kill
@@ -105,17 +112,7 @@ mode "resize" {
 bindsym $mod+r mode "resize"
 
 # Window Rules
-# Catch-all: all windows float by default
-for_window [class="^.*$"] floating enable
-
-# Explicit tiling overrides
-for_window [class="(?i)code"] floating disable
-for_window [class="(?i)firefox"] floating disable
-for_window [class="(?i)alacritty|gnome-terminal|kitty"] floating disable
-for_window [class="(?i)slack"] floating disable
-for_window [class="(?i)teams"] floating disable
-
-# Re-float dialogs and popups regardless of class
+# Float dialogs and popups; everything else tiles by default
 for_window [window_type="dialog"] floating enable
 for_window [window_type="popup_menu"] floating enable
 for_window [window_type="utility"] floating enable
