@@ -15,4 +15,5 @@ readonly VALID_SUBCOMMANDS=(
   install
   config
   apply
+  uninstall
 )

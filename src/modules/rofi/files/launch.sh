@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
+export XDG_DATA_DIRS="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}:/var/lib/flatpak/exports/share:$HOME/.local/share/flatpak/exports/share"
 
 rofi -config "$HOME/.war10ck/rofi/config.rasi" -show drun

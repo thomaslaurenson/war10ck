@@ -11,10 +11,10 @@ default_border pixel 2
 default_floating_border pixel 2
 
 # class                  border    bg        text      indicator  child_border
-client.focused            #00FF00   #0a0a0a   #f8f8f8   #00FF00    #00FF00
-client.focused_inactive   #0a0a0a   #0a0a0a   #666666   #0a0a0a    #0a0a0a
-client.unfocused          #0a0a0a   #0a0a0a   #666666   #0a0a0a    #0a0a0a
-client.urgent             #ff0000   #0a0a0a   #f8f8f8   #ff0000    #ff0000
+client.focused           #00FF00 #0a0a0a #f8f8f8 #00FF00  #00FF00
+client.focused_inactive  #0a0a0a #0a0a0a #666666 #0a0a0a  #0a0a0a
+client.unfocused         #0a0a0a #0a0a0a #666666 #0a0a0a  #0a0a0a
+client.urgent            #ff0000 #0a0a0a #f8f8f8 #ff0000  #ff0000
 
 # Autostart
 exec_always --no-startup-id xsetroot -solid black

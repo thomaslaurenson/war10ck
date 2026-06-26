@@ -17,6 +17,7 @@ Subcommands:
   config        Configure a module      (run without target to list available)
   apply         Apply a module or profile - install + config in one step
                                         (run without target to list all)
+  uninstall     Uninstall a module      (run without target to list available)
   update        Update war10ck to the latest release
   version       Print the current war10ck version
 
@@ -34,6 +35,7 @@ Subcommands:
   install       Install a module
   config        Configure a module
   apply         Apply a module or profile (install + config)
+  uninstall     Uninstall a module
   update        Update war10ck
   version       Print current version
 

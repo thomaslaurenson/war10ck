@@ -39,8 +39,9 @@ _list_modules() {
 
   for mod in ${modules}; do
     local caps=""
-    grep -q "modules/${mod}/install.sh" <<< "${WAR10CK_MANIFEST}" && caps+="[install] "
-    grep -q "modules/${mod}/config.sh"  <<< "${WAR10CK_MANIFEST}" && caps+="[config] "
+    grep -q "modules/${mod}/install.sh"   <<< "${WAR10CK_MANIFEST}" && caps+="[install] "
+    grep -q "modules/${mod}/config.sh"    <<< "${WAR10CK_MANIFEST}" && caps+="[config] "
+    grep -q "modules/${mod}/uninstall.sh" <<< "${WAR10CK_MANIFEST}" && caps+="[uninstall] "
 
     if [[ -n "${action}" ]]; then
       grep -q "modules/${mod}/${action}.sh" <<< "${WAR10CK_MANIFEST}" || continue
@@ -111,6 +112,25 @@ _run_profile() {
     _run_script "modules/${mod}" "config"
   done
   printf '[*] Profile %s complete.\n' "${profile}"
+}
+
+# Uninstall a module. Shows available modules when called with no argument.
+#
+# Arguments:
+#   $1 - Module name (optional)
+uninstall() {
+  local target=${1:-}
+  if [[ -z "${target}" ]]; then
+    printf '\nModules with uninstall support:\n\n'
+    _list_modules "uninstall"
+    printf '\nUsage: war10ck uninstall <module>\n\n'
+    exit 0
+  fi
+  if ! grep -q "modules/${target}/" <<< "${WAR10CK_MANIFEST}"; then
+    printf '[!] Unknown module: %s\n' "${target}" >&2
+    exit 1
+  fi
+  _run_script "modules/${target}" "uninstall"
 }
 
 # Install a module. Shows available modules when called with no argument.
