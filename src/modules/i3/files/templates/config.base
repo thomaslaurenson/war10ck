@@ -19,7 +19,6 @@ client.urgent            #ff0000 #0a0a0a #f8f8f8 #ff0000  #ff0000
 # Autostart
 exec_always --no-startup-id xsetroot -solid black
 exec --no-startup-id dex --autostart --environment i3
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork -c 000000
 exec --no-startup-id nm-applet
 exec_always --no-startup-id ~/.war10ck/i3/scripts/display-setup.sh
 
@@ -29,14 +28,19 @@ bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle
 bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
 
+# Brightness keys
+bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl set +5%
+bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
+
+# Screenshots
+exec_always --no-startup-id mkdir -p ~/Pictures/Screenshots
+bindsym Print exec --no-startup-id scrot '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
+bindsym $mod+Print exec --no-startup-id scrot -s '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
+bindsym $mod+Shift+Print exec --no-startup-id scrot -u '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
+
 # Mouse drag for floating windows
 floating_modifier $mod
 tiling_drag modifier titlebar
-
-# Terminal and launcher
-bindsym $mod+Return exec alacritty
-bindsym $mod+d exec --no-startup-id ~/.war10ck/rofi/launch.sh
-bindsym $mod+Shift+slash exec --no-startup-id ~/.war10ck/rofi/i3-cheatsheet.sh
 
 # Kill focused window
 bindsym $mod+Shift+q kill
@@ -72,6 +76,18 @@ bindsym $mod+space focus mode_toggle
 # Focus parent
 bindsym $mod+a focus parent
 
+# Resize mode
+mode "resize" {
+    bindsym Left resize shrink width 10 px or 10 ppt
+    bindsym Down resize grow height 10 px or 10 ppt
+    bindsym Up resize shrink height 10 px or 10 ppt
+    bindsym Right resize grow width 10 px or 10 ppt
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+    bindsym $mod+r mode "default"
+}
+bindsym $mod+r mode "resize"
+
 # Workspaces
 set $ws1 "1"
 set $ws2 "2"
@@ -97,22 +113,18 @@ bindsym $mod+Shift+6 move container to workspace number $ws6
 # i3 control
 bindsym $mod+Shift+c reload
 bindsym $mod+Shift+r restart
-bindsym $mod+Control+l exec "i3lock -c 000000"
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
 
-# Resize mode
-mode "resize" {
-    bindsym Left resize shrink width 10 px or 10 ppt
-    bindsym Down resize grow height 10 px or 10 ppt
-    bindsym Up resize shrink height 10 px or 10 ppt
-    bindsym Right resize grow width 10 px or 10 ppt
-    bindsym Return mode "default"
-    bindsym Escape mode "default"
-    bindsym $mod+r mode "default"
-}
-bindsym $mod+r mode "resize"
+# Lock
+bindsym $mod+Control+l exec "i3lock -c 000000"
 
-# Window Rules
+# Terminal
+bindsym $mod+Return exec alacritty
+
+# Launcher
+bindsym $mod+d exec --no-startup-id ~/.war10ck/rofi/launch.sh
+bindsym $mod+Shift+slash exec --no-startup-id ~/.war10ck/rofi/i3-cheatsheet.sh
+
 # Float dialogs and popups; everything else tiles by default
 for_window [window_type="dialog"] floating enable
 for_window [window_type="popup_menu"] floating enable
@@ -120,7 +132,13 @@ for_window [window_type="utility"] floating enable
 for_window [window_type="splash"] floating enable
 for_window [window_role="pop-up"] floating enable
 for_window [window_role="task_dialog"] floating enable
+for_window [class="pavucontrol"] floating enable
 
-# keyring
+# Keyring
 exec_always dbus-update-activation-environment --all
 exec_always gnome-keyring-daemon --start --components=secrets
+
+# Propagate display and XDG environment to systemd/dbus so portals and
+# xdg-open can resolve handlers for flatpak apps (e.g. slack:// URLs).
+exec --no-startup-id systemctl --user import-environment DISPLAY XAUTHORITY
+exec_always --no-startup-id bash -c 'dbus-update-activation-environment --systemd DISPLAY XAUTHORITY "XDG_DATA_DIRS=${XDG_DATA_DIRS:-/usr/local/share:/usr/share}:/var/lib/flatpak/exports/share:$HOME/.local/share/flatpak/exports/share"'
