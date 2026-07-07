@@ -1,4 +1,6 @@
-new-session -d -s home -n local
+new-session -d -s home -n btop \
+  'btop'
+new-window -n local
 new-window -n undercity \
   'ssh undercity'
 new-window -n orgrimmar \

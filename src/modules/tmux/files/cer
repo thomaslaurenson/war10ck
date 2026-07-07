@@ -1,4 +1,6 @@
-new-session -d -s cer -n local
+new-session -d -s cer -n btop \
+  'btop'
+new-window -n local
 new-window -n os \
   'cd ~/repos/uoa-eresearch/uvos; exec bash'
 new-window -n tunnel

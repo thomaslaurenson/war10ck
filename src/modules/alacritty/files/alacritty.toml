@@ -2,8 +2,8 @@
 opacity = 0.95
 
 [window.padding]
-x = 8
-y = 8
+x = 0
+y = 0
 
 [font]
 size = 8.0
