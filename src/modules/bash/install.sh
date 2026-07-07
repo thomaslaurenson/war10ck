@@ -6,10 +6,10 @@ set -euo pipefail
 WAR10CK_DIR="$HOME/.war10ck"
 
 # Deploy shell config files
-w_deploy_remote_file "modules/bash/files/rundmc"      "$WAR10CK_DIR/.rundmc"
-w_deploy_remote_file "modules/bash/files/aliases"     "$WAR10CK_DIR/.aliases"
+w_deploy_remote_file "modules/bash/files/rundmc" "$WAR10CK_DIR/.rundmc"
+w_deploy_remote_file "modules/bash/files/aliases" "$WAR10CK_DIR/.aliases"
 w_deploy_remote_file "modules/bash/files/environment" "$WAR10CK_DIR/.environment"
-w_deploy_remote_file "modules/bash/files/history"     "$WAR10CK_DIR/.history"
+w_deploy_remote_file "modules/bash/files/history" "$WAR10CK_DIR/.history"
 
 # Deploy shell functions
 for f in general github sshfs; do
