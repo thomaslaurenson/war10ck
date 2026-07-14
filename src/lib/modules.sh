@@ -1,10 +1,10 @@
 # shellcheck shell=bash
 
-# Fetch and execute a single script from a module or profile.
+# Fetch and execute a single script from a module.
 # Gracefully skips if the script does not exist in the manifest.
 #
 # Arguments:
-#   $1 - Path prefix (e.g. "modules/polybar" or "profiles/desktop")
+#   $1 - Path prefix (e.g. "modules/polybar")
 #   $2 - Action name (e.g. "install" or "config")
 _run_script() {
   local prefix=$1
@@ -51,6 +51,33 @@ _list_modules() {
   done
 }
 
+# Fetch, verify, and source a profile's meta file, populating profile variables
+# in the caller's scope. Defaults are reset first so values never leak between
+# profiles when called in a loop.
+#
+# Arguments:
+#   $1 - Profile name
+# Sets:
+#   NAME, DESCRIPTION - profile metadata (strings)
+#   MODULES           - array of member module entries ("name" or "name:step")
+_load_profile_meta() {
+  local profile=$1
+  local meta_key="profiles/${profile}"
+
+  local _tmpfile
+  _tmpfile=$(mktemp --suffix="-${profile}-meta")
+  ${FETCH_CMD} "${_tmpfile}" "${BASE_URL}/${meta_key}"
+  _verify_from_manifest "${_tmpfile}" "${meta_key}"
+
+  # shellcheck disable=SC2034  # NAME is part of the meta contract; not read here.
+  NAME=""
+  DESCRIPTION=""
+  MODULES=()
+  # shellcheck disable=SC1090
+  source "${_tmpfile}"
+  rm -f "${_tmpfile}"
+}
+
 # List all profiles with their member modules, sourced from each profile's meta file.
 #
 # Outputs:
@@ -60,25 +87,17 @@ _list_profiles() {
   profiles=$(grep -oE "profiles/[^/]+" <<< "${WAR10CK_MANIFEST}" | cut -d'/' -f2 | sort -u)
 
   for profile in ${profiles}; do
-    local meta_key="profiles/${profile}/meta"
-    if ! grep -q "${meta_key}$" <<< "${WAR10CK_MANIFEST}"; then
+    local meta_key="profiles/${profile}"
+    if ! grep -q " ${meta_key}$" <<< "${WAR10CK_MANIFEST}"; then
       continue
     fi
 
-    local _tmpfile
-    _tmpfile=$(mktemp --suffix="-${profile}-meta")
-    ${FETCH_CMD} "${_tmpfile}" "${BASE_URL}/${meta_key}"
-
-    local members
-    local description
-    members=$(grep "^MODULES=" "${_tmpfile}" | cut -d'=' -f2- | tr -d '"')
-    description=$(grep "^DESCRIPTION=" "${_tmpfile}" | cut -d'=' -f2- | tr -d '"')
-    rm -f "${_tmpfile}"
+    _load_profile_meta "${profile}"
 
     local members_display
-    members_display=$(printf '%s' "${members}" | tr ' ' ',')
+    members_display=$(printf '%s' "${MODULES[*]}" | tr ' ' ',')
     printf '  %-18s %s\n' "${profile}" "${members_display}"
-    [[ -n "${description}" ]] && printf '  %-18s %s\n' "" "${description}"
+    [[ -n "${DESCRIPTION}" ]] && printf '  %-18s %s\n' "" "${DESCRIPTION}"
   done
 }
 
@@ -92,24 +111,34 @@ _list_profiles() {
 #   exits 1 if the profile has no meta file
 _run_profile() {
   local profile=$1
-  local meta_key="profiles/${profile}/meta"
+  local meta_key="profiles/${profile}"
 
-  if ! grep -q "${meta_key}$" <<< "${WAR10CK_MANIFEST}"; then
+  if ! grep -q " ${meta_key}$" <<< "${WAR10CK_MANIFEST}"; then
     printf '[!] Profile %s has no meta file. Cannot run.\n' "${profile}" >&2
     exit 1
   fi
 
-  local _tmpfile
-  _tmpfile=$(mktemp --suffix="-${profile}-meta")
-  ${FETCH_CMD} "${_tmpfile}" "${BASE_URL}/${meta_key}"
-  local members
-  members=$(grep "^MODULES=" "${_tmpfile}" | cut -d'=' -f2- | tr -d '"')
-  rm -f "${_tmpfile}"
+  _load_profile_meta "${profile}"
 
   printf '[*] Applying profile: %s\n' "${profile}"
-  for mod in ${members}; do
-    _run_script "modules/${mod}" "install"
-    _run_script "modules/${mod}" "config"
+  for entry in "${MODULES[@]}"; do
+    local mod step
+    mod="${entry%%:*}"                    # "rofi" from "rofi:config"
+    step="${entry#"${mod}"}"; step="${step#:}"  # "config", or "" for a bare name
+    case "${step}" in
+      ""|install|config) ;;
+      *)
+        printf '[!] Profile %s: unknown step %q for module %s (use install or config)\n' \
+          "${profile}" "${step}" "${mod}" >&2
+        exit 1
+        ;;
+    esac
+    if [[ -z "${step}" || "${step}" == "install" ]]; then
+      _run_script "modules/${mod}" "install"
+    fi
+    if [[ -z "${step}" || "${step}" == "config" ]]; then
+      _run_script "modules/${mod}" "config"
+    fi
   done
   printf '[*] Profile %s complete.\n' "${profile}"
 }
@@ -187,7 +216,7 @@ apply() {
     exit 0
   fi
 
-  if grep -q "profiles/${target}/" <<< "${WAR10CK_MANIFEST}"; then
+  if grep -q " profiles/${target}$" <<< "${WAR10CK_MANIFEST}"; then
     _run_profile "${target}"
   elif grep -q "modules/${target}/" <<< "${WAR10CK_MANIFEST}"; then
     printf '[*] Applying module: %s\n' "${target}"

@@ -1,13 +1,12 @@
 # shellcheck shell=bash disable=SC2034
 
-NAME="Desktop"
-DESCRIPTION="Custom desktop environment"
+NAME="Server"
+DESCRIPTION="Generic server environment"
 
 # Modules to apply, one per line.
 # A bare name runs both install and config. Append ":install" or ":config"
 # to restrict a module to a single step.
 MODULES=(
   bash
-  polybar
-  rofi
+  git
 )
