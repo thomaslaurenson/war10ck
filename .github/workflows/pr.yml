@@ -1,0 +1,21 @@
+name: PR
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "test/**"
+      - "bundle.sh"
+      - "install.sh"
+      - "Makefile"
+      - ".github/workflows/**"
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+  test:
+    uses: ./.github/workflows/test.yml

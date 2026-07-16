@@ -9,26 +9,26 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     if [[ -z "${_WAR10CK_MODULE_CACHE:-}" ]]; then
       local targets
       targets=$(war10ck apply 2>/dev/null | awk '/^  /{print $1}')
-      [[ -n "$targets" ]] && _WAR10CK_MODULE_CACHE="$targets"
+      [[ -n "${targets}" ]] && _WAR10CK_MODULE_CACHE="${targets}"
     fi
-    echo "${_WAR10CK_MODULE_CACHE:-}"
+    printf '%s\n' "${_WAR10CK_MODULE_CACHE:-}"
   }
 
+  # Provide Tab completion for war10ck: subcommands at position one, then
+  # module and profile targets for the target-based subcommands.
   _war10ck_completions() {
     local cur
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
 
-    # Top-level subcommands
-    if [[ $COMP_CWORD -eq 1 ]]; then
-      mapfile -t COMPREPLY < <(compgen -W "${VALID_SUBCOMMANDS[*]}" -- "$cur")
+    if (( COMP_CWORD == 1 )); then
+      mapfile -t COMPREPLY < <(compgen -W "${VALID_SUBCOMMANDS[*]}" -- "${cur}")
       return
     fi
 
-    # Second-level: module/profile name for all target-based subcommands
     case "${COMP_WORDS[1]}" in
       install|config|apply)
-        mapfile -t COMPREPLY < <(compgen -W "$(_war10ck_get_targets)" -- "$cur")
+        mapfile -t COMPREPLY < <(compgen -W "$(_war10ck_get_targets)" -- "${cur}")
         ;;
     esac
   }

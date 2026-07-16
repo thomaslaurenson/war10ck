@@ -10,6 +10,22 @@ _bcp() {
 }
 export -f _bcp
 
+# Check that a module or profile target is a plausible name.
+#
+# Targets are interpolated into manifest lookups and remote URLs, so they are
+# restricted to a conservative charset. Without this, a target containing regex
+# metacharacters (".*", for example) satisfies the manifest check and the tool
+# goes on to build a nonsense URL, failing with a raw cp/curl error instead of
+# a clean "unknown module".
+#
+# Arguments:
+#   $1 - Target name
+# Returns:
+#   0 if the target is a valid name, 1 otherwise
+_is_valid_target() {
+  [[ "${1:-}" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]]
+}
+
 # Return 0 if the given string is a valid top-level subcommand, 1 otherwise.
 #
 # Arguments:
@@ -77,7 +93,11 @@ _verify_from_manifest() {
     exit 1
   fi
   local expected
-  expected=$(printf '%s' "${WAR10CK_MANIFEST}" | grep " ${manifest_key}$" | cut -d' ' -f1)
+  # Exact match on the filename field, treated as a literal string (never a
+  # regex or a substring). sha256sum output is "<hash>  <path>", so field 1 is
+  # the hash and field 2 is the path; compare the path for equality.
+  expected=$(printf '%s\n' "${WAR10CK_MANIFEST}" \
+    | awk -v key="${manifest_key}" '$2 == key { print $1; exit }')
   if [[ -z "${expected}" ]]; then
     printf '[!] No manifest entry found for: %s\n' "${manifest_key}" >&2
     exit 1

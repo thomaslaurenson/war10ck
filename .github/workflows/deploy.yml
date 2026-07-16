@@ -2,9 +2,17 @@ name: Deploy
 
 on: workflow_call
 
+# Pages allows a single concurrent deployment. Queue rather than cancel, so a
+# release deploy is never dropped half-way.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   upload:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
 

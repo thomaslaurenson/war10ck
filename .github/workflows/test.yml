@@ -1,4 +1,4 @@
-name: Lint
+name: Test
 
 on: workflow_call
 
@@ -6,10 +6,12 @@ permissions:
   contents: read
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: true
 
-      - name: Run linter
-        run: make lint
+      - name: Run test suite
+        run: make test

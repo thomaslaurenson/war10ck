@@ -7,21 +7,21 @@ set -euo pipefail
 
 # Update NVM_SHA256 when bumping NVM_VERSION.
 # To get the hash: curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/vVERSION/install.sh" | sha256sum
-NVM_VERSION="0.40.3"
-NVM_SHA256="2d8359a64a3cb07c02389ad88ceecd43f2fa469c06104f92f98df5b6f315275f"
+readonly NVM_VERSION="0.40.3"
+readonly NVM_SHA256="2d8359a64a3cb07c02389ad88ceecd43f2fa469c06104f92f98df5b6f315275f"
 
-NVM_INSTALLER_URL="https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/install.sh"
+readonly NVM_INSTALLER_URL="https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/install.sh"
 
 _tmpinstaller=$(mktemp --suffix=-nvm-install.sh)
-curl -fsSL -o "$_tmpinstaller" "$NVM_INSTALLER_URL"
+w_download "${NVM_INSTALLER_URL}" "${_tmpinstaller}"
 
-if ! w_verify_sha256 "$_tmpinstaller" "$NVM_SHA256"; then
-    rm -f "$_tmpinstaller"
-    exit 1
+if ! w_verify_sha256 "${_tmpinstaller}" "${NVM_SHA256}"; then
+  rm -f "${_tmpinstaller}"
+  exit 1
 fi
 
-w_q bash "$_tmpinstaller"
-rm -f "$_tmpinstaller"
+w_q bash "${_tmpinstaller}"
+rm -f "${_tmpinstaller}"
 
 . "$HOME/.nvm/nvm.sh"
 w_q nvm install 18

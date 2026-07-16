@@ -1,16 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
+
+die() { printf '%s: %s\n' "${0##*/}" "$*" >&2; exit 1; }
 
 URL="https://war10ck.thomaslaurenson.com"
 
-# Determine fetch command
 if command -v curl &>/dev/null; then
   FETCH_CMD="curl -fsSL -o"
 elif command -v wget &>/dev/null; then
   FETCH_CMD="wget -q -O"
 else
-  printf '[!] No fetch command found. Exiting.\n' >&2
-  exit 1
+  die "no fetch command found (need curl or wget)"
 fi
 
 tmp_binary=$(mktemp --suffix="-war10ck")
@@ -29,17 +29,13 @@ ${FETCH_CMD} "${tmp_checksums}" "${URL}/checksums.txt"
 
 printf '[*] Verifying checksum...\n'
 expected=$(grep ' war10ck$' "${tmp_checksums}" | cut -d' ' -f1)
-if [[ -z "${expected}" ]]; then
-  printf '[!] war10ck entry not found in checksums.txt\n' >&2
-  exit 1
-fi
+[[ -n "${expected}" ]] || die "war10ck entry not found in checksums.txt"
 
 actual=$(sha256sum "${tmp_binary}" | cut -d' ' -f1)
 if [[ "${actual}" != "${expected}" ]]; then
-  printf '[!] Checksum mismatch!\n' >&2
   printf '[!]   expected: %s\n' "${expected}" >&2
   printf '[!]   actual:   %s\n' "${actual}" >&2
-  exit 1
+  die "checksum mismatch"
 fi
 printf '[*] Checksum OK.\n'
 

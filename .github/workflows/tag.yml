@@ -6,12 +6,15 @@ on:
       - "v*.*.*"
 
 jobs:
-    lint:
-        uses: ./.github/workflows/lint.yml
-    deploy:
-        uses: ./.github/workflows/deploy.yml
-        secrets: inherit
-        permissions:
-            contents: write
-            pages: write
-            id-token: write
+  lint:
+    uses: ./.github/workflows/lint.yml
+  test:
+    uses: ./.github/workflows/test.yml
+  deploy:
+    needs: [lint, test]
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    permissions:
+      contents: write
+      pages: write
+      id-token: write

@@ -8,6 +8,10 @@ DESCRIPTION="Custom desktop environment"
 # to restrict a module to a single step.
 MODULES=(
   bash
+  git
+  i3
   polybar
   rofi
+  alacritty
+  dunst
 )

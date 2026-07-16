@@ -11,7 +11,8 @@ _run_script() {
   local action=$2
   local manifest_key="${prefix}/${action}.sh"
 
-  if ! grep -q "${manifest_key}$" <<< "${WAR10CK_MANIFEST}"; then
+  if ! awk -v key="${manifest_key}" '$2 == key { found=1 } END { exit !found }' \
+      <<< "${WAR10CK_MANIFEST}"; then
     return 0
   fi
 
@@ -39,12 +40,12 @@ _list_modules() {
 
   for mod in ${modules}; do
     local caps=""
-    grep -q "modules/${mod}/install.sh"   <<< "${WAR10CK_MANIFEST}" && caps+="[install] "
-    grep -q "modules/${mod}/config.sh"    <<< "${WAR10CK_MANIFEST}" && caps+="[config] "
-    grep -q "modules/${mod}/uninstall.sh" <<< "${WAR10CK_MANIFEST}" && caps+="[uninstall] "
+    grep -qF "modules/${mod}/install.sh"   <<< "${WAR10CK_MANIFEST}" && caps+="[install] "
+    grep -qF "modules/${mod}/config.sh"    <<< "${WAR10CK_MANIFEST}" && caps+="[config] "
+    grep -qF "modules/${mod}/uninstall.sh" <<< "${WAR10CK_MANIFEST}" && caps+="[uninstall] "
 
     if [[ -n "${action}" ]]; then
-      grep -q "modules/${mod}/${action}.sh" <<< "${WAR10CK_MANIFEST}" || continue
+      grep -qF "modules/${mod}/${action}.sh" <<< "${WAR10CK_MANIFEST}" || continue
     fi
 
     printf '  %-18s %s\n' "${mod}" "${caps}"
@@ -88,7 +89,8 @@ _list_profiles() {
 
   for profile in ${profiles}; do
     local meta_key="profiles/${profile}"
-    if ! grep -q " ${meta_key}$" <<< "${WAR10CK_MANIFEST}"; then
+    if ! awk -v key="${meta_key}" '$2 == key { found=1 } END { exit !found }' \
+        <<< "${WAR10CK_MANIFEST}"; then
       continue
     fi
 
@@ -113,7 +115,8 @@ _run_profile() {
   local profile=$1
   local meta_key="profiles/${profile}"
 
-  if ! grep -q " ${meta_key}$" <<< "${WAR10CK_MANIFEST}"; then
+  if ! awk -v key="${meta_key}" '$2 == key { found=1 } END { exit !found }' \
+      <<< "${WAR10CK_MANIFEST}"; then
     printf '[!] Profile %s has no meta file. Cannot run.\n' "${profile}" >&2
     exit 1
   fi
@@ -155,7 +158,7 @@ uninstall() {
     printf '\nUsage: war10ck uninstall <module>\n\n'
     exit 0
   fi
-  if ! grep -q "modules/${target}/" <<< "${WAR10CK_MANIFEST}"; then
+  if ! _is_valid_target "${target}" || ! grep -qF "modules/${target}/" <<< "${WAR10CK_MANIFEST}"; then
     printf '[!] Unknown module: %s\n' "${target}" >&2
     exit 1
   fi
@@ -174,7 +177,7 @@ install() {
     printf '\nUsage: war10ck install <module>\n\n'
     exit 0
   fi
-  if ! grep -q "modules/${target}/" <<< "${WAR10CK_MANIFEST}"; then
+  if ! _is_valid_target "${target}" || ! grep -qF "modules/${target}/" <<< "${WAR10CK_MANIFEST}"; then
     printf '[!] Unknown module: %s\n' "${target}" >&2
     exit 1
   fi
@@ -193,7 +196,7 @@ config() {
     printf '\nUsage: war10ck config <module>\n\n'
     exit 0
   fi
-  if ! grep -q "modules/${target}/" <<< "${WAR10CK_MANIFEST}"; then
+  if ! _is_valid_target "${target}" || ! grep -qF "modules/${target}/" <<< "${WAR10CK_MANIFEST}"; then
     printf '[!] Unknown module: %s\n' "${target}" >&2
     exit 1
   fi
@@ -216,9 +219,10 @@ apply() {
     exit 0
   fi
 
-  if grep -q " profiles/${target}$" <<< "${WAR10CK_MANIFEST}"; then
+  if _is_valid_target "${target}" \
+      && awk -v key="profiles/${target}" '$2 == key { f=1 } END { exit !f }' <<< "${WAR10CK_MANIFEST}"; then
     _run_profile "${target}"
-  elif grep -q "modules/${target}/" <<< "${WAR10CK_MANIFEST}"; then
+  elif _is_valid_target "${target}" && grep -qF "modules/${target}/" <<< "${WAR10CK_MANIFEST}"; then
     printf '[*] Applying module: %s\n' "${target}"
     _run_script "modules/${target}" "install"
     _run_script "modules/${target}" "config"
