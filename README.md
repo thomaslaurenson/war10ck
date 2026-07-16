@@ -2,7 +2,7 @@
 
 ![Build Status](https://img.shields.io/github/actions/workflow/status/thomaslaurenson/war10ck/tag.yml?style=flat&logo=github) ![Test Status](https://img.shields.io/github/actions/workflow/status/thomaslaurenson/war10ck/tag.yml?style=flat&label=test&logo=github)
 
-![Release Version](https://img.shields.io/github/v/release/thomaslaurenson/war10ck?style=flat&logo=github) ![Release downloads](https://img.shields.io/github/downloads/thomaslaurenson/war10ck/total?label=downloads&logo=github)
+![Release Version](https://img.shields.io/github/v/release/thomaslaurenson/war10ck?style=flat&logo=github)
 
 Personal automated bash environment configuration.
 
