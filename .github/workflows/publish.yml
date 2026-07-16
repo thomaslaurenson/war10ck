@@ -1,0 +1,72 @@
+name: Publish
+
+on: workflow_call
+
+jobs:
+  # Publish the bundle to GitHub Pages - the channel install.sh and the war10ck
+  # binary fetch modules and checksums from at runtime.
+  pages:
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    # Pages allows a single concurrent deployment. Queue rather than cancel, so
+    # a release deploy is never dropped half-way.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Bundle
+        run: make bundle
+
+      - name: Generate basic HTML index page
+        uses: docker://pandoc/core:3.5
+        with:
+          args: >-
+            --standalone
+            --metadata title="war10ck"
+            --from=markdown
+            --to=html5
+            --output=dist/index.html
+            dist/README.md
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      # Passed via env rather than inlined into run: blocks to avoid expression
+      # injection from the ref name.
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Verify the tag matches the embedded version
+        run: |
+          embedded="v$(make get_version)"
+          if [[ "${TAG}" != "${embedded}" ]]; then
+            printf 'Tag %s does not match version.sh (%s). Bump VERSION before tagging.\n' \
+              "${TAG}" "${embedded}" >&2
+            exit 1
+          fi
+
+      - name: Extract changelog notes for this version
+        run: make get_changelog > release-notes.md
+
+      - name: Create the GitHub release
+        run: gh release create "${TAG}" --title "${TAG}" --notes-file release-notes.md
