@@ -123,6 +123,7 @@ bindsym $mod+Return exec alacritty
 
 # Launcher
 bindsym $mod+d exec --no-startup-id ~/.war10ck/rofi/launch.sh
+bindsym $mod+Shift+d exec --no-startup-id ~/.war10ck/rofi/run.sh
 bindsym $mod+Shift+slash exec --no-startup-id ~/.war10ck/rofi/i3-cheatsheet.sh
 
 # Float dialogs and popups; everything else tiles by default

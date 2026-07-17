@@ -3,6 +3,10 @@
 # Launch with: mod+Shift+/ (i.e. mod+?)
 
 SHORTCUTS=$(cat << 'EOF'
+━━━  LAUNCHING  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  mod+Return              Terminal
+  mod+d                   App launcher
+  mod+Shift+d             Run a command (bash history + $PATH, no terminal)
 ━━━  CONTAINERS & LAYOUTS  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   mod+v                   Split into sub-container (next window below)
   mod+h                   Split into sub-container (next window right)
