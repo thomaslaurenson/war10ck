@@ -60,6 +60,14 @@ main() {
     printf '\n'
     _strip_shellcheck "${SRC}/lib/completion.sh"
     printf '\n'
+    # gpipe.sh sits after completion.sh deliberately. completion.sh returns
+    # from the sourced path once it has registered completion, so everything
+    # below it is only ever defined when war10ck is executed as a program.
+    # That matters here and nowhere else: rundmc sources this whole file into
+    # every interactive shell, and a gpipe() function defined there would
+    # shadow the gpipe binary, turning "gpipe generate" into a war10ck error.
+    _strip_shellcheck "${SRC}/lib/gpipe.sh"
+    printf '\n'
     _strip_shellcheck "${SRC}/main.sh"
   } > "${DIST}/war10ck"
   chmod +x "${DIST}/war10ck"
