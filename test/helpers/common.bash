@@ -91,3 +91,26 @@ _build_local_dist() {
   ( cd "$root" && find modules profiles -type f -print0 | sort -z \
       | xargs -0 sha256sum > checksums.txt )
 }
+
+# Write a .bashrc fixture containing a pub-era block: the four-line stanza
+# war10ck appended before the "# war10ck BEGIN" markers existed. Optional
+# surrounding lines let a test assert that a block removal takes the block and
+# nothing else.
+#
+# Arguments:
+#   $1 - path to write to
+#   $2 - line placed before the block (optional)
+#   $3 - line placed after the block (optional)
+_write_pub_era_bashrc() {
+  local file=$1
+  local before=${2:-}
+  local after=${3:-}
+  {
+    if [[ -n "$before" ]]; then printf '%s\n' "$before"; fi
+    printf '# CUSTOM ALIASES\n'
+    printf 'if [ -f ~/.aliases ]; then\n'
+    printf '    . ~/.aliases\n'
+    printf 'fi\n'
+    if [[ -n "$after" ]]; then printf '%s\n' "$after"; fi
+  } > "$file"
+}

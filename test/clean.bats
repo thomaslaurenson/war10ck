@@ -165,19 +165,19 @@ _live_module_paths() {
 @test "bashrc: a block is reported with its line numbers and content" {
   local h="$BATS_TEST_TMPDIR/h"
   mkdir -p "$h"
-  printf 'export A=1\n\n# CUSTOM ALIASES\nif [ -f ~/.aliases ]; then\n    . ~/.aliases\nfi\n' > "$h/.bashrc"
+  _write_pub_era_bashrc "$h/.bashrc" 'export A=1'
   run _with_home "$h" "clean"
   (( status == 0 ))
-  [[ "$output" =~ "lines 3-6" ]]
+  [[ "$output" =~ "lines 2-5" ]]
   [[ "$output" =~ "CUSTOM ALIASES" ]]
   # Reporting must not touch the file
-  [[ $(wc -l < "$h/.bashrc") -eq 6 ]]
+  [[ $(wc -l < "$h/.bashrc") -eq 5 ]]
 }
 
 @test "bashrc: declining the prompt leaves the file untouched" {
   local h="$BATS_TEST_TMPDIR/h"
   mkdir -p "$h"
-  printf '# CUSTOM ALIASES\nif [ -f ~/.aliases ]; then\n    . ~/.aliases\nfi\n' > "$h/.bashrc"
+  _write_pub_era_bashrc "$h/.bashrc"
   run bash -c "printf 'n\n' | HOME='$h' bash -c \"source '$PUBLIC'; source '$LIB'; clean --apply\""
   (( status == 0 ))
   [[ $(wc -l < "$h/.bashrc") -eq 4 ]]
@@ -187,7 +187,7 @@ _live_module_paths() {
 @test "bashrc: accepting the prompt removes the block and leaves a backup" {
   local h="$BATS_TEST_TMPDIR/h"
   mkdir -p "$h"
-  printf 'export KEEP=1\n# CUSTOM ALIASES\nif [ -f ~/.aliases ]; then\n    . ~/.aliases\nfi\nexport ALSO_KEEP=1\n' > "$h/.bashrc"
+  _write_pub_era_bashrc "$h/.bashrc" 'export KEEP=1' 'export ALSO_KEEP=1'
   run bash -c "printf 'y\n' | HOME='$h' bash -c \"source '$PUBLIC'; source '$LIB'; clean --apply\""
   (( status == 0 ))
   run cat "$h/.bashrc"
