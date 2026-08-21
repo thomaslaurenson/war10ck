@@ -10,7 +10,7 @@ if [[ -z "$GHIDRA_DIR" ]]; then
     exit 1
 fi
 
-w_deploy_remote_file "modules/ghidra/files/env.bash" "$HOME/.war10ck/bashrc.d/ghidra"
+w_deploy_remote_file "modules/ghidra/files/env.bash" "$HOME/.war10ck/env.d/ghidra"
 
 mkdir -p "$HOME/.local/share/applications"
 cat > "$HOME/.local/share/applications/ghidra.desktop" <<EOF

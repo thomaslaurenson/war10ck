@@ -22,7 +22,9 @@ done
 # from the loop above.
 w_remove_file "$WAR10CK_DIR/functions.d/sshfs"
 
-# Create bashrc.d directory (unmanaged by war10ck - preserved on uninstall)
+# Create bashrc.d directory. war10ck never writes here: module environment
+# fragments go to env.d and functions to functions.d, which leaves this
+# directory genuinely yours and safe to preserve on uninstall.
 mkdir -p "$WAR10CK_DIR/bashrc.d"
 chmod 700 "$WAR10CK_DIR/bashrc.d"
 

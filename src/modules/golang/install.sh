@@ -66,7 +66,7 @@ readonly GOVULNCHECK_VERSION="1.7.0"
 
 # GOBIN puts the freshly built binary somewhere this script owns, so it can be
 # installed root-owned rather than left in $GOPATH/bin. GOPATH is not exported
-# during install (the config step only writes it to bashrc.d), so go falls back
+# during install (the config step only writes it to env.d), so go falls back
 # to its ~/go default for the module cache, which is where it would land anyway.
 _tmpdir=$(mktemp -d --suffix=-govulncheck)
 _tmppaths+=("${_tmpdir}")

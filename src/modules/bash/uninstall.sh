@@ -11,6 +11,7 @@ w_remove_file "$HOME/.war10ck/.environment"
 w_remove_file "$HOME/.war10ck/.history"
 w_remove_file "$HOME/.war10ck/.rundmc"
 w_remove_dir  "$HOME/.war10ck/functions.d"
+w_remove_dir  "$HOME/.war10ck/env.d"
 
 w_log_info "Bash module uninstalled."
 w_log_info "Note: ~/.war10ck/bashrc.d/ was intentionally preserved."

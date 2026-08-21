@@ -5,9 +5,10 @@ if [ -f "/usr/local/bin/war10ck" ]; then
     . /usr/local/bin/war10ck
 fi
 
-# CUSTOM FUNCTIONS
-if [ -d "$HOME/.war10ck/functions.d" ]; then
-    for file in "$HOME/.war10ck/functions.d/"*; do
+# MODULE ENVIRONMENT
+# Sourced first so PATH and exports are in place before anything that uses them.
+if [ -d "$HOME/.war10ck/env.d" ]; then
+    for file in "$HOME/.war10ck/env.d/"*; do
         [ -r "$file" ] && . "$file"
     done
 fi
@@ -27,7 +28,15 @@ if [ -f "$HOME/.war10ck/.history" ]; then
     . "$HOME/.war10ck/.history"
 fi
 
+# MODULE FUNCTIONS
+if [ -d "$HOME/.war10ck/functions.d" ]; then
+    for file in "$HOME/.war10ck/functions.d/"*; do
+        [ -r "$file" ] && . "$file"
+    done
+fi
+
 # BASHRC.D
+# Unmanaged by war10ck and sourced last, so anything here overrides the above.
 if [ -d "$HOME/.war10ck/bashrc.d" ]; then
     for file in "$HOME/.war10ck/bashrc.d/"*; do
         [ -r "$file" ] && . "$file"
