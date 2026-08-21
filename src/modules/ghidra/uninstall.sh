@@ -10,6 +10,7 @@ while IFS= read -r ghidra_dir; do
   [[ -n "${ghidra_dir}" ]] && w_sudo_remove_dir "${ghidra_dir}"
 done < <(find /opt -maxdepth 1 -type d -name "ghidra_*_PUBLIC*" | sort)
 
+w_remove_file "$HOME/.war10ck/env.d/ghidra"
 w_remove_file "$HOME/.local/share/applications/ghidra.desktop"
 
 # NOTE: openjdk-21-jdk and unzip are left installed. They are general-purpose

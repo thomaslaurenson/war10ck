@@ -16,4 +16,5 @@ readonly VALID_SUBCOMMANDS=(
   config
   apply
   uninstall
+  clean
 )

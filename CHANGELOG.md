@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.0 - 2026-08-21
+
+### Added
+
+- Add a clean subcommand that reports and removes artefacts left by older versions
+
+### Changed
+
+- Move module environment files to env.d, leaving bashrc.d entirely for your own scripts
+
+### Fixed
+
+- Stop war10ck subcommands shadowing commands like install in interactive shells
+- Remove the ghidra environment file when uninstalling the module
+
 ## 0.8.3 - 2026-08-21
 
 ### Changed
