@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.3 - 2026-08-21
+
+### Changed
+
+- Install and update gpipe tools by applying the gpipe module
+- Remove the installed tools as well as the registry when uninstalling gpipe
+
+### Removed
+
+- Remove the gpipe subcommand
+
 ## 0.8.2 - 2026-08-21
 
 ### Added

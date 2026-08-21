@@ -19,8 +19,6 @@ Subcommands:
                                         (run without target to list all)
   uninstall     Uninstall a module      (run without target to list available)
   update        Update war10ck to the latest release
-  gpipe         Show gpipe-installed tool versions
-                (run 'gpipe update [tool...]' to update them)
   version       Print the current war10ck version
 
 HELP
@@ -39,7 +37,6 @@ Subcommands:
   apply         Apply a module or profile (install + config)
   uninstall     Uninstall a module
   update        Update war10ck
-  gpipe         Show or update gpipe-installed tools
   version       Print current version
 
 Run 'war10ck -h' for flags and details.

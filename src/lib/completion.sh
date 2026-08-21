@@ -18,17 +18,6 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     printf '%s\n' "${_WAR10CK_MODULE_CACHE:-}"
   }
 
-  # List the tool names in the gpipe registry, if it exists. This is a local
-  # directory read, so unlike the module list it needs no cache.
-  _war10ck_get_gpipe_tools() {
-    local dir="${HOME}/.war10ck/gpipe.d"
-    [[ -d "${dir}" ]] || return 0
-    local file
-    for file in "${dir}"/*; do
-      [[ -f "${file}" ]] && basename "${file}"
-    done
-  }
-
   # Provide Tab completion for war10ck: subcommands at position one, then
   # module and profile targets for the target-based subcommands.
   _war10ck_completions() {
@@ -44,14 +33,6 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     case "${COMP_WORDS[1]}" in
       install|config|apply|uninstall)
         mapfile -t COMPREPLY < <(compgen -W "$(_war10ck_get_targets)" -- "${cur}")
-        ;;
-      gpipe)
-        # Actions at position two, then registered tool names for 'gpipe update'.
-        if (( COMP_CWORD == 2 )); then
-          mapfile -t COMPREPLY < <(compgen -W "status update" -- "${cur}")
-        elif [[ "${COMP_WORDS[2]}" == "update" ]]; then
-          mapfile -t COMPREPLY < <(compgen -W "$(_war10ck_get_gpipe_tools)" -- "${cur}")
-        fi
         ;;
     esac
   }
