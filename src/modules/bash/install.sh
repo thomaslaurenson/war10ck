@@ -12,9 +12,15 @@ w_deploy_remote_file "modules/bash/files/environment" "$WAR10CK_DIR/.environment
 w_deploy_remote_file "modules/bash/files/history" "$WAR10CK_DIR/.history"
 
 # Deploy shell functions
-for f in general github sshfs; do
+for f in general github; do
   w_deploy_remote_file "modules/bash/files/functions.d/${f}" "$WAR10CK_DIR/functions.d/${f}"
 done
+
+# The sshfs helpers were replaced by the standalone smount tool, which the gpipe
+# module installs. Everything in functions.d is sourced at shell startup, so the
+# file an earlier install deployed has to be removed rather than just dropped
+# from the loop above.
+w_remove_file "$WAR10CK_DIR/functions.d/sshfs"
 
 # Create bashrc.d directory (unmanaged by war10ck - preserved on uninstall)
 mkdir -p "$WAR10CK_DIR/bashrc.d"

@@ -1,0 +1,2 @@
+# optional: binary=<name>, mode=user|system (default system)
+repo=thomaslaurenson/smount

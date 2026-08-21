@@ -5,7 +5,7 @@ set -euo pipefail
 
 GPIPE_DIR="$HOME/.war10ck/gpipe.d"
 
-for tool in gpipe moon narc prongs; do
+for tool in gpipe moon narc prongs smount; do
   w_deploy_remote_file "modules/gpipe/files/${tool}" "$GPIPE_DIR/${tool}"
 done
 
