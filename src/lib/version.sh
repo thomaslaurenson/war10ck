@@ -2,7 +2,7 @@
 # shellcheck disable=SC2034  # Variables are used across bundled files
 
 # Manually increment VERSION before tagging a new release.
-readonly VERSION="v0.9.0"
+readonly VERSION="v0.10.0"
 
 # Print the current war10ck version, appending a -dev suffix for dev builds.
 #
