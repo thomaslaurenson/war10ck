@@ -1,5 +1,11 @@
 # DON'T ASK ME, BECAUSE I DON'T KNOW WHY
 
+# shellcheck shell=bash
+# Every path sourced below is created by a war10ck module at install time, so
+# none of them exist in the repository for shellcheck to follow, and the two
+# loops name their targets through a variable.
+# shellcheck disable=SC1090,SC1091
+
 # WAR10CK BASH COMPLETION
 if [ -f "/usr/local/bin/war10ck" ]; then
     . /usr/local/bin/war10ck

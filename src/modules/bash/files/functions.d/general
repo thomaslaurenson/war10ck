@@ -3,14 +3,14 @@ w_ramdisk () {
     ramdisk_path="$HOME/ramdisk"
     if [ ! -d "$ramdisk_path" ]; then
         echo "Creating RAM disk directory..."
-        mkdir $ramdisk_path
+        mkdir "$ramdisk_path"
     fi
     if [[ "$1" = "mount" ]]; then
         echo "Mounting RAM disk..."
-        sudo mount -t tmpfs -o size=2048M tmpfs $ramdisk_path
+        sudo mount -t tmpfs -o size=2048M tmpfs "$ramdisk_path"
     elif [[ "$1" = "umount" ]]; then
         echo "Unmounting RAM disk..."
-        sudo umount $ramdisk_path
+        sudo umount "$ramdisk_path"
     else
         echo "Usage:"
         echo "ramdisk mount -- mounts RAM disk"
@@ -30,12 +30,12 @@ w_transmission_bind () {
     # bind_address=$(ip -br addr show moz0 | awk '{print $3}')
     bind_address=$(curl https://ipecho.net/plain; echo)
     # If IP wasn't found then quit
-    if [ -z $bind_address ]; then
+    if [ -z "$bind_address" ]; then
         echo "VPN doesn't seem to be up. Will not start transmission-daemon"
-        exit 1
+        return 1
     fi
     # Start transmission-daemon
-    transmission-daemon --rpc-bind-address=127.0.0.1 --bind-address-ipv4=$bind_address
+    transmission-daemon --rpc-bind-address=127.0.0.1 --bind-address-ipv4="$bind_address"
     echo "transmission-daemon started and bound to address $bind_address"
 }
 
