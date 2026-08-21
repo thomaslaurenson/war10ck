@@ -7,6 +7,7 @@ w_sudo_remove_symlink "/usr/local/bin/gofmt"
 w_sudo_remove_dir "/usr/local/go"
 
 w_sudo_remove_file "/usr/local/bin/goreleaser"
+w_sudo_remove_file "/usr/local/bin/govulncheck"
 
 # Removes only this module's file from bashrc.d, never the directory itself,
 # which the bash module keeps for unmanaged user scripts.
