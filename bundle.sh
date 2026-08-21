@@ -122,6 +122,26 @@ main() {
     "${DIST}/war10ck"
   printf '[*] Embedded CHECKSUMS_SHA256=%s\n' "${checksums_sha256}"
 
+  # Embed the manifest itself, not only its hash, so status can compare what was
+  # applied against what this build ships without reaching the network. Safe
+  # because CHECKSUMS_SHA256 above already pins the binary to exactly this
+  # manifest: _load_manifest rejects any remote copy that hashes differently.
+  #
+  # A single-quoted heredoc-free assignment is enough: manifest lines are
+  # sha256 hex and repository paths, so neither can contain a quote.
+  local manifest_embed
+  manifest_embed=$(mktemp --suffix=-manifest-embed)
+  {
+    printf "readonly WAR10CK_EMBEDDED_MANIFEST='\n"
+    cat "${DIST}/checksums.txt"
+    printf "'\n"
+  } > "${manifest_embed}"
+  sed -i -e '/^WAR10CK_EMBEDDED_MANIFEST=/{' \
+         -e "r ${manifest_embed}" \
+         -e 'd' -e '}' "${DIST}/war10ck"
+  rm -f "${manifest_embed}"
+  printf '[*] Embedded manifest (%s entries)\n' "${manifest_lines}"
+
   if [[ "${BUILD_MODE}" == "release" ]]; then
     sed -i 's/^readonly WAR10CK_BUILD=.*/readonly WAR10CK_BUILD="release"/' "${DIST}/war10ck"
     printf '[*] Embedded WAR10CK_BUILD=release\n'

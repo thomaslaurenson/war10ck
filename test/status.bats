@@ -25,6 +25,24 @@ _with_home() {
   HOME="$home" bash -c "VERSION=v9.9.9; source '$PUBLIC'; source '$LIB'; $*"
 }
 
+# As _with_home, but with a manifest embedded, standing in for what bundle.sh
+# bakes into a release binary.
+#
+# Arguments:
+#   $1   - the HOME to use
+#   $2   - manifest contents
+#   $3.. - shell code to run once loaded
+_with_manifest() {
+  local home=$1 manifest=$2; shift 2
+  HOME="$home" WAR10CK_EMBEDDED_MANIFEST="$manifest" \
+    bash -c "VERSION=v9.9.9; source '$PUBLIC'; source '$LIB'; $*"
+}
+
+# A manifest naming one module's install and config scripts.
+_fixture_manifest() {
+  printf '%s  modules/demo/install.sh\n%s  modules/demo/config.sh\n' "$1" "$2"
+}
+
 @test "status: reports an empty registry without failing" {
   run _with_home "$BATS_TEST_TMPDIR/empty" "status"
   (( status == 0 ))
@@ -137,4 +155,66 @@ _with_home() {
   (( status == 0 ))
   [[ "$output" =~ DEMO_INSTALLED ]]
   [[ -f "$h/.war10ck/registry.d/demo" ]]
+}
+
+@test "state: matching hashes read as current" {
+  local h="$BATS_TEST_TMPDIR/h"
+  local manifest; manifest=$(_fixture_manifest aaa bbb)
+  _with_manifest "$h" "$manifest" "WAR10CK_MANIFEST='$manifest' _w_registry_record demo install"
+  run _with_manifest "$h" "$manifest" "status"
+  (( status == 0 ))
+  [[ "$output" =~ current ]]
+}
+
+@test "state: a module whose script has changed reads as changed" {
+  local h="$BATS_TEST_TMPDIR/h"
+  local applied; applied=$(_fixture_manifest aaa bbb)
+  local shipped; shipped=$(_fixture_manifest ZZZ bbb)
+  _with_manifest "$h" "$applied" "WAR10CK_MANIFEST='$applied' _w_registry_record demo install"
+  run _with_manifest "$h" "$shipped" "status"
+  (( status == 0 ))
+  [[ "$output" =~ changed ]]
+  [[ "$output" =~ "Re-apply them" ]]
+}
+
+@test "state: an entry recorded before hashes existed reads as unknown" {
+  # An old entry has timestamps but no _sha fields. Treating that as current
+  # would be a clean bill of health nobody checked.
+  local h="$BATS_TEST_TMPDIR/h"
+  mkdir -p "$h/.war10ck/registry.d"
+  printf 'installed=2026-01-01T00:00:00Z\ninstalled_by=v0.8.0\n' \
+    > "$h/.war10ck/registry.d/demo"
+  run _with_manifest "$h" "$(_fixture_manifest aaa bbb)" "status"
+  (( status == 0 ))
+  [[ "$output" =~ unknown ]]
+}
+
+@test "state: no embedded manifest reads as unknown, never as current" {
+  local h="$BATS_TEST_TMPDIR/h"
+  _with_home "$h" "_w_registry_record demo install"
+  run _with_home "$h" "status"
+  (( status == 0 ))
+  [[ "$output" =~ unknown ]]
+  [[ ! "$output" =~ current ]]
+}
+
+@test "state: only the actions that ran are compared" {
+  # demo was installed but never configured, so a config.sh hash that differs
+  # must not drag the module to changed.
+  local h="$BATS_TEST_TMPDIR/h"
+  local applied; applied=$(_fixture_manifest aaa bbb)
+  local shipped; shipped=$(_fixture_manifest aaa DIFFERENT)
+  _with_manifest "$h" "$applied" "WAR10CK_MANIFEST='$applied' _w_registry_record demo install"
+  run _with_manifest "$h" "$shipped" "status"
+  (( status == 0 ))
+  [[ "$output" =~ current ]]
+}
+
+@test "record: the hash of the script that ran is stored" {
+  local h="$BATS_TEST_TMPDIR/h"
+  local manifest; manifest=$(_fixture_manifest aaa bbb)
+  _with_manifest "$h" "$manifest" "WAR10CK_MANIFEST='$manifest' _w_registry_record demo config"
+  run cat "$h/.war10ck/registry.d/demo"
+  (( status == 0 ))
+  [[ "$output" =~ configured_sha=bbb ]]
 }
