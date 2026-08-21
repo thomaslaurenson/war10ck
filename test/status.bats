@@ -218,3 +218,59 @@ _fixture_manifest() {
   (( status == 0 ))
   [[ "$output" =~ configured_sha=bbb ]]
 }
+
+@test "get: an absent key returns empty and succeeds" {
+  # The root cause of the half-completed apply: this helper's last command used
+  # to be a grep pipeline, so a missing key made the function return 1 and
+  # errexit killed the caller before it could write anything.
+  local h="$BATS_TEST_TMPDIR/h"
+  mkdir -p "$h/.war10ck/registry.d"
+  printf 'installed=x\n' > "$h/.war10ck/registry.d/demo"
+  run _with_home "$h" \
+    "set -euo pipefail; v=\$(_w_registry_get '$h/.war10ck/registry.d/demo' installed_sha); printf 'ok:%s' \"\$v\""
+  (( status == 0 ))
+  [[ "$output" == "ok:" ]]
+}
+
+@test "record: rewrites an entry written before the hash fields existed" {
+  # The upgrade path from 0.10.0. The old entry has four keys, not six, and
+  # recording over it must succeed and keep the action it does not touch.
+  local h="$BATS_TEST_TMPDIR/h"
+  mkdir -p "$h/.war10ck/registry.d"
+  printf 'installed=2026-01-01T00:00:00Z\ninstalled_by=v0.10.0\n' \
+    > "$h/.war10ck/registry.d/demo"
+  printf 'configured=2026-01-02T00:00:00Z\nconfigured_by=v0.10.0\n' \
+    >> "$h/.war10ck/registry.d/demo"
+  run _with_home "$h" "set -euo pipefail; _w_registry_record demo install"
+  (( status == 0 ))
+  run cat "$h/.war10ck/registry.d/demo"
+  [[ "$output" =~ installed_by=v9.9.9 ]]
+  [[ "$output" =~ configured=2026-01-02T00:00:00Z ]]
+  [[ "$output" =~ configured_by=v0.10.0 ]]
+}
+
+@test "runner: apply completes both steps over a pre-hash entry" {
+  # The symptom users saw: install ran, the recorder aborted, and config was
+  # never reached, leaving the module half applied with no error printed.
+  local base="$BATS_TEST_TMPDIR/dist"
+  _build_local_dist "$base"
+  local h="$BATS_TEST_TMPDIR/h"
+  mkdir -p "$h/.war10ck/registry.d"
+  printf 'installed=2026-01-01T00:00:00Z\ninstalled_by=v0.10.0\n' \
+    > "$h/.war10ck/registry.d/demo"
+
+  run bash -c "
+    set -euo pipefail
+    export HOME='$h' BASE_URL='$base' FETCH_CMD='_bcp' VERSION=v9.9.9
+    export WAR10CK_MANIFEST=\"\$(cat '$base/checksums.txt')\"
+    source '$REPO_ROOT/src/lib/private.sh'
+    source '$PUBLIC'
+    source '$REPO_ROOT/src/lib/status.sh'
+    source '$REPO_ROOT/src/lib/modules.sh'
+    _run_script modules/demo install
+    _run_script modules/demo config
+  "
+  (( status == 0 ))
+  [[ "$output" =~ DEMO_INSTALLED ]]
+  [[ "$output" =~ DEMO_CONFIGURED ]]
+}

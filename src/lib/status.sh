@@ -60,7 +60,15 @@ _w_registry_get() {
   local file=$1
   local key=$2
   [[ -f "${file}" ]] || return 0
-  grep -E "^${key}=" "${file}" 2>/dev/null | tail -1 | cut -d'=' -f2-
+  # awk rather than grep, and not for style: a key that is absent is normal
+  # here, because an entry written by an older war10ck has no hash fields at
+  # all. grep signals "no match" by exiting 1, which as the function's last
+  # command makes the function itself return 1, and under errexit that takes
+  # down the caller mid-record. awk exits 0 whether or not it matched.
+  awk -v key="${key}" '
+    index($0, key "=") == 1 { value = substr($0, length(key) + 2) }
+    END { if (value != "") print value }
+  ' "${file}"
 }
 
 # Record that a module lifecycle script completed, or drop the entry when the
