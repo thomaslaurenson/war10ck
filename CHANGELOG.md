@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.10.0 - 2026-08-21
+
+### Added
+
+- Add a status subcommand backed by a registry of modules war10ck has applied
+
+### Fixed
+
+- Lint every deployed shell file, not just module lifecycle scripts
+- Quote shell expansions in the bash helper functions
+- Return rather than exit the shell when the transmission VPN check fails
+
 ## 0.9.0 - 2026-08-21
 
 ### Added
