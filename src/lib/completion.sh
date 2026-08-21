@@ -34,6 +34,9 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
       install|config|apply|uninstall)
         mapfile -t COMPREPLY < <(compgen -W "$(_war10ck_get_targets)" -- "${cur}")
         ;;
+      clean)
+        mapfile -t COMPREPLY < <(compgen -W "--apply" -- "${cur}")
+        ;;
     esac
   }
   complete -F _war10ck_completions war10ck

@@ -520,6 +520,59 @@ w_github_checksums_verify() {
   w_verify_sha256 "${file}" "${expected}"
 }
 
+# Print the inclusive line range of a block in a file, or nothing when there
+# is no complete block. A block runs from the first line matching the start
+# pattern to the next line at or after it matching the end pattern.
+#
+# The end line is resolved by searching forward from the start rather than
+# handing sed a /start/,/end/ range: when the end pattern never matches, sed
+# deletes to the end of the file, which for an rc file is catastrophic.
+#
+# Arguments:
+#   $1 - Path to the file
+#   $2 - POSIX ERE matching the first line of the block
+#   $3 - POSIX ERE matching the last line of the block
+# Outputs:
+#   stdout: "<start> <end>" line numbers, or nothing
+w_block_range() {
+  local file=$1
+  local start_re=$2
+  local end_re=$3
+  [[ -f "${file}" ]] || return 0
+
+  local start_line offset
+  start_line=$(grep -nE "${start_re}" "${file}" 2>/dev/null | head -1 | cut -d: -f1)
+  [[ -n "${start_line}" ]] || return 0
+
+  offset=$(tail -n +"${start_line}" "${file}" | grep -nE "${end_re}" | head -1 | cut -d: -f1)
+  [[ -n "${offset}" ]] || return 0
+
+  printf '%s %s\n' "${start_line}" "$((start_line + offset - 1))"
+}
+
+# Delete a block of lines from a file, leaving a .war10ck-bak copy alongside.
+# Does nothing when the block is not present or has no end line.
+#
+# Arguments:
+#   $1 - Path to the file
+#   $2 - POSIX ERE matching the first line of the block
+#   $3 - POSIX ERE matching the last line of the block
+w_remove_block() {
+  local file=$1
+  local range
+  range=$(w_block_range "$@")
+  if [[ -z "${range}" ]]; then
+    w_log_debug "No complete block to remove in: ${file}"
+    return 0
+  fi
+  local start=${range% *}
+  local end=${range#* }
+  cp "${file}" "${file}.war10ck-bak"
+  sed -i "${start},${end}d" "${file}"
+  w_log_info "Removed lines ${start}-${end} from: ${file}"
+  w_log_info "Backup written to: ${file}.war10ck-bak"
+}
+
 # Bash function helpers
 
 # Deploy a module's bash functions file to ~/.war10ck/functions.d/<module>.
@@ -601,6 +654,8 @@ export -f w_user_remove_group
 export -f w_deploy_functions
 export -f w_remove_functions
 export -f w_remove_lines
+export -f w_block_range
+export -f w_remove_block
 export -f w_github_latest_tag
 export -f w_verify_sha256
 export -f w_github_checksums_verify

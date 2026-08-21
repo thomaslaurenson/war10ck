@@ -19,6 +19,8 @@ Subcommands:
                                         (run without target to list all)
   uninstall     Uninstall a module      (run without target to list available)
   update        Update war10ck to the latest release
+  clean         Report artefacts left by older versions
+                (run 'clean --apply' to remove them)
   version       Print the current war10ck version
 
 HELP
@@ -37,6 +39,7 @@ Subcommands:
   apply         Apply a module or profile (install + config)
   uninstall     Uninstall a module
   update        Update war10ck
+  clean         Report artefacts left by older versions
   version       Print current version
 
 Run 'war10ck -h' for flags and details.
@@ -174,11 +177,11 @@ main() {
     exit 1
   fi
 
-  # version is purely local; resolving a fetch source for it would fail on a
-  # host with neither curl nor wget, for no benefit. update needs a fetch
-  # command but never a manifest.
+  # version and clean are purely local; resolving a fetch source for them would
+  # fail on a host with neither curl nor wget, for no benefit. update needs a
+  # fetch command but never a manifest.
   case "${subcommand}" in
-    version) ;;
+    version|clean) ;;
     *)
       _resolve_fetch
       _load_manifest "${subcommand}"
