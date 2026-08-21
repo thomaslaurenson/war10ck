@@ -46,19 +46,29 @@ main() {
     printf '  return 0\n'
     printf 'fi\n'
     printf '_WAR10CK_LOADED=1\n\n'
-    _strip_shellcheck "${SRC}/lib/version.sh"
-    printf '\n'
     _strip_shellcheck "${SRC}/lib/constants.sh"
     printf '\n'
     _strip_shellcheck "${SRC}/lib/private.sh"
     printf '\n'
     _strip_shellcheck "${SRC}/lib/public.sh"
     printf '\n'
+    _strip_shellcheck "${SRC}/lib/completion.sh"
+    printf '\n'
+    # Everything below completion.sh is only ever defined when war10ck is
+    # executed as a program: completion.sh returns from the sourced path once
+    # it has registered completion. That matters because rundmc sources this
+    # whole file into every interactive shell, and these files define the
+    # subcommand functions - install(), config(), version() and friends. Named
+    # like that, they shadow real commands: a bare "install" would reach
+    # war10ck instead of /usr/bin/install. Only the helpers above this line,
+    # which are w_-prefixed or war10ck-specific, are safe to define in a shell.
+    _strip_shellcheck "${SRC}/lib/version.sh"
+    printf '\n'
     _strip_shellcheck "${SRC}/lib/update.sh"
     printf '\n'
     _strip_shellcheck "${SRC}/lib/modules.sh"
     printf '\n'
-    _strip_shellcheck "${SRC}/lib/completion.sh"
+    _strip_shellcheck "${SRC}/lib/clean.sh"
     printf '\n'
     _strip_shellcheck "${SRC}/main.sh"
   } > "${DIST}/war10ck"
