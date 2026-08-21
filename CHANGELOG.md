@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.8.1 - 2026-08-21
+
+### Added
+
+- Install govulncheck as part of the golang module
+
+### Fixed
+
+- Clean up temporary downloads when a golang install fails partway
+
+### Updated
+
+- Bump Go to 1.27.0 and goreleaser to 2.17.1
+
+## 0.8.0 - 2026-08-16
+
+### Added
+
+- Add a gpipe subcommand to show and update gpipe-installed tools
+- Add gpipe, mdbook, mermaid, and pass-env modules
+- Add a Claude session and weekly usage indicator to Polybar
+
+## 0.7.1 - 2026-07-17
+
+### Added
+
+- Add a command launcher to rofi
+
 ## 0.7.0 - 2026-07-16
 
 ### Added
