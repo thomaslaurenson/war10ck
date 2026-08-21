@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.2 - 2026-08-21
+
+### Added
+
+- Add smount to the gpipe registry and install sshfs with the ssh module
+
+### Removed
+
+- Remove the sshfs shell functions, now provided by smount
+
 ## 0.8.1 - 2026-08-21
 
 ### Added
