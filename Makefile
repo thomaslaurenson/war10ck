@@ -2,6 +2,22 @@ SHELL := /bin/bash
 
 VERSION_FILE := src/lib/version.sh
 
+# Every file lint checks. Scripts are found by extension; the sourced fragments
+# are listed explicitly because bash sources rather than executes them, so they
+# carry no extension and no shebang to match on.
+#
+# find rather than a shell glob: ** only recurses when globstar is set, and it
+# is not set inside a recipe, so src/modules/**/*.sh silently stops one level
+# down and skips every deployed file under src/modules/*/files.
+LINT_SCRIPTS := $(shell find src test -type f \( -name '*.sh' -o -name '*.bash' \) \
+                  -not -path 'test/extern/*' | sort)
+LINT_SOURCED := src/modules/bash/files/rundmc \
+                src/modules/bash/files/aliases \
+                src/modules/bash/files/environment \
+                src/modules/bash/files/history \
+                $(wildcard src/modules/bash/files/functions.d/*)
+LINT_FILES := $(LINT_SCRIPTS) $(LINT_SOURCED) $(wildcard src/profiles/*) bundle.sh install.sh
+
 # BUILD
 .PHONY: help
 help: ## Show this help message
@@ -20,15 +36,12 @@ dev: ## Bundle a dev binary (local mode + checksum skip built in)
 # LINT
 .PHONY: lint
 lint: ## Run bash -n syntax check and shellcheck on all scripts
-	@printf 'bash -n src/main.sh ... '
-	@bash -n src/main.sh && printf 'ok\n' || { printf 'fail\n'; exit 1; }
-	@printf 'bash -n src/lib/*.sh ... '
-	@for f in src/lib/*.sh; do bash -n "$$f" || { printf 'fail\n'; exit 1; }; done && printf 'ok\n'
-	@printf 'bash -n src/modules/**/*.sh ... '
-	@for f in src/modules/**/*.sh; do bash -n "$$f" || { printf 'fail\n'; exit 1; }; done && printf 'ok\n'
-	@printf 'bash -n src/profiles/* ... '
-	@for f in src/profiles/*; do bash -n "$$f" || { printf 'fail\n'; exit 1; }; done && printf 'ok\n'
-	shellcheck src/main.sh src/lib/*.sh src/modules/**/*.sh src/profiles/* bundle.sh install.sh
+	@printf 'bash -n     %s files ... ' '$(words $(LINT_FILES))'
+	@for f in $(LINT_FILES); do \
+		bash -n "$$f" || { printf 'fail: %s\n' "$$f"; exit 1; }; \
+	done && printf 'ok\n'
+	@printf 'shellcheck  %s files ...\n' '$(words $(LINT_FILES))'
+	shellcheck -s bash $(LINT_FILES)
 
 # TEST
 .PHONY: test
