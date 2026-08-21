@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.2 - 2026-08-22
+
+### Fixed
+
+- Fix apply stopping after install when a module was last recorded by an older release
+
 ## 0.10.1 - 2026-08-21
 
 ### Added
