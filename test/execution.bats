@@ -12,18 +12,28 @@ load helpers/common
 #   REPO_ROOT   - repository root
 #   PRIVATE     - private library (verify + _bcp helpers)
 #   MODULES_LIB - modules library (execution engine)
+#   PUBLIC      - public helpers
+#   STATUS_LIB  - status library, which supplies the registry recorder
 setup() {
   REPO_ROOT="$(_repo_root)"
   PRIVATE="$REPO_ROOT/src/lib/private.sh"
   MODULES_LIB="$REPO_ROOT/src/lib/modules.sh"
+  PUBLIC="$REPO_ROOT/src/lib/public.sh"
+  STATUS_LIB="$REPO_ROOT/src/lib/status.sh"
 }
 
 # Emit the shell prelude that sources the libraries and wires up a fixture dist
 # rooted at $1, with checksum verification active. Callers append the command
 # under test on a following line.
+# HOME is exported before status.sh is sourced, not after: the library resolves
+# the registry path into a readonly at source time, so a later export would
+# leave the recorder writing into the developer's real home directory.
 _engine_env() {
   cat <<EOF
+export HOME='$BATS_TEST_TMPDIR/home'
 source '$PRIVATE'
+source '$PUBLIC'
+source '$STATUS_LIB'
 source '$MODULES_LIB'
 export FETCH_CMD=_bcp BASE_URL='$1'
 export WAR10CK_MANIFEST="\$(cat '$1/checksums.txt')"

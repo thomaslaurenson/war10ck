@@ -17,4 +17,5 @@ readonly VALID_SUBCOMMANDS=(
   apply
   uninstall
   clean
+  status
 )

@@ -1,7 +1,8 @@
 # shellcheck shell=bash
 
-# Fetch and execute a single script from a module.
-# Gracefully skips if the script does not exist in the manifest.
+# Fetch and execute a single script from a module, then record the result in
+# the module registry. Gracefully skips if the script does not exist in the
+# manifest, in which case nothing is recorded.
 #
 # Arguments:
 #   $1 - Path prefix (e.g. "modules/polybar")
@@ -24,6 +25,11 @@ _run_script() {
   _verify_from_manifest "${_tmpfile}" "${manifest_key}"
   bash "${_tmpfile}"
   rm -f "${_tmpfile}"
+
+  # Recorded here rather than in the module scripts: this is the one path every
+  # lifecycle script takes, it only runs when the script exited 0, and a new
+  # module then needs no registry code of its own.
+  _w_registry_record "${prefix#modules/}" "${action}"
 }
 
 # List all modules, filtered optionally by action support.

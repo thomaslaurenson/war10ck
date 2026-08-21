@@ -37,6 +37,8 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
       clean)
         mapfile -t COMPREPLY < <(compgen -W "--apply" -- "${cur}")
         ;;
+      status)
+        ;;
     esac
   }
   complete -F _war10ck_completions war10ck

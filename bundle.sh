@@ -70,6 +70,8 @@ main() {
     printf '\n'
     _strip_shellcheck "${SRC}/lib/clean.sh"
     printf '\n'
+    _strip_shellcheck "${SRC}/lib/status.sh"
+    printf '\n'
     _strip_shellcheck "${SRC}/main.sh"
   } > "${DIST}/war10ck"
   chmod +x "${DIST}/war10ck"
