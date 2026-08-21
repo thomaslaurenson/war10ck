@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.1 - 2026-08-21
+
+### Added
+
+- Show in status whether each applied module still matches the release in use
+
 ## 0.10.0 - 2026-08-21
 
 ### Added
