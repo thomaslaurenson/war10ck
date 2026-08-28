@@ -18,6 +18,9 @@ client.urgent            #ff0000 #0a0a0a #f8f8f8 #ff0000  #ff0000
 
 # Autostart
 exec_always --no-startup-id xsetroot -solid black
+# Keep the display awake. The screensaver and DPMS blank independently, so both
+# must go; xset state is per X session, so exec_always reapplies it on reload.
+exec_always --no-startup-id xset s off -dpms
 exec --no-startup-id dex --autostart --environment i3
 exec --no-startup-id nm-applet
 exec_always --no-startup-id ~/.war10ck/i3/scripts/display-setup.sh
