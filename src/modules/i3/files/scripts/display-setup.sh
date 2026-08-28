@@ -31,4 +31,11 @@ xrandr "${XRANDR_ARGS[@]}"
 
 # Give xrandr a moment to settle before polybar attaches to outputs.
 sleep 0.5
-~/.war10ck/polybar/launch.sh
+
+# The bars belong to the polybar module, which may not be applied on this host.
+POLYBAR_LAUNCH="$HOME/.war10ck/polybar/launch.sh"
+if [ -x "$POLYBAR_LAUNCH" ]; then
+    "$POLYBAR_LAUNCH"
+else
+    printf 'display-setup: no polybar launcher at %s\n' "$POLYBAR_LAUNCH" >&2
+fi
