@@ -10,10 +10,14 @@ EXTERNAL=$(xrandr | grep " connected" | grep -v "$INTERNAL" | awk '{print $1}' |
 # are named with --off rather than skipped.
 XRANDR_ARGS=()
 if [ -n "$EXTERNAL" ]; then
-    # External monitor sits to the left of the laptop screen.
-    XRANDR_ARGS+=(--output "$EXTERNAL" --auto --left-of "$INTERNAL")
+    # External monitor sits to the left of the laptop screen. Both outputs are
+    # placed explicitly: --auto sets a mode and leaves the position alone, so an
+    # output not given one keeps where it sat in the previous arrangement.
+    XRANDR_ARGS+=(--output "$EXTERNAL" --auto --pos 0x0)
+    XRANDR_ARGS+=(--output "$INTERNAL" --auto --primary --right-of "$EXTERNAL")
+else
+    XRANDR_ARGS+=(--output "$INTERNAL" --auto --primary --pos 0x0)
 fi
-XRANDR_ARGS+=(--output "$INTERNAL" --auto --primary)
 
 while IFS= read -r output; do
     if [ "$output" != "$INTERNAL" ] && [ "$output" != "$EXTERNAL" ]; then
