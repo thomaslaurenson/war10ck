@@ -29,8 +29,23 @@ done < <(xrandr --query | awk '$2 == "connected" || $2 == "disconnected" {print 
 
 xrandr "${XRANDR_ARGS[@]}"
 
-# Give xrandr a moment to settle before polybar attaches to outputs.
-sleep 0.5
+# Wait for the outputs just asked for before polybar attaches bars to them.
+# --listmonitors lists an output once it holds a CRTC, so it reports readiness
+# rather than a guess at how long the switch takes.
+EXPECTED=("$INTERNAL")
+if [ -n "$EXTERNAL" ]; then
+    EXPECTED+=("$EXTERNAL")
+fi
+
+for ((attempt = 0; attempt < 20; attempt++)); do
+    active=$(xrandr --listmonitors | awk 'NR > 1 {print $NF}')
+    ready=1
+    for output in "${EXPECTED[@]}"; do
+        printf '%s\n' "$active" | grep -qx -- "$output" || ready=0
+    done
+    [ "$ready" -eq 1 ] && break
+    sleep 0.1
+done
 
 # The bars belong to the polybar module, which may not be applied on this host.
 POLYBAR_LAUNCH="$HOME/.war10ck/polybar/launch.sh"
