@@ -2,7 +2,7 @@
 # Polybar Claude Code usage module.
 #
 # Prints the percentage of the current session or weekly limit already used,
-# with the time left in the window appended for the session. Prints nothing
+# with the time left before that window resets appended. Prints nothing
 # when claude is missing, unauthenticated, or unparseable - polybar hides a
 # custom/script module whose output is empty.
 #
@@ -65,9 +65,10 @@ reset_epoch() {
     printf '%s\n' "$epoch"
 }
 
-# Render the time left until a reset as "(43m)", or "(4h47m)" past the hour -
-# a session window runs to five hours, and "(287m)" is harder to read at a
-# glance. Returns non-zero once the reset is in the past.
+# Render the time left until a reset as "(43m)", "(4h47m)" past the hour, or
+# "(3d22h)" past the day - a session window runs to five hours and a weekly one
+# to seven days, and "(287m)" or "(94h)" are harder to read at a glance.
+# Returns non-zero once the reset is in the past.
 #
 # Arguments:
 #   $1 - Reset time in seconds since the epoch
@@ -79,8 +80,10 @@ format_countdown() {
     mins=$(( (left + 59) / 60 ))
     if (( mins < 60 )); then
         printf '(%dm)\n' "$mins"
-    else
+    elif (( mins < 1440 )); then
         printf '(%dh%02dm)\n' $(( mins / 60 )) $(( mins % 60 ))
+    else
+        printf '(%dd%02dh)\n' $(( mins / 1440 )) $(( mins % 1440 / 60 ))
     fi
 }
 
@@ -88,7 +91,7 @@ format_countdown() {
 # cache if the output holds no percentages, which is what an unauthenticated
 # or otherwise unhappy claude produces.
 refresh() {
-    local output line session="" week="" reset=""
+    local output line session="" week="" session_reset="" week_reset=""
     local re_session='^Current session: +([0-9]+)%'
     local re_week='^Current week \(all models\): +([0-9]+)%'
     local re_reset='resets ([^(]+) \(([^)]+)\)'
@@ -101,15 +104,20 @@ refresh() {
             # Matched separately so a missing or reworded reset clause costs
             # the countdown only, not the percentage.
             if [[ "$line" =~ $re_reset ]]; then
-                reset=$(reset_epoch "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}") || reset=""
+                session_reset=$(reset_epoch "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}") \
+                    || session_reset=""
             fi
         elif [[ "$line" =~ $re_week ]]; then
             week="${BASH_REMATCH[1]}"
+            if [[ "$line" =~ $re_reset ]]; then
+                week_reset=$(reset_epoch "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}") || week_reset=""
+            fi
         fi
     done <<< "$output"
 
     [[ -n "$session" && -n "$week" ]] || return 1
-    printf 'session=%s\nweek=%s\nreset=%s\n' "$session" "$week" "$reset" > "$CACHE"
+    printf 'session=%s\nweek=%s\nsession_reset=%s\nweek_reset=%s\n' \
+        "$session" "$week" "$session_reset" "$week_reset" > "$CACHE"
 }
 
 is_stale() {
@@ -119,10 +127,12 @@ is_stale() {
     now=$(date +%s)
     (( now - mtime > TTL )) && return 0
 
-    # The window rolled over while the cache sat there, so the percentage in it
-    # belongs to a session that has already ended.
-    reset=$(cache_get reset)
-    [[ -n "$reset" ]] && (( now >= reset ))
+    # A window rolled over while the cache sat there, so the percentage in it
+    # belongs to a session or week that has already ended.
+    for reset in $(cache_get session_reset) $(cache_get week_reset); do
+        (( now >= reset )) && return 0
+    done
+    return 1
 }
 
 # Serialise refreshes: the modules that wake up second wait here and then read
@@ -140,8 +150,8 @@ value=$(cache_get "$FIELD")
 [[ -n "$value" ]] || exit 0
 
 countdown=""
-reset=$(cache_get reset)
-if [[ "$FIELD" == "session" && -n "$reset" ]]; then
+reset=$(cache_get "${FIELD}_reset")
+if [[ -n "$reset" ]]; then
     countdown=$(format_countdown "$reset") || countdown=""
 fi
 
