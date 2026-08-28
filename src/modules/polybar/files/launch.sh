@@ -28,7 +28,9 @@ if [ -z "$ETH_IFACE" ]; then
     export ETH_IFACE
 fi
 
-# Launch one bar per connected monitor
+# Launch one bar per active monitor. --listmonitors reports outputs that hold a
+# CRTC, where "connected" also counts a monitor that is plugged in but switched
+# off, which polybar cannot attach a bar to.
 while IFS= read -r monitor; do
-    MONITOR="$monitor" polybar top -c "$DIR/config.ini" 2>&1 | tee -a "/tmp/polybar-${monitor}.log" &
-done < <(xrandr --query | grep ' connected' | awk '{print $1}')
+    MONITOR="$monitor" polybar top -c "$DIR/config.ini" 2>&1 | tee "/tmp/polybar-${monitor}.log" &
+done < <(xrandr --listmonitors | awk 'NR > 1 {print $NF}')
