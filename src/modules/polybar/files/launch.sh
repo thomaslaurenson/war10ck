@@ -32,5 +32,5 @@ fi
 # CRTC, where "connected" also counts a monitor that is plugged in but switched
 # off, which polybar cannot attach a bar to.
 while IFS= read -r monitor; do
-    MONITOR="$monitor" polybar top -c "$DIR/config.ini" 2>&1 | tee -a "/tmp/polybar-${monitor}.log" &
+    MONITOR="$monitor" polybar top -c "$DIR/config.ini" 2>&1 | tee "/tmp/polybar-${monitor}.log" &
 done < <(xrandr --listmonitors | awk 'NR > 1 {print $NF}')
