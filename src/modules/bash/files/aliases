@@ -19,13 +19,15 @@ alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
 
+# Chrome
+alias chrome_proxy='nohup google-chrome --proxy-server="127.0.0.1:8000" --user-data-dir="$(mktemp -d)" --no-first-run --no-default-browser-check --log-level=3 >/dev/null 2>&1 &'
+
 # Tmux
 alias tmux_source="tmux source ~/.tmux/tmux.conf"
 
 # Git aliases
 alias g="git"
 alias gs="git status"
-alias gp="git push"
 alias gb="git branch"
 alias gc="git checkout"
 alias gd="git diff"
@@ -48,7 +50,6 @@ alias dr="docker run"
 alias di="docker image"
 alias dv="docker volume"
 alias dc="docker compose"
-alias dp="docker system prune -af && docker image prune -af && docker volume prune -af"
 
 # Terraform
 alias tf="terraform"
@@ -59,9 +60,6 @@ alias osa="openstack allocation"
 alias osp="openstack project"
 alias oss="openstack server"
 alias osi="openstack image"
-
-# Kubernetes
-alias k="kubectl"
 
 # Jira
 if command -v jira >/dev/null 2>&1; then
