@@ -51,20 +51,30 @@ readonly W_CLEAN_ENTRIES=(
   "file|${HOME}/.config/i3/layouts/docked_ws2.json|dropped"
   "dir|${HOME}/.config/i3/layouts|dropped"
 
+  # The nvm module, replaced by fnm
+  "dir|${HOME}/.nvm|fnm"
+
   # The sshfs shell helpers, replaced by the smount tool
   "file|${HOME}/.war10ck/functions.d/sshfs|smount"
   "file|${HOME}/.war10ck/.sshfs_favorites|smount"
   "mount|${HOME}/sshfs|smount"
 )
 
-# Blocks appended to ~/.bashrc by the pub era. These predate the
-# "# war10ck BEGIN/END" markers, so no version of war10ck has ever been able
-# to find them, and they source files that were removed years ago.
+# Blocks appended to ~/.bashrc by something other than war10ck, which is why
+# they need patterns at all: they carry no "# war10ck BEGIN/END" markers, so
+# nothing here can be found by the block helpers the modules use. The first two
+# are pub-era leftovers sourcing files removed years ago; the third is what the
+# nvm installer wrote for a module war10ck no longer ships.
 #
 # Format: start pattern|end pattern|description
+#
+# The nvm entry is single-quoted deliberately: $NVM_DIR is part of the pattern
+# grep matches on, not a value to expand here.
+# shellcheck disable=SC2016  # Single quotes are correct, see above
 readonly W_CLEAN_BASHRC_BLOCKS=(
   "^# CUSTOM FUNCTIONS$|^fi$|sources ~/.functions"
   "^# CUSTOM ALIASES$|^fi$|sources ~/.aliases"
+  '^export NVM_DIR=|^\[ -s "\$NVM_DIR/bash_completion"|nvm shell setup, replaced by fnm'
 )
 
 # Print a path with $HOME collapsed to ~, so the report stays readable.

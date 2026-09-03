@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.11.0 - 2026-09-02
+
+### Added
+
+- Add a claude module installing the Claude Code CLI and putting ~/.local/bin on PATH
+- Add an fnm module installing Node 22, 24 and 26, with 24 as the default
+- Put the default Node on PATH directly, so it is there for non-interactive shells too
+- Catalogue the nvm install for clean, including the lines it appended to ~/.bashrc
+
+### Removed
+
+- Remove the nvm module, replaced by fnm
+
 ## 0.10.2 - 2026-08-22
 
 ### Fixed
