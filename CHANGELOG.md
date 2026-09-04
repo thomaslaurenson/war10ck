@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0 - 2026-09-04
+
+### Added
+
+- Add a clap module for running claude against a separate configuration root per profile
+
 ## 0.11.0 - 2026-09-02
 
 ### Added
