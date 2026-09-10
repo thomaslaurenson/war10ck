@@ -35,7 +35,7 @@ cmd=$(candidates | rofi \
     -p "run" \
     -theme-str 'entry { placeholder: "Run a command..."; }' \
     -theme-str 'element { children: [ element-text ]; }' \
-    -theme-str 'textbox-help { content: " Enter to run  │  Esc to close"; }')
+    -theme-str 'textbox-help { content: " Enter to run  |  Esc to close"; }')
 
 [[ -n "$cmd" ]] || exit 0
 

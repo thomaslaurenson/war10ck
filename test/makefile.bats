@@ -67,3 +67,46 @@ _lint_file_list() {
   (( status == 0 ))
   [[ ! "$output" =~ \* ]]
 }
+
+@test "check_version: passes when the changelog leads with the embedded version" {
+  run make --no-print-directory -C "$REPO_ROOT" check_version
+  (( status == 0 ))
+  [[ "$output" =~ ok$ ]]
+}
+
+@test "check_version: fails when the changelog leads with a different version" {
+  # A copy of the tree, because the target reads CHANGELOG.md from the working
+  # directory and the test must not edit the repository's own copy.
+  local work="$BATS_TEST_TMPDIR/repo"
+  mkdir -p "$work/src/lib" "$work/test"
+  cp "$REPO_ROOT/Makefile" "$work/Makefile"
+  cp "$REPO_ROOT/src/lib/version.sh" "$work/src/lib/version.sh"
+  sed -E '0,/^## [0-9]+\.[0-9]+\.[0-9]+ /s//## 99.99.99 /' \
+    "$REPO_ROOT/CHANGELOG.md" > "$work/CHANGELOG.md"
+
+  run make --no-print-directory -C "$work" check_version
+  (( status != 0 ))
+  [[ "$output" =~ "CHANGELOG.md leads with 99.99.99" ]]
+}
+
+@test "check_version_tag: accepts the tag for the embedded version" {
+  local v
+  v="$(make --no-print-directory -C "$REPO_ROOT" get_version)"
+  run make --no-print-directory -C "$REPO_ROOT" check_version_tag TAG="v$v"
+  (( status == 0 ))
+  [[ "$output" =~ ok$ ]]
+}
+
+@test "check_version_tag: rejects a tag for a different version" {
+  run make --no-print-directory -C "$REPO_ROOT" check_version_tag TAG=v99.99.99
+  (( status != 0 ))
+  [[ "$output" =~ "Tag v99.99.99 does not match" ]]
+}
+
+@test "check_version_tag: rejects a missing TAG rather than passing vacuously" {
+  # Without the guard an absent TAG expands to empty, which compares equal to
+  # nothing useful and would let the release workflow proceed unchecked.
+  run make --no-print-directory -C "$REPO_ROOT" check_version_tag
+  (( status != 0 ))
+  [[ "$output" =~ "TAG is required" ]]
+}

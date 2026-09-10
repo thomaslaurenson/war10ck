@@ -57,13 +57,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Verify the tag matches the embedded version
-        run: |
-          embedded="v$(make get_version)"
-          if [[ "${TAG}" != "${embedded}" ]]; then
-            printf 'Tag %s does not match version.sh (%s). Bump VERSION before tagging.\n' \
-              "${TAG}" "${embedded}" >&2
-            exit 1
-          fi
+        run: make check_version_tag TAG="${TAG}"
 
       - name: Extract changelog notes for this version
         run: make get_changelog > release-notes.md

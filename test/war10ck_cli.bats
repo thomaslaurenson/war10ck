@@ -61,7 +61,7 @@ setup() {
 @test "version: exits 0 and reports a dev build" {
   run "$BIN" version
   (( status == 0 ))
-  [[ "$output" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-dev$ ]]
+  [[ "$output" =~ ^[0-9]+\.[0-9]+\.[0-9]+-dev$ ]]
 }
 
 @test "no args: exits 0 and prints usage" {
@@ -161,7 +161,7 @@ setup() {
 @test "flags: flags are stripped from the subcommand arguments" {
   run "$BIN" version --debug
   (( status == 0 ))
-  [[ "$output" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-dev$ ]]
+  [[ "$output" =~ ^[0-9]+\.[0-9]+\.[0-9]+-dev$ ]]
 }
 
 @test "manifest: checksums.txt covers every bundled module file" {
@@ -177,7 +177,7 @@ setup() {
   _make_nonet_path "$nonet"
   run env -i PATH="$nonet" HOME="$BATS_TEST_TMPDIR" "$REL_BIN" version
   (( status == 0 ))
-  [[ "$output" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+  [[ "$output" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 }
 
 @test "help: works on a host with no curl or wget" {

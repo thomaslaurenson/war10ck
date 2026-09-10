@@ -10,6 +10,7 @@ on:
       - "bundle.sh"
       - "install.sh"
       - "Makefile"
+      - "CHANGELOG.md"
       - ".github/workflows/**"
 
 concurrency:

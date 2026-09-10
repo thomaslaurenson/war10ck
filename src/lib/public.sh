@@ -40,7 +40,7 @@ w_log_error() {
 # Environment:
 #   WAR10CK_DEBUG - when 1, print the message; otherwise no-op
 w_log_debug() {
-  [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && printf '[d] %s\n' "$*"
+  [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && printf '[*] %s\n' "$*"
   return 0
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-die() { printf '%s: %s\n' "${0##*/}" "$*" >&2; exit 1; }
+die() { printf '[!] %s\n' "$*" >&2; exit 1; }
 
 SRC="src"
 DIST="dist"
