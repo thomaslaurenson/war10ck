@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.0 - 2026-09-10
+
+### Added
+
+- Add a network module handing wireless to NetworkManager, with w_wifi for joining networks
+- Give headless logins an ssh-agent so a key passphrase is entered once per session
+
 ## 0.12.0 - 2026-09-04
 
 ### Added
