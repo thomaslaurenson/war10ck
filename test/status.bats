@@ -22,7 +22,7 @@ setup() {
 #   $2.. - shell code to run once loaded
 _with_home() {
   local home=$1; shift
-  HOME="$home" bash -c "VERSION=v9.9.9; source '$PUBLIC'; source '$LIB'; $*"
+  HOME="$home" bash -c "VERSION=9.9.9; source '$PUBLIC'; source '$LIB'; $*"
 }
 
 # As _with_home, but with a manifest embedded, standing in for what bundle.sh
@@ -35,7 +35,7 @@ _with_home() {
 _with_manifest() {
   local home=$1 manifest=$2; shift 2
   HOME="$home" WAR10CK_EMBEDDED_MANIFEST="$manifest" \
-    bash -c "VERSION=v9.9.9; source '$PUBLIC'; source '$LIB'; $*"
+    bash -c "VERSION=9.9.9; source '$PUBLIC'; source '$LIB'; $*"
 }
 
 # A manifest naming one module's install and config scripts.
@@ -55,7 +55,7 @@ _fixture_manifest() {
   (( status == 0 ))
   run cat "$h/.war10ck/registry.d/golang"
   [[ "$output" =~ installed=20 ]]
-  [[ "$output" =~ installed_by=v9.9.9 ]]
+  [[ "$output" =~ installed_by=9.9.9 ]]
   [[ "$output" =~ configured= ]]
 }
 
@@ -70,7 +70,7 @@ _fixture_manifest() {
   run cat "$h/.war10ck/registry.d/golang"
   (( status == 0 ))
   [[ "$output" =~ $installed ]]
-  [[ "$output" =~ configured_by=v9.9.9 ]]
+  [[ "$output" =~ configured_by=9.9.9 ]]
 }
 
 @test "record: an uninstall drops the entry" {
@@ -95,7 +95,7 @@ _fixture_manifest() {
   (( status == 0 ))
   [[ "$output" =~ trivy ]]
   # installed is stamped, configured is not
-  [[ "$output" =~ -[[:space:]]+v9.9.9 ]]
+  [[ "$output" =~ -[[:space:]]+9.9.9 ]]
 }
 
 @test "status: lists every recorded module" {
@@ -124,7 +124,7 @@ _fixture_manifest() {
   mkdir -p "$h"
   run bash -c "
     set -euo pipefail
-    export HOME='$h' BASE_URL='$base' FETCH_CMD='_bcp' VERSION=v9.9.9
+    export HOME='$h' BASE_URL='$base' FETCH_CMD='_bcp' VERSION=9.9.9
     export WAR10CK_MANIFEST=\"\$(cat '$base/checksums.txt')\"
     source '$REPO_ROOT/src/lib/private.sh'
     source '$PUBLIC'
@@ -144,7 +144,7 @@ _fixture_manifest() {
   mkdir -p "$h"
   run bash -c "
     set -euo pipefail
-    export HOME='$h' BASE_URL='$base' FETCH_CMD='_bcp' VERSION=v9.9.9
+    export HOME='$h' BASE_URL='$base' FETCH_CMD='_bcp' VERSION=9.9.9
     export WAR10CK_MANIFEST=\"\$(cat '$base/checksums.txt')\"
     source '$REPO_ROOT/src/lib/private.sh'
     source '$PUBLIC'
@@ -244,7 +244,7 @@ _fixture_manifest() {
   run _with_home "$h" "set -euo pipefail; _w_registry_record demo install"
   (( status == 0 ))
   run cat "$h/.war10ck/registry.d/demo"
-  [[ "$output" =~ installed_by=v9.9.9 ]]
+  [[ "$output" =~ installed_by=9.9.9 ]]
   [[ "$output" =~ configured=2026-01-02T00:00:00Z ]]
   [[ "$output" =~ configured_by=v0.10.0 ]]
 }
@@ -261,7 +261,7 @@ _fixture_manifest() {
 
   run bash -c "
     set -euo pipefail
-    export HOME='$h' BASE_URL='$base' FETCH_CMD='_bcp' VERSION=v9.9.9
+    export HOME='$h' BASE_URL='$base' FETCH_CMD='_bcp' VERSION=9.9.9
     export WAR10CK_MANIFEST=\"\$(cat '$base/checksums.txt')\"
     source '$REPO_ROOT/src/lib/private.sh'
     source '$PUBLIC'

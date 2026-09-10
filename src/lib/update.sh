@@ -31,10 +31,11 @@ update() {
     exit 1
   fi
 
-  # Strip the leading v for a numeric comparison. Only a strictly newer remote
-  # version is installed: string equality alone would let a rolled-back server
-  # (offering an older tag) "update" the local binary downwards.
-  local current_version="${VERSION#v}"
+  # Only a strictly newer remote version is installed: string equality alone
+  # would let a rolled-back server (offering an older tag) "update" the local
+  # binary downwards. Both sides are bare here: VERSION carries no v, and the
+  # tag name read from the API had one stripped above.
+  local current_version="${VERSION}"
   if [[ "${current_version}" == "${latest_version}" ]]; then
     printf '[*] Already up to date.\n'
     return

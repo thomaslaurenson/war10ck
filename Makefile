@@ -101,7 +101,7 @@ check_version_tag: ## Check TAG=vX.Y.Z matches the embedded version
 
 .PHONY: get_version
 get_version: ## Print the current version from the version fragment
-	@grep -E '^readonly VERSION=' $(VERSION_FILE) | sed -E 's/.*"v?([^"]+)".*/\1/'
+	@grep -E '^readonly VERSION=' $(VERSION_FILE) | sed -E 's/.*"([^"]+)".*/\1/'
 
 .PHONY: get_changelog
 get_changelog: ## Print the changelog entry for the current version
