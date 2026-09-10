@@ -136,7 +136,7 @@ element-text {
 
 textbox-help {
     expand: false;
-    content: " [ Alt + 1-9 ] Select  │  [ Shift + > ] Switch View";
+    content: " [ Alt + 1-9 ] Select  |  [ Shift + > ] Switch View";
     text-color: @fg-dim;
     background-color: transparent;
     vertical-align: 0.5;
