@@ -58,6 +58,21 @@ check_version: ## Check every file stating the version agrees with the embedded 
 	fi; \
 	printf 'ok\n'
 
+.PHONY: check_version_tag
+check_version_tag: ## Check TAG=vX.Y.Z matches the embedded version
+	@[[ -n "$(TAG)" ]] || { printf '[!] TAG is required: make check_version_tag TAG=vX.Y.Z\n' >&2; \
+		exit 1; }
+	@embedded="$$($(MAKE) --no-print-directory get_version)"; \
+	tag="$(TAG)"; \
+	printf 'tag         %s ... ' "$(TAG)"; \
+	if [[ "$${tag#v}" != "$${embedded}" ]]; then \
+		printf 'fail\n'; \
+		printf '[!] Tag %s does not match %s (%s). Bump VERSION before tagging\n' \
+			"$(TAG)" '$(VERSION_FILE)' "$${embedded}" >&2; \
+		exit 1; \
+	fi; \
+	printf 'ok\n'
+
 # TEST
 .PHONY: test
 test: ## Run the bats test suite
