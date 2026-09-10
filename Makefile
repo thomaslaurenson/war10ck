@@ -16,7 +16,9 @@ LINT_SOURCED := src/modules/bash/files/rundmc \
                 src/modules/bash/files/environment \
                 src/modules/bash/files/history \
                 $(wildcard src/modules/bash/files/functions.d/*)
-LINT_FILES := $(LINT_SCRIPTS) $(LINT_SOURCED) $(wildcard src/profiles/*) bundle.sh install.sh
+LINT_MOCKS := $(wildcard test/helpers/mock_*)
+LINT_FILES := $(LINT_SCRIPTS) $(LINT_SOURCED) $(LINT_MOCKS) $(wildcard src/profiles/*) \
+              bundle.sh install.sh
 
 # BUILD
 .PHONY: help

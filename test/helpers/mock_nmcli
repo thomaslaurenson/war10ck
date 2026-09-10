@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#
+# Stands in for nmcli. Symlink it onto PATH as "nmcli".
+#
+# Environment:
+#   MOCK_NMCLI_CALLS   - file each invocation's arguments are appended to
+#   MOCK_NMCLI_OUTPUT  - text written to stdout, "\n" expanded to newlines
+#   MOCK_NMCLI_STATUS  - exit status to return (default 0)
+
+if [[ -n "${MOCK_NMCLI_CALLS:-}" ]]; then
+  printf '%s\n' "$*" >> "${MOCK_NMCLI_CALLS}"
+fi
+
+if [[ -n "${MOCK_NMCLI_OUTPUT:-}" ]]; then
+  printf '%b\n' "${MOCK_NMCLI_OUTPUT}"
+fi
+
+exit "${MOCK_NMCLI_STATUS:-0}"

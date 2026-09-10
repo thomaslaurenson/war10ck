@@ -9,6 +9,7 @@ DESCRIPTION="Custom desktop environment"
 MODULES=(
   bash
   git
+  network
   i3
   polybar
   rofi
