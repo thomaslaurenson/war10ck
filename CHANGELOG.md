@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.0 - 2026-09-10
+
+### Changed
+
+- Print the version without a leading v in the version command and status table
+- Use the standard output markers for debug messages and installer errors
+- Draw the rofi cheatsheet and polybar indicators with ASCII characters only
+
 ## 0.13.0 - 2026-09-10
 
 ### Added
