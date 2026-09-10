@@ -45,6 +45,19 @@ lint: ## Run bash -n syntax check and shellcheck on all scripts
 	@printf 'shellcheck  %s files ...\n' '$(words $(LINT_FILES))'
 	shellcheck -s bash $(LINT_FILES)
 
+.PHONY: check_version
+check_version: ## Check every file stating the version agrees with the embedded one
+	@embedded="$$($(MAKE) --no-print-directory get_version)"; \
+	heading="$$(sed -nE 's/^## ([0-9]+\.[0-9]+\.[0-9]+) .*/\1/p' CHANGELOG.md | head -1)"; \
+	printf 'version     %s ... ' "$${embedded}"; \
+	if [[ "$${embedded}" != "$${heading}" ]]; then \
+		printf 'fail\n'; \
+		printf '[!] CHANGELOG.md leads with %s; %s says %s\n' \
+			"$${heading:-no version heading}" '$(VERSION_FILE)' "$${embedded}" >&2; \
+		exit 1; \
+	fi; \
+	printf 'ok\n'
+
 # TEST
 .PHONY: test
 test: ## Run the bats test suite
@@ -61,7 +74,7 @@ get_changelog: ## Print the changelog entry for the current version
 
 # CI
 .PHONY: ci
-ci: lint test ## Run everything the lint and test workflows run
+ci: lint check_version test ## Run everything the lint and test workflows run
 
 .PHONY: clean
 clean: ## Remove build artefacts

@@ -67,3 +67,24 @@ _lint_file_list() {
   (( status == 0 ))
   [[ ! "$output" =~ \* ]]
 }
+
+@test "check_version: passes when the changelog leads with the embedded version" {
+  run make --no-print-directory -C "$REPO_ROOT" check_version
+  (( status == 0 ))
+  [[ "$output" =~ ok$ ]]
+}
+
+@test "check_version: fails when the changelog leads with a different version" {
+  # A copy of the tree, because the target reads CHANGELOG.md from the working
+  # directory and the test must not edit the repository's own copy.
+  local work="$BATS_TEST_TMPDIR/repo"
+  mkdir -p "$work/src/lib" "$work/test"
+  cp "$REPO_ROOT/Makefile" "$work/Makefile"
+  cp "$REPO_ROOT/src/lib/version.sh" "$work/src/lib/version.sh"
+  sed -E '0,/^## [0-9]+\.[0-9]+\.[0-9]+ /s//## 99.99.99 /' \
+    "$REPO_ROOT/CHANGELOG.md" > "$work/CHANGELOG.md"
+
+  run make --no-print-directory -C "$work" check_version
+  (( status != 0 ))
+  [[ "$output" =~ "CHANGELOG.md leads with 99.99.99" ]]
+}
