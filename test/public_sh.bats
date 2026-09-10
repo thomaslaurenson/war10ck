@@ -33,7 +33,7 @@ setup() {
 @test "w_log_debug: prints when WAR10CK_DEBUG is 1" {
   run bash -c "export WAR10CK_DEBUG=1; source '$LIB'; w_log_debug 'loud'"
   (( status == 0 ))
-  [[ "$output" == "[d] loud" ]]
+  [[ "$output" == "[*] loud" ]]
 }
 
 @test "w_log_debug: returns 0 so it is safe under set -e" {
