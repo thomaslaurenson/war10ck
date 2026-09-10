@@ -5,6 +5,11 @@ set -euo pipefail
 SSH_CONFIG="${HOME}/.ssh/config"
 SSH_CONFIG_D="${HOME}/.ssh/config.d"
 
+# Deployed before the base config below, which returns early on any machine that
+# already has an ~/.ssh/config. The agent fragment has nothing to do with that
+# file and has to reach those machines too.
+w_deploy_remote_file "modules/ssh/files/env.bash" "$HOME/.war10ck/env.d/ssh"
+
 # Create ~/.ssh with correct permissions if it does not exist
 if [[ ! -d "${HOME}/.ssh" ]]; then
   mkdir -p "${HOME}/.ssh"
