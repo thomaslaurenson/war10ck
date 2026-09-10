@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 
 VERSION_FILE := src/lib/version.sh
+BATS_DIR := test/extern/bats
 
 # Every file lint checks. Scripts are found by extension; the sourced fragments
 # are listed explicitly because bash sources rather than executes them, so they
@@ -76,7 +77,22 @@ check_version_tag: ## Check TAG=vX.Y.Z matches the embedded version
 # TEST
 .PHONY: test
 test: ## Run the bats test suite
-	@test/extern/bats/bin/bats test/
+	@$(BATS_DIR)/bin/bats test/
+
+# Dependabot is not used for this: the gitsubmodule ecosystem follows branch
+# commits rather than releases, so it would land untagged development commits.
+.PHONY: bump_bats
+bump_bats: ## Move the bats submodule to the newest upstream release tag
+	@url="$$(git config -f .gitmodules submodule.$(BATS_DIR).url)"; \
+	tag="$$(git ls-remote --tags --refs "$${url}" 'v*' \
+		| sed 's|.*refs/tags/||' \
+		| grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$$' \
+		| sort -V | tail -1)"; \
+	[[ -n "$${tag}" ]] \
+		|| { printf '[!] Could not determine the latest bats release\n' >&2; exit 1; }; \
+	git -C $(BATS_DIR) fetch --depth 1 origin "refs/tags/$${tag}:refs/tags/$${tag}"; \
+	git -C $(BATS_DIR) checkout --detach "$${tag}"; \
+	printf '[~] bats moved to %s. Stage it with: git add %s\n' "$${tag}" '$(BATS_DIR)'
 
 # GET
 .PHONY: get_version
