@@ -20,7 +20,7 @@ alias ...="cd ../.."
 alias ....="cd ../../.."
 
 # Chrome
-alias chrome_proxy='nohup google-chrome --proxy-server="127.0.0.1:8000" --user-data-dir="$(mktemp -d)" --no-first-run --no-default-browser-check --log-level=3 >/dev/null 2>&1 &'
+alias chrome_proxy='nohup google-chrome --proxy-server="socks5://127.0.0.1:8000" --user-data-dir="$(mktemp -d)" --no-first-run --no-default-browser-check --log-level=3 >/dev/null 2>&1 &'
 
 # Tmux
 alias tmux_source="tmux source ~/.tmux/tmux.conf"
