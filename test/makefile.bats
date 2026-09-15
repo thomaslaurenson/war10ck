@@ -53,8 +53,7 @@ _lint_file_list() {
            src/modules/bash/files/aliases \
            src/modules/bash/files/environment \
            src/modules/bash/files/history \
-           src/modules/bash/files/functions.d/general \
-           src/modules/bash/files/functions.d/github; do
+           src/modules/bash/files/functions.d/general; do
     printf '%s\n' "${linted[@]}" | grep -qxF "$f"
   done
 }

@@ -147,11 +147,22 @@ _live_module_paths() {
   local h="$BATS_TEST_TMPDIR/h"
   mkdir -p "$h/.war10ck/functions.d"
   printf 'old\n' > "$h/.war10ck/functions.d/sshfs"
-  printf 'live\n' > "$h/.war10ck/functions.d/github"
+  printf 'live\n' > "$h/.war10ck/functions.d/general"
   run _with_home "$h" "clean --apply"
   (( status == 0 ))
   [[ ! -f "$h/.war10ck/functions.d/sshfs" ]]
-  [[ -f "$h/.war10ck/functions.d/github" ]]
+  [[ -f "$h/.war10ck/functions.d/general" ]]
+}
+
+@test "apply: removes the github helpers that moved into the git module" {
+  # Left behind, the old file is sourced at shell startup alongside the git
+  # module's copy, so every function it holds is defined twice.
+  local h="$BATS_TEST_TMPDIR/h"
+  mkdir -p "$h/.war10ck/functions.d"
+  printf 'old\n' > "$h/.war10ck/functions.d/github"
+  run _with_home "$h" "clean --apply"
+  (( status == 0 ))
+  [[ ! -f "$h/.war10ck/functions.d/github" ]]
 }
 
 @test "mount guard: a non-empty ~/sshfs is left alone" {

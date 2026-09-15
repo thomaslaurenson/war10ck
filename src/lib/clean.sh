@@ -54,6 +54,9 @@ readonly W_CLEAN_ENTRIES=(
   # The nvm module, replaced by fnm
   "dir|${HOME}/.nvm|fnm"
 
+  # The github shell helpers, moved into the git module
+  "file|${HOME}/.war10ck/functions.d/github|~/.war10ck/functions.d/git"
+
   # The sshfs shell helpers, replaced by the smount tool
   "file|${HOME}/.war10ck/functions.d/sshfs|smount"
   "file|${HOME}/.war10ck/.sshfs_favorites|smount"

@@ -12,15 +12,19 @@ w_deploy_remote_file "modules/bash/files/environment" "$WAR10CK_DIR/.environment
 w_deploy_remote_file "modules/bash/files/history" "$WAR10CK_DIR/.history"
 
 # Deploy shell functions
-for f in general github; do
-  w_deploy_remote_file "modules/bash/files/functions.d/${f}" "$WAR10CK_DIR/functions.d/${f}"
-done
+w_deploy_remote_file "modules/bash/files/functions.d/general" "$WAR10CK_DIR/functions.d/general"
 
 # The sshfs helpers were replaced by the standalone smount tool, which the gpipe
 # module installs. Everything in functions.d is sourced at shell startup, so the
 # file an earlier install deployed has to be removed rather than just dropped
 # from the loop above.
 w_remove_file "$WAR10CK_DIR/functions.d/sshfs"
+
+# The github helpers moved to the git module, which deploys them as
+# functions.d/git. Removed here for the same reason as sshfs above: a host that
+# installed them from this module would otherwise keep sourcing the old copy
+# alongside the new one, defining each function twice.
+w_remove_file "$WAR10CK_DIR/functions.d/github"
 
 # Create bashrc.d directory. war10ck never writes here: module environment
 # fragments go to env.d and functions to functions.d, which leaves this
