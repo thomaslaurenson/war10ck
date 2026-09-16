@@ -114,3 +114,77 @@ _write_pub_era_bashrc() {
     if [[ -n "$after" ]]; then printf '%s\n' "$after"; fi
   } > "$file"
 }
+
+# Build a directory of git repositories in known states, mirroring the
+# ~/repos/<org> layout w_git_repository_properties reports on. The tree lands in
+# <root>/org, with the matching bare remotes kept out of the way in <root>/rem.
+#
+# Repositories created, each tracking a local origin:
+#   ahead     two commits origin does not have
+#   behind    three commits origin has and it does not
+#   stale     up to date, plus two local branches never merged into main
+#   detached  a detached HEAD and an untracked file
+#   nostream  on a branch that tracks nothing
+# A plain directory named notarepo is left beside them, so the repository
+# detection has something it must skip.
+#
+# Git's global and system config are replaced for the caller, so a host that
+# signs every commit or names a different default branch cannot change what
+# the fixture looks like.
+#
+# Arguments:
+#   $1 - directory to build the tree in (created if missing)
+_build_repo_fixture() {
+  local root=$1
+  mkdir -p "$root/org" "$root/rem" "$root/cfg"
+
+  export GIT_CONFIG_GLOBAL="$root/cfg/gitconfig"
+  export GIT_CONFIG_SYSTEM=/dev/null
+  git config --global user.email bats@example.com
+  git config --global user.name bats
+  git config --global commit.gpgsign false
+  git config --global init.defaultBranch main
+
+  local name
+  for name in ahead behind stale detached nostream; do
+    git init -q --bare "$root/rem/$name.git"
+    git init -q "$root/org/$name"
+    printf 'base\n' > "$root/org/$name/f.txt"
+    git -C "$root/org/$name" add f.txt
+    git -C "$root/org/$name" commit -qm base
+    git -C "$root/org/$name" remote add origin "$root/rem/$name.git"
+    git -C "$root/org/$name" push -q -u origin main
+    git -C "$root/org/$name" remote set-head origin -a > /dev/null 2>&1
+  done
+
+  local i
+  for i in 1 2; do
+    printf 'a%s\n' "$i" >> "$root/org/ahead/f.txt"
+    git -C "$root/org/ahead" commit -qam "ahead$i"
+  done
+
+  # Commits reach the behind repo's origin through a second clone, which is the
+  # only way to put them upstream without also putting them in the repo itself.
+  git clone -q "$root/rem/behind.git" "$root/pusher"
+  for i in 1 2 3; do
+    printf 'b%s\n' "$i" >> "$root/pusher/f.txt"
+    git -C "$root/pusher" commit -qam "behind$i"
+  done
+  git -C "$root/pusher" push -q origin main
+  git -C "$root/org/behind" fetch -q origin
+
+  git -C "$root/org/stale" checkout -q -b feature/one
+  printf 'one\n' >> "$root/org/stale/f.txt"
+  git -C "$root/org/stale" commit -qam feature-one
+  git -C "$root/org/stale" checkout -q -b feature/two main
+  printf 'two\n' >> "$root/org/stale/f.txt"
+  git -C "$root/org/stale" commit -qam feature-two
+  git -C "$root/org/stale" checkout -q main
+
+  printf 'scratch\n' > "$root/org/detached/untracked.txt"
+  git -C "$root/org/detached" checkout -q --detach HEAD
+
+  git -C "$root/org/nostream" checkout -q -b orphan-work
+
+  mkdir -p "$root/org/notarepo"
+}

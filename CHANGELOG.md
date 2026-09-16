@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.15.0 - 2026-09-16
+
+### Added
+
+- Report unmerged branch counts in w_git_repository_properties, with --branches to name them
+- Give w_git_repository_properties --help, --no-fetch and --debug modes
+
+### Changed
+
+- Hand wired interfaces to NetworkManager alongside wireless, leaving Docker bridges and veth pairs unmanaged
+- Take ifupdown out of the boot path, stripping every non-loopback stanza from /etc/network/interfaces
+- Move the GitHub shell helpers into the git module, renaming them to the w_git prefix
+- Require a directory argument for w_git_repository_properties
+- Print the git helpers' errors on stderr and mark their prompts as questions
+
+### Fixed
+
+- Stop the minute-long boot stall from DHCP on a wired port with no cable
+- Correct ahead, behind, dirty and detached HEAD reporting in w_git_repository_properties
+- Report every repository under a relative target, and skip a repository's own subdirectories
+- Keep background fetches off the terminal, and name a missing origin apart from a failed fetch
+- Point the chrome_proxy alias at a SOCKS5 proxy rather than an HTTP one
+
+### Removed
+
+- Drop w_git_bump_submodules, w_git_verbs_commit and w_gh_clone_user_repositories
+
 ## 0.14.0 - 2026-09-10
 
 ### Changed
