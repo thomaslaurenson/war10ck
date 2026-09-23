@@ -32,5 +32,7 @@ fi
 bash "$_tmpinstaller" --yes
 rm -f "$_tmpinstaller"
 
+w_deploy_functions pass-env
+
 w_log_info "pass-env module installed."
 w_log_info "Open a new shell, then try: passenv --help"
