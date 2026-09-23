@@ -6,11 +6,11 @@ set -euo pipefail
 GPIPE_DIR="$HOME/.war10ck/gpipe.d"
 
 # The registry is deployed before it is read, so a tool added upstream is
-# picked up by the same run that installs it. Files dropped in by hand are
-# left alone by the deploy and still take part in the loop below.
-for tool in gpipe moon narc prongs smount; do
-  w_deploy_remote_file "modules/gpipe/files/${tool}" "$GPIPE_DIR/${tool}"
-done
+# picked up by the same run that installs it. The manifest names the files, so
+# adding a tool is a matter of committing its registry file and nothing else.
+# Files dropped in by hand are left alone by the deploy and still take part in
+# the loop below.
+w_deploy_remote_dir "modules/gpipe/files" "$GPIPE_DIR"
 
 # Read a key from a registry file.
 #

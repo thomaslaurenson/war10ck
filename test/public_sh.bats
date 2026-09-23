@@ -601,6 +601,91 @@ WGET
   [[ "$(cat "$BATS_TEST_TMPDIR/out/thing.conf")" == "remote-content" ]]
 }
 
+@test "w_deploy_remote_dir: deploys every manifest file under the remote directory" {
+  local base="$BATS_TEST_TMPDIR/base"
+  mkdir -p "$base/modules/demo/files"
+  printf 'one\n' > "$base/modules/demo/files/alpha"
+  printf 'two\n' > "$base/modules/demo/files/beta"
+  run bash -c "
+    source '$REPO_ROOT/src/lib/private.sh'
+    source '$LIB'
+    BASE_URL='$base'
+    FETCH_CMD='_bcp'
+    WAR10CK_MANIFEST='aaa  modules/demo/files/alpha
+bbb  modules/demo/files/beta'
+    w_deploy_remote_dir 'modules/demo/files' '$BATS_TEST_TMPDIR/out'
+  "
+  (( status == 0 ))
+  [[ "$(cat "$BATS_TEST_TMPDIR/out/alpha")" == "one" ]]
+  [[ "$(cat "$BATS_TEST_TMPDIR/out/beta")" == "two" ]]
+}
+
+@test "w_deploy_remote_dir: ignores files nested below the remote directory" {
+  local base="$BATS_TEST_TMPDIR/base"
+  mkdir -p "$base/modules/demo/files/deeper"
+  printf 'one\n' > "$base/modules/demo/files/alpha"
+  printf 'nested\n' > "$base/modules/demo/files/deeper/beta"
+  run bash -c "
+    source '$REPO_ROOT/src/lib/private.sh'
+    source '$LIB'
+    BASE_URL='$base'
+    FETCH_CMD='_bcp'
+    WAR10CK_MANIFEST='aaa  modules/demo/files/alpha
+bbb  modules/demo/files/deeper/beta'
+    w_deploy_remote_dir 'modules/demo/files' '$BATS_TEST_TMPDIR/out'
+  "
+  (( status == 0 ))
+  [[ -f "$BATS_TEST_TMPDIR/out/alpha" ]]
+  [[ ! -e "$BATS_TEST_TMPDIR/out/deeper" ]]
+}
+
+@test "w_deploy_remote_dir: leaves files the manifest does not name in place" {
+  local base="$BATS_TEST_TMPDIR/base"
+  mkdir -p "$base/modules/demo/files" "$BATS_TEST_TMPDIR/out"
+  printf 'one\n' > "$base/modules/demo/files/alpha"
+  printf 'local\n' > "$BATS_TEST_TMPDIR/out/handmade"
+  run bash -c "
+    source '$REPO_ROOT/src/lib/private.sh'
+    source '$LIB'
+    BASE_URL='$base'
+    FETCH_CMD='_bcp'
+    WAR10CK_MANIFEST='aaa  modules/demo/files/alpha'
+    w_deploy_remote_dir 'modules/demo/files' '$BATS_TEST_TMPDIR/out'
+  "
+  (( status == 0 ))
+  [[ "$(cat "$BATS_TEST_TMPDIR/out/handmade")" == "local" ]]
+}
+
+@test "w_deploy_remote_dir: matches the directory prefix literally, not as a regex" {
+  local base="$BATS_TEST_TMPDIR/base"
+  mkdir -p "$base/modules/aXc/files"
+  printf 'wrong\n' > "$base/modules/aXc/files/alpha"
+  run bash -c "
+    source '$REPO_ROOT/src/lib/private.sh'
+    source '$LIB'
+    BASE_URL='$base'
+    FETCH_CMD='_bcp'
+    WAR10CK_MANIFEST='aaa  modules/aXc/files/alpha'
+    w_deploy_remote_dir 'modules/a.c/files' '$BATS_TEST_TMPDIR/out' 2>&1
+  "
+  (( status == 1 ))
+  [[ "$output" =~ "No manifest entries under" ]]
+  [[ ! -e "$BATS_TEST_TMPDIR/out/alpha" ]]
+}
+
+@test "w_deploy_remote_dir: fails when the manifest names nothing under the directory" {
+  run bash -c "
+    source '$REPO_ROOT/src/lib/private.sh'
+    source '$LIB'
+    BASE_URL='$BATS_TEST_TMPDIR/base'
+    FETCH_CMD='_bcp'
+    WAR10CK_MANIFEST='aaa  modules/other/files/alpha'
+    w_deploy_remote_dir 'modules/demo/files' '$BATS_TEST_TMPDIR/out' 2>&1
+  "
+  (( status == 1 ))
+  [[ "$output" =~ "No manifest entries under: modules/demo/files" ]]
+}
+
 @test "w_deploy_functions: deploys a module's functions file under HOME" {
   local base="$BATS_TEST_TMPDIR/base"
   mkdir -p "$base/modules/demo/files"
