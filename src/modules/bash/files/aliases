@@ -11,7 +11,7 @@ alias myip="curl https://ipecho.net/plain; echo"
 alias update="sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y"
 alias df="df -H"
 alias shred="shred -u -z"
-alias ssh="ssh -v -o 'IdentitiesOnly=yes'"
+alias ssh="ssh -o 'IdentitiesOnly=yes'"
 alias reload='exec "$BASH"'
 
 # Directory traversal

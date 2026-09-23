@@ -226,6 +226,48 @@ w_deploy_remote_file() {
   w_log_debug "Deployed remote: ${BASE_URL}/${remote_path} -> ${dest}"
 }
 
+# Deploy every file the manifest lists directly under a remote directory,
+# keeping their names.
+#
+# The manifest is what makes this possible. A remote run has no directory it
+# can list, so a module shipping a variable set of files would otherwise have
+# to name each one in its install script and be edited again for every file
+# added. Nested paths are skipped: this deploys one directory, not a tree.
+#
+# Files already in the destination that the manifest does not name are left
+# alone, so a hand-written drop-in survives a redeploy.
+#
+# Arguments:
+#   $1 - Remote directory relative to BASE_URL (e.g. "modules/gpipe/files")
+#   $2 - Destination directory
+# Globals:
+#   WAR10CK_MANIFEST - loaded manifest, read only
+# Returns:
+#   1 when the manifest names no file under the remote directory
+w_deploy_remote_dir() {
+  local remote_dir=$1
+  local dest=$2
+  local names=()
+  # The prefix is compared with index(), which is a literal string search: a
+  # regex match would let a "." in a module name stand for any character, the
+  # same trap _verify_from_manifest avoids. Field 2 is the path, because
+  # manifest lines are sha256sum output.
+  readarray -t names < <(printf '%s\n' "${WAR10CK_MANIFEST:-}" \
+    | awk -v prefix="${remote_dir}/" '
+        index($2, prefix) == 1 {
+          name = substr($2, length(prefix) + 1)
+          if (name !~ "/") { print name }
+        }')
+  if (( ${#names[@]} == 0 )); then
+    w_log_error "No manifest entries under: ${remote_dir}"
+    return 1
+  fi
+  local name
+  for name in "${names[@]}"; do
+    w_deploy_remote_file "${remote_dir}/${name}" "${dest}/${name}"
+  done
+}
+
 # Deploy a directory recursively, creating the destination if needed.
 #
 # Arguments:
@@ -635,6 +677,7 @@ export -f w_apt_remove_key
 export -f w_apt_remove_source
 export -f w_deploy_file
 export -f w_deploy_remote_file
+export -f w_deploy_remote_dir
 export -f w_deploy_dir
 export -f w_make_executable
 export -f w_download

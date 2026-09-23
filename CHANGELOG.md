@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.16.0 - 2026-09-23
+
+### Added
+
+- Add a filen module installing the Rust Filen CLI, with fuse3 for mounting
+- Restrict filen to environment-variable authentication, blocking its saved-credential and prompt fallbacks
+- Add per to the pass-env module, a shorthand for pass env run with tab completion
+- Add w_deploy_remote_dir, deploying every file the manifest names under a remote directory
+- Add filenget to the gpipe registry
+
+### Changed
+
+- Drive the gpipe registry from the manifest, so a new tool file needs no edit to install.sh
+- Drop -v from the ssh alias, so a normal connection is quiet again
+
 ## 0.15.0 - 2026-09-16
 
 ### Added

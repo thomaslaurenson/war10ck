@@ -3,6 +3,8 @@
 set -euo pipefail
 [[ "${WAR10CK_DEBUG:-0}" == "1" ]] && set -x
 
+w_remove_functions pass-env
+
 # pass-env ships its own uninstaller, laid down next to the install manifest
 # that records every file the installer placed. Reimplementing the removal here
 # would mean tracking those paths in two repos, so the shipped script is used
