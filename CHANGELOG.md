@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.16.1 - 2026-09-23
+
+### Changed
+
+- Print the BY column in status without a leading v, so rows from older builds line up
+
 ## 0.16.0 - 2026-09-23
 
 ### Added

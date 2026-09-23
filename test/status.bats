@@ -189,6 +189,17 @@ _fixture_manifest() {
   [[ "$output" =~ unknown ]]
 }
 
+@test "status: the version column drops the v older builds recorded" {
+  local h="$BATS_TEST_TMPDIR/h"
+  mkdir -p "$h/.war10ck/registry.d"
+  printf 'installed=2026-01-01T00:00:00Z\ninstalled_by=v0.10.2\n' \
+    > "$h/.war10ck/registry.d/demo"
+  run _with_home "$h" "status"
+  (( status == 0 ))
+  [[ "$output" =~ 0.10.2 ]]
+  [[ ! "$output" =~ v0.10.2 ]]
+}
+
 @test "state: no embedded manifest reads as unknown, never as current" {
   local h="$BATS_TEST_TMPDIR/h"
   _with_home "$h" "_w_registry_record demo install"

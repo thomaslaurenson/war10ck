@@ -200,6 +200,11 @@ status() {
     # The later action is the one that describes the entry's age.
     applied_by=$(_w_registry_get "${file}" configured_by)
     [[ -n "${applied_by}" ]] || applied_by=$(_w_registry_get "${file}" installed_by)
+    # Builds up to 0.13.0 stamped the version with a leading v, so a column of
+    # mixed entries reads as v0.10.2 beside 0.15.0. Stripped on the way out
+    # rather than rewritten in the registry: an entry records what ran, and
+    # editing it afterwards would make the record less true, not tidier.
+    applied_by=${applied_by#v}
     state=$(_w_registry_state "${file}" "${module}")
     [[ "${state}" == "changed" ]] && changed=1
     printf '%-14s %-22s %-22s %-9s %s\n' \
