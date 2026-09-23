@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.17.0 - 2026-09-23
+
+### Added
+
+- Add a base module installing the tools other modules assume: build-essential, make, curl, ca-certificates, gnupg, jq and unzip
+- Add a cpp module installing cmake, g++ and the clang 18 toolchain (clang, clang-format, clang-tidy)
+- Add base to the desktop and server profiles
+
 ## 0.16.1 - 2026-09-23
 
 ### Changed
