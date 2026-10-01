@@ -1,0 +1,12 @@
+[
+  {"nameWithOwner": "owner/both", "hasWikiEnabled": true, "hasProjectsEnabled": true,
+   "hasDiscussionsEnabled": false},
+  {"nameWithOwner": "owner/wiki-only", "hasWikiEnabled": true, "hasProjectsEnabled": false,
+   "hasDiscussionsEnabled": false},
+  {"nameWithOwner": "owner/projects-only", "hasWikiEnabled": false, "hasProjectsEnabled": true,
+   "hasDiscussionsEnabled": false},
+  {"nameWithOwner": "owner/discussions-only", "hasWikiEnabled": false,
+   "hasProjectsEnabled": false, "hasDiscussionsEnabled": true},
+  {"nameWithOwner": "owner/neither", "hasWikiEnabled": false, "hasProjectsEnabled": false,
+   "hasDiscussionsEnabled": false}
+]

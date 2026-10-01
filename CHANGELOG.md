@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.17.2 - 2026-10-02
+
+### Added
+
+- Add w_git_disable_discussions_for_user, turning discussions off across a GitHub owner's repositories
+
+### Changed
+
+- List the affected repositories and confirm before disabling wikis or projects, rejecting an empty owner
+
+### Fixed
+
+- Fix non-ASCII output, silent failures and the 100 repository cap when disabling wikis or projects
+
 ## 0.17.1 - 2026-10-02
 
 ### Updated

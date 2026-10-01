@@ -389,73 +389,141 @@ w_git_repository_properties() {
   fi
 }
 
-# function: w_git_disable_project_for_user
+# function: _w_git_disable_repo_feature
 #
-# Turn the projects tab off across every non-archived repository a GitHub user
-# or organisation owns, prompting for the name. Repositories are read through
-# the GitHub CLI, so gh has to be authenticated as an account that can edit
-# them.
+# Turn one repository feature off across every non-archived repository a GitHub
+# user or organisation owns. The name is prompted for, and the repositories that
+# have the feature on are listed and confirmed before any is edited. They are
+# read through the GitHub CLI, so gh has to be authenticated as an account that
+# can edit them.
 #
+# Arguments:
+#   $1 - the field gh repo list reports the feature under, such as hasWikiEnabled
+#   $2 - the gh repo edit flag that turns the feature on, such as enable-wiki
+#   $3 - the feature as printed, such as wiki
 # Outputs:
-#   one line per repository on stdout, naming it and whether projects were on
+#   the repositories to change on stdout, then one line per repository changed;
+#   warnings and errors on stderr
 # Returns:
-#   1 when the repositories could not be listed
-w_git_disable_project_for_user() {
-  local target repo_metadata json enabled name
+#   1 when the name is empty, the repositories could not be listed, or any
+#   repository could not be changed
+_w_git_disable_repo_feature() {
+  local field=$1 flag=$2 label=$3
 
-  printf '[?] Enter GitHub user/org name: '
-  read -r target
-
-  if ! repo_metadata=$(gh repo list "${target}" -L 100 --no-archived \
-    --json nameWithOwner,hasProjectsEnabled); then
-    printf 'w_git_disable_project_for_user: could not list repositories for %s\n' \
-      "${target}" >&2
+  # gh repo list reads an empty owner as the authenticated account, so an
+  # accidental Enter would otherwise edit every repository that account owns.
+  local target
+  read -rp '[?] Enter GitHub user/org name: ' target
+  if [[ -z "${target}" ]]; then
+    printf '[!] Name cannot be empty\n' >&2
     return 1
   fi
 
-  # Process substitution rather than a pipe, which would run the loop in a
-  # subshell and lose every assignment it makes.
-  while IFS= read -r json; do
-    enabled=$(jq -r '.hasProjectsEnabled' <<< "${json}")
-    name=$(jq -r '.nameWithOwner' <<< "${json}")
-    printf '[*] %s | %s\n' "${name}" "${enabled}"
-    if [[ "${enabled}" == "true" ]]; then
-      printf '[~] Disabling repository project...\n'
-      gh repo edit "${name}" --enable-projects=false
+  # gh stops at the limit without saying so, so reaching it is reported rather
+  # than taken to be every repository the owner has.
+  local limit=1000 repo_metadata
+  if ! repo_metadata=$(gh repo list "${target}" --limit "${limit}" --no-archived \
+    --json "nameWithOwner,${field}"); then
+    printf '[!] Could not list repositories for %s\n' "${target}" >&2
+    return 1
+  fi
+
+  local total
+  total=$(jq 'length' <<< "${repo_metadata}")
+  if (( total >= limit )); then
+    printf '[!] Listing stopped at %s repositories, so any beyond it were not checked\n' \
+      "${limit}" >&2
+  fi
+
+  local -a names=()
+  readarray -t names < <(jq -r --arg field "${field}" \
+    '.[] | select(.[$field]) | .nameWithOwner' <<< "${repo_metadata}")
+
+  printf '[*] Repositories with %s on: %s of %s\n' "${label}" "${#names[@]}" "${total}"
+  if (( ${#names[@]} == 0 )); then
+    return 0
+  fi
+
+  printf '\n'
+  local name
+  for name in "${names[@]}"; do
+    printf '    %s\n' "${name}"
+  done
+  printf '\n'
+
+  local reply
+  read -rp "[?] Disable ${label} in the repositories listed above? (y/N) " reply
+  case "${reply}" in
+    y|Y) ;;
+    *)
+      printf '[*] Aborted\n'
+      return 0
+      ;;
+  esac
+
+  # gh's stdout is dropped because, whenever it is a terminal, gh opens its
+  # success line with a non-ASCII tick. Its stderr is kept, since that is where
+  # the reason for a failed edit goes.
+  local failures=0
+  for name in "${names[@]}"; do
+    if gh repo edit "${name}" "--${flag}=false" > /dev/null; then
+      printf '[~] Disabled %s: %s\n' "${label}" "${name}"
+    else
+      printf '[!] Could not disable %s: %s\n' "${label}" "${name}" >&2
+      failures=$((failures + 1))
     fi
-  done < <(jq -c '.[]' <<< "${repo_metadata}")
+  done
+
+  if (( failures > 0 )); then
+    printf '[!] Repositories not changed: %s of %s\n' "${failures}" "${#names[@]}" >&2
+    return 1
+  fi
+}
+
+# function: w_git_disable_project_for_user
+#
+# Turn the projects tab off across every non-archived repository a GitHub user
+# or organisation owns, after listing the repositories that have it on and
+# confirming at the prompt.
+#
+# Outputs:
+#   the repositories to change on stdout, then one line per repository changed;
+#   warnings and errors on stderr
+# Returns:
+#   1 when the name is empty, the repositories could not be listed, or any
+#   repository could not be changed
+w_git_disable_project_for_user() {
+  _w_git_disable_repo_feature hasProjectsEnabled enable-projects projects
 }
 
 # function: w_git_disable_wiki_for_user
 #
 # Turn the wiki off across every non-archived repository a GitHub user or
-# organisation owns, prompting for the name. Repositories are read through the
-# GitHub CLI, so gh has to be authenticated as an account that can edit them.
+# organisation owns, after listing the repositories that have it on and
+# confirming at the prompt.
 #
 # Outputs:
-#   one line per repository on stdout, naming it and whether the wiki was on
+#   the repositories to change on stdout, then one line per repository changed;
+#   warnings and errors on stderr
 # Returns:
-#   1 when the repositories could not be listed
+#   1 when the name is empty, the repositories could not be listed, or any
+#   repository could not be changed
 w_git_disable_wiki_for_user() {
-  local target repo_metadata json enabled name
+  _w_git_disable_repo_feature hasWikiEnabled enable-wiki wiki
+}
 
-  printf '[?] Enter GitHub user/org name: '
-  read -r target
-
-  if ! repo_metadata=$(gh repo list "${target}" -L 100 --no-archived \
-    --json nameWithOwner,hasWikiEnabled); then
-    printf 'w_git_disable_wiki_for_user: could not list repositories for %s\n' \
-      "${target}" >&2
-    return 1
-  fi
-
-  while IFS= read -r json; do
-    enabled=$(jq -r '.hasWikiEnabled' <<< "${json}")
-    name=$(jq -r '.nameWithOwner' <<< "${json}")
-    printf '[*] %s | %s\n' "${name}" "${enabled}"
-    if [[ "${enabled}" == "true" ]]; then
-      printf '[~] Disabling repository wiki...\n'
-      gh repo edit "${name}" --enable-wiki=false
-    fi
-  done < <(jq -c '.[]' <<< "${repo_metadata}")
+# function: w_git_disable_discussions_for_user
+#
+# Turn discussions off across every non-archived repository a GitHub user or
+# organisation owns, after listing the repositories that have them on and
+# confirming at the prompt.
+#
+# Outputs:
+#   the repositories to change on stdout, then one line per repository changed;
+#   warnings and errors on stderr
+# Returns:
+#   1 when the name is empty, the repositories could not be listed, or any
+#   repository could not be changed
+w_git_disable_discussions_for_user() {
+  _w_git_disable_repo_feature hasDiscussionsEnabled enable-discussions discussions
 }

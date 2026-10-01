@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#
+# Stands in for the GitHub CLI. Symlink it onto PATH as "gh".
+#
+# Only the two calls the repository feature functions make are answered. gh
+# repo list prints a fixture whatever fields are asked for. gh repo edit prints
+# the success line the real gh prints to a terminal, tick included, so a test
+# can catch that line leaking into the output of the function under test.
+#
+# Environment:
+#   MOCK_GH_CALLS       - file each invocation's arguments are appended to
+#   MOCK_GH_LIST        - JSON file gh repo list prints
+#   MOCK_GH_LIST_STATUS - exit status for gh repo list (default 0)
+#   MOCK_GH_LIST_FULL   - 1 to print as many repositories as --limit asks for,
+#                         standing in for an owner with more than the limit
+#   MOCK_GH_EDIT_FAIL   - repository whose gh repo edit fails
+
+set -euo pipefail
+
+if [[ -n "${MOCK_GH_CALLS:-}" ]]; then
+  printf '%s\n' "$*" >> "${MOCK_GH_CALLS}"
+fi
+
+case "${1:-} ${2:-}" in
+  "repo list")
+    if [[ "${MOCK_GH_LIST_STATUS:-0}" != "0" ]]; then
+      printf 'GraphQL: Could not resolve to a User with the login of %s.\n' "${3:-}" >&2
+      exit "${MOCK_GH_LIST_STATUS}"
+    fi
+    if [[ "${MOCK_GH_LIST_FULL:-0}" == "1" ]]; then
+      limit=30
+      while (( $# > 0 )); do
+        if [[ "$1" == "--limit" ]]; then
+          limit=$2
+        fi
+        shift
+      done
+      jq -n --argjson n "${limit}" '[range($n) | {nameWithOwner: "owner/repo\(.)",
+        hasWikiEnabled: false, hasProjectsEnabled: false, hasDiscussionsEnabled: false}]'
+    else
+      cat "${MOCK_GH_LIST}"
+    fi
+    ;;
+  "repo edit")
+    if [[ "${3:-}" == "${MOCK_GH_EDIT_FAIL:-}" ]]; then
+      printf 'HTTP 403: Must have admin rights to Repository.\n' >&2
+      exit 1
+    fi
+    # The tick is U+2713, written as its UTF-8 bytes so this file stays ASCII
+    printf '\xe2\x9c\x93 Edited repository %s\n' "${3:-}"
+    ;;
+  *)
+    printf 'mock_gh: unhandled call: %s\n' "$*" >&2
+    exit 2
+    ;;
+esac
