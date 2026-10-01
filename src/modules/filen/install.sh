@@ -32,8 +32,8 @@ w_apt_install fuse3
 #
 # To bump: change the version, re-download the binary, and replace the hash
 # with the output of sha256sum.
-readonly FILEN_VERSION="0.2.7"
-readonly FILEN_SHA256="d05c3a4a7585cbbfe936da7a479738982928df49576bd2374c8b608b4d889189"
+readonly FILEN_VERSION="0.2.8"
+readonly FILEN_SHA256="c0051e90459e947d6dee04eadac899806c261b99dbf2fc4739e0b0d41f6bdc71"
 
 # The Rust CLI, which replaces the sunsetted Node one. Releases live in a
 # separate repository from the source, and the tags carry no leading "v".

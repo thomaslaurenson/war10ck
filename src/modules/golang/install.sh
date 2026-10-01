@@ -16,8 +16,8 @@ trap _cleanup EXIT
 
 # Update GO_VERSION and GO_SHA256 together when bumping.
 # SHA256 values: https://go.dev/dl/?mode=json
-readonly GO_VERSION="1.27.0"
-readonly GO_SHA256="675c26c449cbb18fc24b74650de1eabbae6e16f64326fd85a283fb3b58280685"
+readonly GO_VERSION="1.27.1"
+readonly GO_SHA256="63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445"
 readonly GO_ARCHIVE="go${GO_VERSION}.linux-amd64.tar.gz"
 
 _tmpfile=$(mktemp --suffix=-"${GO_ARCHIVE}")
@@ -39,8 +39,8 @@ w_sudo_symlink /usr/local/go/bin/gofmt /usr/local/bin/gofmt
 
 # Update GORELEASER_VERSION and GORELEASER_SHA256 together when bumping.
 # SHA256 values: https://github.com/goreleaser/goreleaser/releases
-readonly GORELEASER_VERSION="2.17.1"
-readonly GORELEASER_SHA256="a99bbc7ae0d8d897b07c4c497a9b62f222558804715ef219d1af05a7e417bc80"
+readonly GORELEASER_VERSION="2.18.2"
+readonly GORELEASER_SHA256="0a96edc9d9bc594e4a41cc4d59467c182062910ab24d9d1f6dd7b667d32606d3"
 readonly GORELEASER_ARCHIVE="goreleaser_Linux_x86_64.tar.gz"
 
 _tmpfile=$(mktemp --suffix=-"${GORELEASER_ARCHIVE}")
@@ -62,7 +62,7 @@ sudo install -m 0755 "${_tmpdir}/goreleaser" /usr/local/bin/goreleaser
 # the Go checksum database (sum.golang.org, consulted by default) is what
 # guarantees the source is the same code every time.
 # Versions: https://proxy.golang.org/golang.org/x/vuln/@v/list
-readonly GOVULNCHECK_VERSION="1.7.0"
+readonly GOVULNCHECK_VERSION="1.8.0"
 
 # GOBIN puts the freshly built binary somewhere this script owns, so it can be
 # installed root-owned rather than left in $GOPATH/bin. GOPATH is not exported
