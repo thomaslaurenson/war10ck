@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.18.0 - 2026-10-02
+
+### Fixed
+
+- Fix forged manifest lines bypassing checksum verification, including during tab completion
+- Fix files deployed by modules skipping checksum verification against the manifest
+- Fix fnm letting a cloned repository's version file point node at its own binaries
+
 ## 0.17.2 - 2026-10-02
 
 ### Added

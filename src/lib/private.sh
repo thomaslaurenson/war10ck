@@ -95,12 +95,21 @@ _verify_from_manifest() {
   local expected
   # Exact match on the filename field, treated as a literal string (never a
   # regex or a substring). sha256sum output is "<hash>  <path>", so field 1 is
-  # the hash and field 2 is the path; compare the path for equality.
+  # the hash and field 2 is the path; compare the path for equality. A line
+  # with extra fields never matches and a key listed twice matches nothing:
+  # taking the first match lets an unpinned line win the lookup.
   expected=$(printf '%s\n' "${WAR10CK_MANIFEST}" \
-    | awk -v key="${manifest_key}" '$2 == key { print $1; exit }')
+    | awk -v key="${manifest_key}" '
+        NF == 2 && $2 == key { count++; hash = $1 }
+        END { if (count == 1) print hash }')
   if [[ -z "${expected}" ]]; then
     printf '[!] No manifest entry found for: %s\n' "${manifest_key}" >&2
     exit 1
   fi
   _verify_checksum "${file}" "${expected}"
 }
+
+# Exported because w_deploy_remote_file verifies what it deploys, and it runs
+# inside module scripts: child processes that see only exported functions.
+export -f _verify_checksum
+export -f _verify_from_manifest

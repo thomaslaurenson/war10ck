@@ -206,15 +206,17 @@ w_deploy_file() {
   w_log_debug "Deployed: ${src} -> ${dest}"
 }
 
-# Fetch a file from BASE_URL and deploy it to a local destination.
-# Uses the same fetch command (curl/wget/cp) that war10ck itself uses.
+# Fetch a file from BASE_URL, verify it against the manifest and deploy it to a
+# local destination. Uses the same fetch command (curl/wget/cp) that war10ck
+# itself uses.
 #
 # Arguments:
 #   $1 - Remote path relative to BASE_URL (e.g. "modules/polybar/files/config.ini")
 #   $2 - Destination file path
 # Environment:
-#   BASE_URL  - base URL or local path for fetching files
-#   FETCH_CMD - fetch command to use (curl, wget, or _bcp)
+#   BASE_URL         - base URL or local path for fetching files
+#   FETCH_CMD        - fetch command to use (curl, wget, or _bcp)
+#   WAR10CK_MANIFEST - loaded manifest the fetched file is verified against
 w_deploy_remote_file() {
   local remote_path=$1
   local dest=$2
@@ -222,6 +224,10 @@ w_deploy_remote_file() {
   local _tmpfile
   _tmpfile=$(mktemp --suffix="-$(basename "${dest}")")
   $FETCH_CMD "${_tmpfile}" "${BASE_URL}/${remote_path}"
+  # Checked as strictly as the module script deploying it: what lands here is
+  # sourced by every shell or run as a program. A mismatch exits before the
+  # destination is touched.
+  _verify_from_manifest "${_tmpfile}" "${remote_path}"
   mv "${_tmpfile}" "${dest}"
   w_log_debug "Deployed remote: ${BASE_URL}/${remote_path} -> ${dest}"
 }

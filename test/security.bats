@@ -57,6 +57,36 @@ setup() {
   (( status == 0 ))
 }
 
+@test "manifest verification ignores a line with extra fields" {
+  # A third field is how a forged line hides from the manifest pin, so such a
+  # line must never supply a hash, even one that matches the file.
+  printf 'payload\n' > "$BATS_TEST_TMPDIR/f"
+  local hash
+  hash=$(sha256sum "$BATS_TEST_TMPDIR/f" | cut -d' ' -f1)
+  run bash -c "
+    export WAR10CK_MANIFEST='${hash}  modules/foo/install.sh war10ck'
+    source '$PRIVATE'
+    _verify_from_manifest '$BATS_TEST_TMPDIR/f' 'modules/foo/install.sh'
+  "
+  (( status == 1 ))
+  [[ "$output" =~ "No manifest entry found" ]]
+}
+
+@test "manifest verification rejects a key listed more than once" {
+  # The matching hash comes first, so a first-match lookup would accept it.
+  printf 'payload\n' > "$BATS_TEST_TMPDIR/f"
+  local hash
+  hash=$(sha256sum "$BATS_TEST_TMPDIR/f" | cut -d' ' -f1)
+  run bash -c "
+    export WAR10CK_MANIFEST='${hash}  modules/foo/install.sh
+deadbeef  modules/foo/install.sh'
+    source '$PRIVATE'
+    _verify_from_manifest '$BATS_TEST_TMPDIR/f' 'modules/foo/install.sh'
+  "
+  (( status == 1 ))
+  [[ "$output" =~ "No manifest entry found" ]]
+}
+
 @test "a wrong hash in the manifest is rejected and the file is deleted" {
   printf 'payload\n' > "$BATS_TEST_TMPDIR/f"
   run bash -c "

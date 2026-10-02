@@ -586,19 +586,76 @@ WGET
 
 # Remote file deployment (uses FETCH_CMD/BASE_URL, exercised here with _bcp)
 
+# Print manifest lines, in the "<sha256>  <path>" form bundle.sh writes, for
+# files under a fixture base directory.
+#
+# Arguments:
+#   $1 - base directory the paths are relative to
+#   $@ - paths to hash
+# Outputs:
+#   one manifest line per path on stdout
+_manifest_for() {
+  local base=$1
+  shift
+  (cd "$base" && sha256sum "$@")
+}
+
 @test "w_deploy_remote_file: fetches from BASE_URL via FETCH_CMD and deploys" {
   local base="$BATS_TEST_TMPDIR/base"
   mkdir -p "$base/modules/demo/files"
   printf 'remote-content\n' > "$base/modules/demo/files/thing.conf"
+  local manifest
+  manifest=$(_manifest_for "$base" modules/demo/files/thing.conf)
   run bash -c "
     source '$REPO_ROOT/src/lib/private.sh'
     source '$LIB'
     BASE_URL='$base'
     FETCH_CMD='_bcp'
+    WAR10CK_MANIFEST='$manifest'
     w_deploy_remote_file 'modules/demo/files/thing.conf' '$BATS_TEST_TMPDIR/out/thing.conf'
   "
   (( status == 0 ))
   [[ "$(cat "$BATS_TEST_TMPDIR/out/thing.conf")" == "remote-content" ]]
+}
+
+@test "w_deploy_remote_file: refuses a file that does not match the manifest" {
+  # Run in a child shell, as a module script would be, so the verification
+  # helpers are reached through their exports. The tampered copy must never
+  # replace what is already deployed.
+  local base="$BATS_TEST_TMPDIR/base" manifest
+  mkdir -p "$base/modules/demo/files" "$BATS_TEST_TMPDIR/out"
+  printf 'genuine\n' > "$base/modules/demo/files/thing.conf"
+  manifest=$(_manifest_for "$base" modules/demo/files/thing.conf)
+  printf 'tampered\n' > "$base/modules/demo/files/thing.conf"
+  printf 'deployed\n' > "$BATS_TEST_TMPDIR/out/thing.conf"
+  run bash -c "
+    source '$REPO_ROOT/src/lib/private.sh'
+    source '$LIB'
+    export BASE_URL='$base' FETCH_CMD='_bcp' WAR10CK_MANIFEST='$manifest'
+    bash -c 'w_deploy_remote_file modules/demo/files/thing.conf $BATS_TEST_TMPDIR/out/thing.conf' 2>&1
+  "
+  (( status == 1 ))
+  [[ "$output" =~ "Checksum mismatch" ]]
+  [[ "$(cat "$BATS_TEST_TMPDIR/out/thing.conf")" == "deployed" ]]
+}
+
+@test "w_deploy_remote_file: refuses a file the manifest does not list" {
+  local base="$BATS_TEST_TMPDIR/base" manifest
+  mkdir -p "$base/modules/demo/files"
+  printf 'one\n' > "$base/modules/demo/files/listed"
+  printf 'two\n' > "$base/modules/demo/files/unlisted"
+  manifest=$(_manifest_for "$base" modules/demo/files/listed)
+  run bash -c "
+    source '$REPO_ROOT/src/lib/private.sh'
+    source '$LIB'
+    BASE_URL='$base'
+    FETCH_CMD='_bcp'
+    WAR10CK_MANIFEST='$manifest'
+    w_deploy_remote_file 'modules/demo/files/unlisted' '$BATS_TEST_TMPDIR/out/unlisted' 2>&1
+  "
+  (( status == 1 ))
+  [[ "$output" =~ "No manifest entry found for: modules/demo/files/unlisted" ]]
+  [[ ! -e "$BATS_TEST_TMPDIR/out/unlisted" ]]
 }
 
 @test "w_deploy_remote_dir: deploys every manifest file under the remote directory" {
@@ -606,13 +663,14 @@ WGET
   mkdir -p "$base/modules/demo/files"
   printf 'one\n' > "$base/modules/demo/files/alpha"
   printf 'two\n' > "$base/modules/demo/files/beta"
+  local manifest
+  manifest=$(_manifest_for "$base" modules/demo/files/alpha modules/demo/files/beta)
   run bash -c "
     source '$REPO_ROOT/src/lib/private.sh'
     source '$LIB'
     BASE_URL='$base'
     FETCH_CMD='_bcp'
-    WAR10CK_MANIFEST='aaa  modules/demo/files/alpha
-bbb  modules/demo/files/beta'
+    WAR10CK_MANIFEST='$manifest'
     w_deploy_remote_dir 'modules/demo/files' '$BATS_TEST_TMPDIR/out'
   "
   (( status == 0 ))
@@ -625,13 +683,14 @@ bbb  modules/demo/files/beta'
   mkdir -p "$base/modules/demo/files/deeper"
   printf 'one\n' > "$base/modules/demo/files/alpha"
   printf 'nested\n' > "$base/modules/demo/files/deeper/beta"
+  local manifest
+  manifest=$(_manifest_for "$base" modules/demo/files/alpha modules/demo/files/deeper/beta)
   run bash -c "
     source '$REPO_ROOT/src/lib/private.sh'
     source '$LIB'
     BASE_URL='$base'
     FETCH_CMD='_bcp'
-    WAR10CK_MANIFEST='aaa  modules/demo/files/alpha
-bbb  modules/demo/files/deeper/beta'
+    WAR10CK_MANIFEST='$manifest'
     w_deploy_remote_dir 'modules/demo/files' '$BATS_TEST_TMPDIR/out'
   "
   (( status == 0 ))
@@ -644,12 +703,14 @@ bbb  modules/demo/files/deeper/beta'
   mkdir -p "$base/modules/demo/files" "$BATS_TEST_TMPDIR/out"
   printf 'one\n' > "$base/modules/demo/files/alpha"
   printf 'local\n' > "$BATS_TEST_TMPDIR/out/handmade"
+  local manifest
+  manifest=$(_manifest_for "$base" modules/demo/files/alpha)
   run bash -c "
     source '$REPO_ROOT/src/lib/private.sh'
     source '$LIB'
     BASE_URL='$base'
     FETCH_CMD='_bcp'
-    WAR10CK_MANIFEST='aaa  modules/demo/files/alpha'
+    WAR10CK_MANIFEST='$manifest'
     w_deploy_remote_dir 'modules/demo/files' '$BATS_TEST_TMPDIR/out'
   "
   (( status == 0 ))
@@ -690,11 +751,14 @@ bbb  modules/demo/files/deeper/beta'
   local base="$BATS_TEST_TMPDIR/base"
   mkdir -p "$base/modules/demo/files"
   printf 'alias demo=echo\n' > "$base/modules/demo/files/functions.bash"
+  local manifest
+  manifest=$(_manifest_for "$base" modules/demo/files/functions.bash)
   run bash -c "
     source '$REPO_ROOT/src/lib/private.sh'
     source '$LIB'
     BASE_URL='$base'
     FETCH_CMD='_bcp'
+    WAR10CK_MANIFEST='$manifest'
     HOME='$BATS_TEST_TMPDIR/home'
     w_deploy_functions demo
     cat \"\$HOME/.war10ck/functions.d/demo\"

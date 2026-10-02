@@ -7,12 +7,19 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
   # to avoid repeated network calls on every Tab press.
   _war10ck_get_targets() {
     if [[ -z "${_WAR10CK_MODULE_CACHE:-}" ]]; then
-      local targets
+      local name targets=""
       # Match only lines whose name starts immediately after the two-space
       # indent. A profile's description is printed on its own line under a
       # blank name column, so a bare /^  / would offer its first word ("Custom
       # desktop environment" -> "Custom") as a completion target.
-      targets=$(war10ck apply 2>/dev/null | awk '/^  [^ ]/{print $1}')
+      #
+      # Each name must also pass _is_valid_target, because compgen -W expands
+      # its word list: a name carrying "$(...)" would run in this shell on Tab.
+      while IFS= read -r name; do
+        if _is_valid_target "${name}"; then
+          targets+="${name}"$'\n'
+        fi
+      done < <(war10ck apply 2>/dev/null | awk '/^  [^ ]/{print $1}')
       [[ -n "${targets}" ]] && _WAR10CK_MODULE_CACHE="${targets}"
     fi
     printf '%s\n' "${_WAR10CK_MODULE_CACHE:-}"
