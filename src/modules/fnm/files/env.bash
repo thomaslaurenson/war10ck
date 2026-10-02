@@ -5,9 +5,11 @@ export FNM_DIR="$HOME/.local/share/fnm"
 # including one where the fnm environment below never gets set up.
 export PATH="$FNM_DIR/aliases/default/bin:$PATH"
 
-# fnm env prepends a per-shell path ahead of the default above, and --use-on-cd
-# repoints it on entering a directory that names a version in .nvmrc,
-# .node-version or a package.json engines field.
+# fnm env prepends a per-shell path ahead of the default above. Switching
+# version is left to an explicit fnm use rather than --use-on-cd, which acts on
+# whatever .nvmrc or .node-version a directory holds: fnm reads anything that
+# is not a version as an alias name, paths included, so a cloned repository
+# could point node, npm and npx at binaries it ships.
 if command -v fnm > /dev/null 2>&1; then
-    eval "$(fnm env --use-on-cd --shell bash)"
+    eval "$(fnm env --shell bash)"
 fi
