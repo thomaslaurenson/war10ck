@@ -108,3 +108,8 @@ _verify_from_manifest() {
   fi
   _verify_checksum "${file}" "${expected}"
 }
+
+# Exported because w_deploy_remote_file verifies what it deploys, and it runs
+# inside module scripts: child processes that see only exported functions.
+export -f _verify_checksum
+export -f _verify_from_manifest
