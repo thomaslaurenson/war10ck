@@ -145,11 +145,15 @@ _load_manifest() {
   manifest_tmp=$(mktemp --suffix=.txt)
   ${FETCH_CMD} "${manifest_tmp}" "${BASE_URL}/checksums.txt"
   if [[ "${WAR10CK_SKIP_CHECKSUMS:-0}" != "1" ]]; then
-    local manifest_filtered
-    manifest_filtered=$(mktemp --suffix=.txt)
-    grep -v ' war10ck$' "${manifest_tmp}" > "${manifest_filtered}"
-    _verify_checksum "${manifest_filtered}" "${CHECKSUMS_SHA256}"
-    rm -f "${manifest_filtered}"
+    # The binary's own line is matched in full rather than by a ' war10ck$'
+    # suffix: a suffix filter also drops any forged line given a trailing
+    # "war10ck" field, which then escapes the pin while still being read by
+    # every lookup. What is kept is the verified copy, never the download.
+    local manifest_verified
+    manifest_verified=$(mktemp --suffix=.txt)
+    grep -vxE '[0-9a-f]{64}  war10ck' "${manifest_tmp}" > "${manifest_verified}"
+    _verify_checksum "${manifest_verified}" "${CHECKSUMS_SHA256}"
+    mv "${manifest_verified}" "${manifest_tmp}"
   fi
   WAR10CK_MANIFEST=$(cat "${manifest_tmp}")
   export WAR10CK_MANIFEST

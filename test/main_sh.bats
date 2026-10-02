@@ -2,9 +2,10 @@ bats_require_minimum_version 1.7.0
 
 load helpers/common
 
-# Unit tests for the flag parser and fetch resolver in main.sh. main.sh ends
-# with `main "$@"`, so it self-executes when sourced; the setup strips that one
-# line into a copy that can be sourced to reach the functions in isolation.
+# Unit tests for the flag parser, fetch resolver and manifest loader in main.sh.
+# main.sh ends with `main "$@"`, so it self-executes when sourced; the setup
+# strips that one line into a copy that can be sourced to reach the functions
+# in isolation.
 # WAR10CK_BUILD=release is exported so the dev-build auto-enable of local/skip
 # mode does not mask what the flags themselves do.
 #
@@ -91,4 +92,58 @@ setup() {
   "
   (( status == 1 ))
   [[ "$output" =~ "cannot find a modules/ directory" ]]
+}
+
+# Turn a fixture dist into a published one: take the pin over checksums.txt,
+# then append the binary's own hash line, which is what bundle.sh does.
+#
+# Arguments:
+#   $1 - fixture dist directory, built by _build_local_dist
+# Outputs:
+#   the pin (sha256 of checksums.txt without the binary's line) on stdout
+_publish_manifest() {
+  local root=$1 pin
+  pin=$(sha256sum "$root/checksums.txt" | cut -d' ' -f1)
+  printf '%s  war10ck\n' "$(printf 'binary\n' | sha256sum | cut -d' ' -f1)" \
+    >> "$root/checksums.txt"
+  printf '%s\n' "$pin"
+}
+
+@test "_load_manifest: accepts the pinned manifest and keeps only the verified lines" {
+  local root="$BATS_TEST_TMPDIR/dist" pin
+  _build_local_dist "$root"
+  pin=$(_publish_manifest "$root")
+  run bash -c "
+    export WAR10CK_BUILD=release
+    source '$REPO_ROOT/src/lib/private.sh'
+    source '$MAIN'
+    CHECKSUMS_SHA256='$pin' FETCH_CMD=_bcp BASE_URL='$root'
+    _load_manifest install
+    printf '%s\n' \"\$WAR10CK_MANIFEST\"
+  "
+  (( status == 0 ))
+  [[ "$output" =~ "modules/demo/install.sh" ]]
+  [[ ! "$output" =~ "war10ck" ]]
+}
+
+@test "_load_manifest: rejects a forged line hidden behind a trailing war10ck field" {
+  # The pin covers the manifest minus the binary's own line. A filter loose
+  # enough to drop any line ending in " war10ck" would also drop this one from
+  # the pinned bytes while every lookup still read it.
+  local root="$BATS_TEST_TMPDIR/dist" pin
+  _build_local_dist "$root"
+  pin=$(_publish_manifest "$root")
+  { printf '%s  profiles/foo war10ck\n' "$(printf 'evil\n' | sha256sum | cut -d' ' -f1)"
+    cat "$root/checksums.txt"
+  } > "$root/forged"
+  mv "$root/forged" "$root/checksums.txt"
+  run bash -c "
+    export WAR10CK_BUILD=release
+    source '$REPO_ROOT/src/lib/private.sh'
+    source '$MAIN'
+    CHECKSUMS_SHA256='$pin' FETCH_CMD=_bcp BASE_URL='$root'
+    _load_manifest install 2>&1
+  "
+  (( status == 1 ))
+  [[ "$output" =~ "Checksum mismatch" ]]
 }

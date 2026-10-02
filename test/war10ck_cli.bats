@@ -231,6 +231,25 @@ setup() {
   [[ "$output" =~ "_war10ck_completions" ]]
 }
 
+@test "sourcing: completion drops a target that is not a plausible module name" {
+  # compgen -W expands its word list, so a name carrying "$(...)" would run in
+  # the interactive shell the moment Tab is pressed. war10ck is replaced by a
+  # function printing one real target and one hostile one.
+  cd "$BATS_TEST_TMPDIR" || return 1
+  run bash -c "
+    set +u
+    . '$BIN'
+    war10ck() { printf '  demo     [install]\n  \$(touch\${IFS}pwned)  [install]\n'; }
+    COMP_WORDS=(war10ck install '')
+    COMP_CWORD=2
+    _war10ck_completions
+    printf '%s\n' \"\${COMPREPLY[@]}\"
+  "
+  (( status == 0 ))
+  [[ "$output" == "demo" ]]
+  [[ ! -e "$BATS_TEST_TMPDIR/pwned" ]]
+}
+
 @test "sourcing: is idempotent and prints no readonly errors" {
   # 'source ~/.bashrc' is a common thing to do; it must not spew errors.
   run bash -c "set +u; . '$BIN' 2>&1; . '$BIN' 2>&1; . '$BIN' 2>&1"
