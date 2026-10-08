@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.19.0 - 2026-10-08
+
+### Added
+
+- Add an aseprite module building Aseprite 1.3.18.6 from source, with the aseprite MCP server registered in Claude Code
+- Add an ldtk module installing LDtk 1.5.3, with the ldtk-mcp server built from source and registered in Claude Code
+
 ## 0.18.0 - 2026-10-02
 
 ### Fixed
