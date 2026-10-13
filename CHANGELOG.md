@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.20.0 - 2026-10-14
+
+### Added
+
+- Add an emsdk module installing the Emscripten SDK 4.0.10, with emcc on PATH
+
 ## 0.19.0 - 2026-10-08
 
 ### Added
