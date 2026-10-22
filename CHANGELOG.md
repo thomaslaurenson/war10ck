@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.20.1 - 2026-10-23
+
+### Updated
+
+- Bump Go to 1.27.3, goreleaser to 2.18.3 and govulncheck to 1.9.0
+- Bump uv to 0.13.5
+- Bump filen to 0.2.9
+
 ## 0.20.0 - 2026-10-14
 
 ### Added
