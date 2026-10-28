@@ -13,9 +13,17 @@ FIELD="${1:-session}"
 # Both fields, both bars and every monitor share one cached answer: querying
 # claude takes a couple of seconds and there is no point doing it four times.
 CACHE="${XDG_RUNTIME_DIR:-/tmp}/war10ck-claude-usage-${UID}"
-# The session module ticks every minute so its countdown stays live, but claude
-# itself is only asked once per TTL.
-TTL=280
+# The modules tick every minute so their countdowns stay live, but claude
+# itself is only asked once per TTL. The TTL is short while Claude Code is in
+# use, so the percentages follow the work, and long while it sits idle, when
+# only claude.ai or another machine can move them. TTL_ACTIVE sits just under
+# the polybar interval: the cache is written a few seconds after a tick, so a
+# TTL of exactly 60 would only be exceeded every other tick.
+TTL_ACTIVE=50
+TTL_IDLE=1800
+# Minutes since the last session log write that still count as in use.
+ACTIVE_MINS=5
+PROJECTS="$HOME/.claude/projects"
 
 # polybar inherits i3's environment, which does not always carry ~/.local/bin.
 PATH="$HOME/.local/bin:$PATH"
@@ -96,7 +104,10 @@ refresh() {
     local re_week='^Current week \(all models\): +([0-9]+)%'
     local re_reset='resets ([^(]+) \(([^)]+)\)'
 
-    output=$(timeout 60 claude -p "/usage" 2>/dev/null) || return 1
+    # Without --no-session-persistence every query leaves a session log in
+    # ~/.claude/projects, which is_active would then mistake for real use.
+    output=$(timeout 60 claude -p "/usage" --no-session-persistence \
+        2>/dev/null) || return 1
 
     while IFS= read -r line; do
         if [[ "$line" =~ $re_session ]]; then
@@ -120,12 +131,26 @@ refresh() {
         "$session" "$week" "$session_reset" "$week_reset" > "$CACHE"
 }
 
+# Return 0 when Claude Code has written a session log in the last ACTIVE_MINS
+# minutes. The VS Code extension and the CLI both log every turn under
+# ~/.claude/projects, so this covers either. Looking for a running claude
+# process does not work: the VS Code extension keeps several alive whether or
+# not anything is happening.
+is_active() {
+    local hit
+    hit=$(find "$PROJECTS" -name '*.jsonl' -mmin "-$ACTIVE_MINS" \
+        -print -quit 2>/dev/null)
+    [[ -n "$hit" ]]
+}
+
 is_stale() {
-    local mtime now reset
+    local mtime now age reset
     [[ -s "$CACHE" ]] || return 0
     mtime=$(stat -c %Y "$CACHE" 2>/dev/null) || return 0
     now=$(date +%s)
-    (( now - mtime > TTL )) && return 0
+    age=$(( now - mtime ))
+    (( age > TTL_IDLE )) && return 0
+    (( age > TTL_ACTIVE )) && is_active && return 0
 
     # A window rolled over while the cache sat there, so the percentage in it
     # belongs to a session or week that has already ended.
