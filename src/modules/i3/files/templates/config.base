@@ -45,6 +45,14 @@ bindsym Print exec --no-startup-id scrot '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv
 bindsym $mod+Print exec --no-startup-id scrot -s '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -a screenshot -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
 bindsym $mod+Shift+Print exec --no-startup-id scrot -u '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -a screenshot -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
 
+# Notifications (dunst). Pausing holds new notifications until resumed, with
+# nothing on screen to show it is paused.
+bindsym $mod+n exec --no-startup-id dunstctl close
+bindsym $mod+Shift+n exec --no-startup-id dunstctl close-all
+bindsym $mod+Control+n exec --no-startup-id dunstctl set-paused toggle
+bindsym $mod+grave exec --no-startup-id dunstctl history-pop
+bindsym $mod+period exec --no-startup-id dunstctl context
+
 # Mouse drag for floating windows
 floating_modifier $mod
 tiling_drag modifier titlebar

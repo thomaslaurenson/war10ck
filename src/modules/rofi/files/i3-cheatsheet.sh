@@ -28,6 +28,12 @@ SHORTCUTS=$(cat << 'EOF'
 ===  WORKSPACES  ====================================================
   mod+1-6                    Switch to workspace
   mod+Shift+1-6              Move focused window to workspace
+===  NOTIFICATIONS  =================================================
+  mod+n                      Close newest notification
+  mod+Shift+n                Close all notifications
+  mod+Ctrl+n                 Pause / resume notifications
+  mod+`                      Bring back last closed notification
+  mod+.                      Open notification actions menu
 ===  i3 CONTROL  ====================================================
   mod+Shift+r                Restart i3
   mod+Shift+c                Reload config
