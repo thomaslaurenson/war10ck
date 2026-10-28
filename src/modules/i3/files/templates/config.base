@@ -24,6 +24,10 @@ exec_always --no-startup-id xset s off -dpms
 exec --no-startup-id dex --autostart --environment i3
 exec --no-startup-id nm-applet
 exec_always --no-startup-id ~/.war10ck/i3/scripts/display-setup.sh
+# Lock before suspend. xss-lock hooks logind's sleep signal, not the screensaver,
+# so the xset line above does not disable it. --nofork keeps i3lock in the
+# foreground so the sleep delay holds until the lock screen is up.
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork -c 000000
 
 # Volume keys
 bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5%
@@ -37,9 +41,17 @@ bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
 
 # Screenshots
 exec_always --no-startup-id mkdir -p ~/Pictures/Screenshots
-bindsym Print exec --no-startup-id scrot '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
-bindsym $mod+Print exec --no-startup-id scrot -s '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
-bindsym $mod+Shift+Print exec --no-startup-id scrot -u '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
+bindsym Print exec --no-startup-id scrot '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -a screenshot -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
+bindsym $mod+Print exec --no-startup-id scrot -s '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -a screenshot -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
+bindsym $mod+Shift+Print exec --no-startup-id scrot -u '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -a screenshot -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
+
+# Notifications (dunst). Pausing holds new notifications until resumed, with
+# nothing on screen to show it is paused.
+bindsym $mod+n exec --no-startup-id dunstctl close
+bindsym $mod+Shift+n exec --no-startup-id dunstctl close-all
+bindsym $mod+Control+n exec --no-startup-id dunstctl set-paused toggle
+bindsym $mod+grave exec --no-startup-id dunstctl history-pop
+bindsym $mod+period exec --no-startup-id dunstctl context
 
 # Mouse drag for floating windows
 floating_modifier $mod
