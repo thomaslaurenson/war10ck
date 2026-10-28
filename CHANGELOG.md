@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.21.0 - 2026-10-28
+
+### Added
+
+- Add thumb to the gpipe registry
+- Lock the screen before suspend in the i3 module
+- Add i3 key bindings to close, pause, recall and act on notifications
+
+### Changed
+
+- Restyle dunst notifications to match polybar, with colour icons and larger screenshot previews
+- Refresh the polybar Claude usage modules every minute while Claude Code is in use
+
 ## 0.20.1 - 2026-10-23
 
 ### Updated
