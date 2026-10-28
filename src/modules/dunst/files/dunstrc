@@ -1,34 +1,44 @@
+# Colours follow polybar's [colors] and the i3 client borders: #0a0a0a
+# background, #1a1a1a raised surface, #f8f8f8 text, #666666 dim, #00FF00
+# accent, #ff0000 alert.
+
 [global]
+    # follow overrides monitor: notifications open on the monitor holding the
+    # pointer, whichever workspace is showing there
     monitor = 0
     follow = mouse
-    width = 300
-    height = 300
+    width = (300, 420)
+    height = (0, 300)
     origin = top-right
-    offset = 10x32
+    # Clears the 32px polybar with the same 10px margin as the right edge
+    offset = (10, 42)
     scale = 0
     notification_limit = 5
+    # Draws each notification as its own framed card; separator_height is
+    # ignored while this is set
+    gap_size = 6
 
     progress_bar = true
-    progress_bar_height = 10
+    progress_bar_height = 8
     progress_bar_frame_width = 1
     progress_bar_min_width = 150
-    progress_bar_max_width = 300
+    progress_bar_max_width = 400
 
     indicate_hidden = yes
     transparency = 0
-    separator_height = 2
-    padding = 12
+    padding = 10
     horizontal_padding = 12
-    text_icon_padding = 8
+    text_icon_padding = 12
     frame_width = 2
     frame_color = "#00FF00"
-    separator_color = frame
 
     sort = yes
-    font = monospace 9
+    font = monospace 10
     line_height = 0
     markup = full
-    format = "<b>%s</b>\n%b"
+    # The header mirrors polybar's "* SESS" prefixes. Rules below swap its
+    # colour for low and critical urgency, which the urgency sections cannot
+    format = "<span foreground='#00FF00' text_transform='uppercase'>* %a</span>\n<b>%s</b>\n%b"
     alignment = left
     vertical_alignment = center
     show_age_threshold = 60
@@ -38,12 +48,20 @@
     hide_duplicate_count = false
     show_indicators = yes
 
+    # Adwaita ships mostly symbolic icons, which draw dark grey on the dark
+    # background. gnome carries the full colour status icons and hicolor the
+    # application ones; dunst does not follow a theme's Inherits, so both are
+    # named
+    icon_theme = "gnome, hicolor"
+    enable_recursive_icon_lookup = true
     icon_position = left
-    min_icon_size = 0
-    max_icon_size = 64
+    min_icon_size = 32
+    max_icon_size = 48
 
     sticky_history = yes
     history_length = 20
+    # Quoted as a whole: dunst reads an unquoted # as the start of a comment
+    dmenu = "/usr/bin/dmenu -p dunst -fn monospace-10 -nb '#0a0a0a' -nf '#f8f8f8' -sb '#00FF00' -sf '#0a0a0a'"
     always_run_script = true
     title = Dunst
     class = Dunst
@@ -53,17 +71,34 @@
 [urgency_low]
     background = "#0a0a0a"
     foreground = "#666666"
-    frame_color = "#0a0a0a"
+    frame_color = "#666666"
+    highlight = "#666666"
     timeout = 5
 
 [urgency_normal]
     background = "#0a0a0a"
     foreground = "#f8f8f8"
     frame_color = "#00FF00"
+    highlight = "#00FF00"
     timeout = 8
 
 [urgency_critical]
-    background = "#0a0a0a"
+    background = "#1a1a1a"
     foreground = "#f8f8f8"
     frame_color = "#ff0000"
+    highlight = "#ff0000"
     timeout = 0
+
+[low_header]
+    msg_urgency = low
+    format = "<span foreground='#666666' text_transform='uppercase'>* %a</span>\n<b>%s</b>\n%b"
+
+[critical_header]
+    msg_urgency = critical
+    format = "<span foreground='#ff0000' text_transform='uppercase'>* %a</span>\n<b>%s</b>\n%b"
+
+# The screenshot key bindings in the i3 config send as "screenshot", with the
+# saved file as the icon, so it reads as a preview rather than a thumbnail
+[screenshot]
+    appname = screenshot
+    max_icon_size = 128

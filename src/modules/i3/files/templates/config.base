@@ -41,9 +41,9 @@ bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
 
 # Screenshots
 exec_always --no-startup-id mkdir -p ~/Pictures/Screenshots
-bindsym Print exec --no-startup-id scrot '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
-bindsym $mod+Print exec --no-startup-id scrot -s '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
-bindsym $mod+Shift+Print exec --no-startup-id scrot -u '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
+bindsym Print exec --no-startup-id scrot '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -a screenshot -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
+bindsym $mod+Print exec --no-startup-id scrot -s '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -a screenshot -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
+bindsym $mod+Shift+Print exec --no-startup-id scrot -u '%Y-%m-%d-%H%M%S_screenshot.png' -e 'mv $f ~/Pictures/Screenshots/ && notify-send -a screenshot -i ~/Pictures/Screenshots/$f "Screenshot saved" "$f"'
 
 # Mouse drag for floating windows
 floating_modifier $mod
