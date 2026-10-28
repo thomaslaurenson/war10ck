@@ -24,6 +24,10 @@ exec_always --no-startup-id xset s off -dpms
 exec --no-startup-id dex --autostart --environment i3
 exec --no-startup-id nm-applet
 exec_always --no-startup-id ~/.war10ck/i3/scripts/display-setup.sh
+# Lock before suspend. xss-lock hooks logind's sleep signal, not the screensaver,
+# so the xset line above does not disable it. --nofork keeps i3lock in the
+# foreground so the sleep delay holds until the lock screen is up.
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork -c 000000
 
 # Volume keys
 bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5%
