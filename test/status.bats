@@ -43,6 +43,34 @@ _fixture_manifest() {
   printf '%s  modules/demo/install.sh\n%s  modules/demo/config.sh\n' "$1" "$2"
 }
 
+# As _fixture_manifest, with files the module ships under files/.
+#
+# Arguments:
+#   $1   - install.sh hash
+#   $2   - config.sh hash
+#   $3.. - name=hash pairs, one per file under files/
+_fixture_manifest_files() {
+  _fixture_manifest "$1" "$2"
+  shift 2
+  local pair
+  for pair in "$@"; do
+    printf '%s  modules/demo/files/%s\n' "${pair#*=}" "${pair%%=*}"
+  done
+}
+
+# Record an action against one manifest, then report status against another,
+# standing in for a module applied by one build and checked by the next.
+#
+# Arguments:
+#   $1 - the HOME to use
+#   $2 - action to record: install or config
+#   $3 - manifest the action ran with
+#   $4 - manifest the checking build ships
+_applied_then_shipped() {
+  _with_manifest "$1" "$3" "WAR10CK_MANIFEST='$3' _w_registry_record demo $2"
+  run _with_manifest "$1" "$4" "status"
+}
+
 @test "status: reports an empty registry without failing" {
   run _with_home "$BATS_TEST_TMPDIR/empty" "status"
   (( status == 0 ))
@@ -284,4 +312,119 @@ _fixture_manifest() {
   (( status == 0 ))
   [[ "$output" =~ DEMO_INSTALLED ]]
   [[ "$output" =~ DEMO_CONFIGURED ]]
+}
+
+@test "record: the hash of the module's files is stored for the action that ran" {
+  local h="$BATS_TEST_TMPDIR/h"
+  local manifest; manifest=$(_fixture_manifest_files aaa bbb functions=fff)
+  _with_manifest "$h" "$manifest" "WAR10CK_MANIFEST='$manifest' _w_registry_record demo config"
+  run cat "$h/.war10ck/registry.d/demo"
+  [[ "$output" =~ configured_files_sha=[0-9a-f]{64} ]]
+  [[ "$output" =~ installed_files_sha=$'\n' ]]
+}
+
+@test "record: a module that ships no files records none" {
+  local h="$BATS_TEST_TMPDIR/h"
+  local manifest; manifest=$(_fixture_manifest aaa bbb)
+  _with_manifest "$h" "$manifest" "WAR10CK_MANIFEST='$manifest' _w_registry_record demo install"
+  run cat "$h/.war10ck/registry.d/demo"
+  [[ "$output" =~ installed_files_sha=none ]]
+}
+
+@test "record: with no manifest, no files hash is claimed" {
+  # none would say the module ships no files, which nothing has shown.
+  local h="$BATS_TEST_TMPDIR/h"
+  _with_home "$h" "_w_registry_record demo install"
+  run cat "$h/.war10ck/registry.d/demo"
+  [[ "$output" =~ installed_files_sha=$'\n' ]]
+}
+
+@test "state: unchanged scripts and files read as current" {
+  local h="$BATS_TEST_TMPDIR/h"
+  local manifest; manifest=$(_fixture_manifest_files aaa bbb functions=fff gitconfig=ggg)
+  _applied_then_shipped "$h" config "$manifest" "$manifest"
+  (( status == 0 ))
+  [[ "$output" =~ current ]]
+}
+
+@test "state: a changed file reads as changed though no script changed" {
+  # The git module: config.sh only deploys files/functions.bash, so a new
+  # function library leaves every script hash as it was.
+  local h="$BATS_TEST_TMPDIR/h"
+  local applied; applied=$(_fixture_manifest_files aaa bbb functions=fff)
+  local shipped; shipped=$(_fixture_manifest_files aaa bbb functions=NEW)
+  _applied_then_shipped "$h" config "$applied" "$shipped"
+  (( status == 0 ))
+  [[ "$output" =~ changed ]]
+  [[ "$output" =~ "Re-apply them" ]]
+}
+
+@test "state: a file added or removed reads as changed" {
+  local h="$BATS_TEST_TMPDIR/h"
+  local one; one=$(_fixture_manifest_files aaa bbb functions=fff)
+  local two; two=$(_fixture_manifest_files aaa bbb functions=fff extra=eee)
+  _applied_then_shipped "$h" config "$one" "$two"
+  [[ "$output" =~ changed ]]
+  rm -rf "$h"
+  _applied_then_shipped "$h" config "$two" "$one"
+  [[ "$output" =~ changed ]]
+}
+
+@test "state: a module that gains its first file reads as changed" {
+  local h="$BATS_TEST_TMPDIR/h"
+  local applied; applied=$(_fixture_manifest aaa bbb)
+  local shipped; shipped=$(_fixture_manifest_files aaa bbb functions=fff)
+  _applied_then_shipped "$h" install "$applied" "$shipped"
+  [[ "$output" =~ changed ]]
+}
+
+@test "state: another module's files do not count" {
+  local h="$BATS_TEST_TMPDIR/h"
+  local applied; applied=$(_fixture_manifest_files aaa bbb functions=fff)
+  local shipped
+  shipped=$(printf '%s\n%s\n' "$applied" 'zzz  modules/other/files/functions.bash')
+  _applied_then_shipped "$h" config "$applied" "$shipped"
+  [[ "$output" =~ current ]]
+}
+
+@test "state: an entry from before files were tracked is unknown when the module has files" {
+  # Every entry written up to 0.22.0. Its script hash still matches, but
+  # nothing says which files it deployed, so current would be a guess.
+  local h="$BATS_TEST_TMPDIR/h"
+  mkdir -p "$h/.war10ck/registry.d"
+  printf 'configured=2026-01-01T00:00:00Z\nconfigured_by=0.22.0\nconfigured_sha=bbb\n' \
+    > "$h/.war10ck/registry.d/demo"
+  run _with_manifest "$h" "$(_fixture_manifest_files aaa bbb functions=fff)" "status"
+  (( status == 0 ))
+  [[ "$output" =~ unknown ]]
+  [[ "$output" =~ "Re-apply them to start tracking" ]]
+}
+
+@test "state: an entry from before files were tracked stays current when the module has none" {
+  local h="$BATS_TEST_TMPDIR/h"
+  mkdir -p "$h/.war10ck/registry.d"
+  printf 'configured=2026-01-01T00:00:00Z\nconfigured_by=0.22.0\nconfigured_sha=bbb\n' \
+    > "$h/.war10ck/registry.d/demo"
+  run _with_manifest "$h" "$(_fixture_manifest aaa bbb)" "status"
+  [[ "$output" =~ current ]]
+}
+
+@test "state: a definite change is not hidden by an action that cannot be compared" {
+  # install predates file tracking and reads as unknown on its own; config has
+  # since changed, which is the more useful thing to report.
+  local h="$BATS_TEST_TMPDIR/h"
+  mkdir -p "$h/.war10ck/registry.d"
+  printf '%s\n' 'installed=2026-01-01T00:00:00Z' 'installed_sha=aaa' \
+    'configured=2026-01-01T00:00:00Z' 'configured_sha=OLD' \
+    > "$h/.war10ck/registry.d/demo"
+  run _with_manifest "$h" "$(_fixture_manifest_files aaa bbb functions=fff)" "status"
+  [[ "$output" =~ changed ]]
+}
+
+@test "status: no hint to re-apply unknown modules in a dev build" {
+  local h="$BATS_TEST_TMPDIR/h"
+  _with_home "$h" "_w_registry_record demo install"
+  run _with_home "$h" "status"
+  [[ "$output" =~ unknown ]]
+  [[ ! "$output" =~ "start tracking" ]]
 }
