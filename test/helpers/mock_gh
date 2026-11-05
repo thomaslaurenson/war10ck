@@ -2,15 +2,18 @@
 #
 # Stands in for the GitHub CLI. Symlink it onto PATH as "gh".
 #
-# Only the two calls the repository feature functions make are answered. gh
-# repo list prints a fixture whatever fields are asked for. gh repo edit prints
-# the success line the real gh prints to a terminal, tick included, so a test
-# can catch that line leaking into the output of the function under test.
+# Only the calls the git functions make are answered. gh repo list prints a
+# fixture whatever fields are asked for. gh repo edit prints the success line
+# the real gh prints to a terminal, tick included, so a test can catch that
+# line leaking into the output of the function under test. gh api prints a
+# fixture whatever path is asked for, standing in for a raw file download.
 #
 # Environment:
 #   MOCK_GH_CALLS       - file each invocation's arguments are appended to
 #   MOCK_GH_LIST        - JSON file gh repo list prints
 #   MOCK_GH_LIST_STATUS - exit status for gh repo list (default 0)
+#   MOCK_GH_SITE        - file gh api prints
+#   MOCK_GH_API_STATUS  - exit status for gh api (default 0)
 #   MOCK_GH_LIST_FULL   - 1 to print as many repositories as --limit asks for,
 #                         standing in for an owner with more than the limit
 #   MOCK_GH_EDIT_FAIL   - repository whose gh repo edit fails
@@ -48,6 +51,13 @@ case "${1:-} ${2:-}" in
     fi
     # The tick is U+2713, written as its UTF-8 bytes so this file stays ASCII
     printf '\xe2\x9c\x93 Edited repository %s\n' "${3:-}"
+    ;;
+  "api "*)
+    if [[ "${MOCK_GH_API_STATUS:-0}" != "0" ]]; then
+      printf 'gh: Not Found (HTTP 404)\n' >&2
+      exit "${MOCK_GH_API_STATUS}"
+    fi
+    cat "${MOCK_GH_SITE}"
     ;;
   *)
     printf 'mock_gh: unhandled call: %s\n' "$*" >&2
