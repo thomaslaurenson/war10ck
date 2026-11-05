@@ -5,8 +5,12 @@
 #
 #   installed=<ISO 8601 UTC>      when install.sh last completed
 #   installed_by=<war10ck version>
+#   installed_sha=<sha256>        of the install.sh that ran
+#   installed_files_sha=<sha256>  of the module's files/ at the time, or none
 #   configured=<ISO 8601 UTC>     when config.sh last completed
 #   configured_by=<war10ck version>
+#   configured_sha=<sha256>       of the config.sh that ran
+#   configured_files_sha=<sha256> of the module's files/ at the time, or none
 #
 # The same shape as gpipe.d, so there is one registry format in this project
 # rather than two.
@@ -49,6 +53,32 @@ _w_manifest_sha() {
   printf '%s\n' "$1" | awk -v key="$2" '$2 == key { print $1; exit }'
 }
 
+# Print one hash standing for every file a module ships under files/, or none
+# when it ships none. The lifecycle scripts alone are not enough to compare: a
+# module such as git deploys a function library from files/ with a config.sh
+# that never changes, so a new library would otherwise read as current.
+#
+# The manifest lines are hashed rather than the files, since each line already
+# carries its file's sha256. The result changes when any file under files/ is
+# added, removed, renamed or edited, and with nothing else.
+#
+# Arguments:
+#   $1 - Manifest contents
+#   $2 - Module name
+# Outputs:
+#   stdout: the sha256, or none
+_w_manifest_files_sha() {
+  local lines
+  lines=$(printf '%s\n' "$1" \
+    | awk -v prefix="modules/$2/files/" 'index($2, prefix) == 1 { print $1, $2 }' \
+    | LC_ALL=C sort)
+  if [[ -z "${lines}" ]]; then
+    printf 'none\n'
+    return 0
+  fi
+  printf '%s\n' "${lines}" | sha256sum | cut -d' ' -f1
+}
+
 # Read a key from a registry entry.
 #
 # Arguments:
@@ -89,45 +119,64 @@ _w_registry_record() {
     return 0
   fi
 
-  local installed installed_by installed_sha
-  local configured configured_by configured_sha
-  local stamp sha
+  local installed installed_by installed_sha installed_files_sha
+  local configured configured_by configured_sha configured_files_sha
+  local stamp sha files_sha=""
   installed=$(_w_registry_get "${file}" installed)
   installed_by=$(_w_registry_get "${file}" installed_by)
   installed_sha=$(_w_registry_get "${file}" installed_sha)
+  installed_files_sha=$(_w_registry_get "${file}" installed_files_sha)
   configured=$(_w_registry_get "${file}" configured)
   configured_by=$(_w_registry_get "${file}" configured_by)
   configured_sha=$(_w_registry_get "${file}" configured_sha)
+  configured_files_sha=$(_w_registry_get "${file}" configured_files_sha)
   stamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
   # The manifest is already loaded and verified for any action that reaches
   # here, so the hash of the script that just ran costs nothing to record.
   sha=$(_w_manifest_sha "${WAR10CK_MANIFEST:-}" "modules/${module}/${action}.sh")
 
+  # Which files an action deploys is not known, so each action records the
+  # whole files/ tree. With no manifest nothing is recorded: none would claim
+  # the module ships no files, which an empty manifest does not show.
+  if [[ -n "${WAR10CK_MANIFEST:-}" ]]; then
+    files_sha=$(_w_manifest_files_sha "${WAR10CK_MANIFEST}" "${module}")
+  fi
+
   case "${action}" in
-    install) installed=${stamp};  installed_by=${VERSION}; installed_sha=${sha} ;;
-    config)  configured=${stamp}; configured_by=${VERSION}; configured_sha=${sha} ;;
-    *)       return 0 ;;
+    install)
+      installed=${stamp}; installed_by=${VERSION}
+      installed_sha=${sha}; installed_files_sha=${files_sha}
+      ;;
+    config)
+      configured=${stamp}; configured_by=${VERSION}
+      configured_sha=${sha}; configured_files_sha=${files_sha}
+      ;;
+    *) return 0 ;;
   esac
 
   mkdir -p "${W_REGISTRY_DIR}"
   {
-    printf 'installed=%s\n'      "${installed}"
-    printf 'installed_by=%s\n'   "${installed_by}"
-    printf 'installed_sha=%s\n'  "${installed_sha}"
-    printf 'configured=%s\n'     "${configured}"
-    printf 'configured_by=%s\n'  "${configured_by}"
-    printf 'configured_sha=%s\n' "${configured_sha}"
+    printf 'installed=%s\n'            "${installed}"
+    printf 'installed_by=%s\n'         "${installed_by}"
+    printf 'installed_sha=%s\n'        "${installed_sha}"
+    printf 'installed_files_sha=%s\n'  "${installed_files_sha}"
+    printf 'configured=%s\n'           "${configured}"
+    printf 'configured_by=%s\n'        "${configured_by}"
+    printf 'configured_sha=%s\n'       "${configured_sha}"
+    printf 'configured_files_sha=%s\n' "${configured_files_sha}"
   } > "${file}"
 }
 
 # Print the state of a recorded module against the manifest this build ships:
 # current, changed, or unknown.
 #
-# A module is only "current" when every action recorded for it still matches.
-# Anything unresolvable is "unknown" rather than assumed good: an entry written
-# before hashes were recorded, or a dev build with no embedded manifest, must
-# not read as a clean bill of health.
+# A module is only "current" when every action recorded for it still matches,
+# both the script that ran and the files/ tree it ran with. Anything
+# unresolvable is "unknown" rather than assumed good: an entry written before
+# hashes were recorded, or a dev build with no embedded manifest, must not read
+# as a clean bill of health. A definite change outranks an unknown, so an
+# action nothing can be said about never hides one that has changed.
 #
 # Arguments:
 #   $1 - Registry file path
@@ -137,29 +186,46 @@ _w_registry_state() {
   local module=$2
   [[ -n "${WAR10CK_EMBEDDED_MANIFEST}" ]] || { printf 'unknown\n'; return 0; }
 
-  local action ran recorded current compared=0
+  local files_now
+  files_now=$(_w_manifest_files_sha "${WAR10CK_EMBEDDED_MANIFEST}" "${module}")
+
+  local action key ran recorded recorded_files current
+  local compared=0 unknown=0
   for action in install config; do
     case "${action}" in
-      install) ran=$(_w_registry_get "${file}" installed)
-               recorded=$(_w_registry_get "${file}" installed_sha) ;;
-      config)  ran=$(_w_registry_get "${file}" configured)
-               recorded=$(_w_registry_get "${file}" configured_sha) ;;
+      install) key=installed ;;
+      config)  key=configured ;;
     esac
+    ran=$(_w_registry_get "${file}" "${key}")
+    recorded=$(_w_registry_get "${file}" "${key}_sha")
+    recorded_files=$(_w_registry_get "${file}" "${key}_files_sha")
 
     # An action with no timestamp never ran, so there is nothing to compare.
     [[ -n "${ran}" ]] || continue
-    [[ -n "${recorded}" ]] || { printf 'unknown\n'; return 0; }
 
     current=$(_w_manifest_sha "${WAR10CK_EMBEDDED_MANIFEST}" "modules/${module}/${action}.sh")
-    [[ -n "${current}" ]] || { printf 'unknown\n'; return 0; }
+    if [[ -z "${recorded}" || -z "${current}" ]]; then
+      unknown=1
+      continue
+    fi
     [[ "${recorded}" == "${current}" ]] || { printf 'changed\n'; return 0; }
+
+    # An entry from before files/ was tracked has no files hash. For a module
+    # shipping no files the script settles it; for one that does, nothing
+    # recorded says which files were deployed.
+    if [[ -z "${recorded_files}" ]]; then
+      [[ "${files_now}" == "none" ]] || { unknown=1; continue; }
+    elif [[ "${recorded_files}" != "${files_now}" ]]; then
+      printf 'changed\n'
+      return 0
+    fi
     compared=1
   done
 
-  if (( compared )); then
-    printf 'current\n'
-  else
+  if (( unknown || ! compared )); then
     printf 'unknown\n'
+  else
+    printf 'current\n'
   fi
 }
 
@@ -192,7 +258,7 @@ status() {
     "------" "---------" "----------" "--" "-----"
 
   local file module installed configured applied_by state
-  local changed=0
+  local changed=0 unknown=0
   for file in "${files[@]}"; do
     module=$(basename "${file}")
     installed=$(_w_registry_get "${file}" installed)
@@ -207,6 +273,7 @@ status() {
     applied_by=${applied_by#v}
     state=$(_w_registry_state "${file}" "${module}")
     [[ "${state}" == "changed" ]] && changed=1
+    [[ "${state}" == "unknown" ]] && unknown=1
     printf '%-14s %-22s %-22s %-9s %s\n' \
       "${module}" "${installed:--}" "${configured:--}" "${applied_by:--}" "${state}"
   done
@@ -214,5 +281,10 @@ status() {
 
   if (( changed )); then
     w_log_info "Modules marked changed differ from this build. Re-apply them to catch up."
+  fi
+  # Not said for a dev build, where every module is unknown and re-applying
+  # changes nothing about that.
+  if (( unknown )) && [[ -n "${WAR10CK_EMBEDDED_MANIFEST}" ]]; then
+    w_log_info "Modules marked unknown have no record to compare. Re-apply them to start tracking."
   fi
 }

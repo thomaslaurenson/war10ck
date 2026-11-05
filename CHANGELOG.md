@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.22.1 - 2026-11-05
+
+### Changed
+
+- Stop git guessing a name and email when none is configured
+
+### Fixed
+
+- Report a module as changed in status when only a file it deploys has changed
+
 ## 0.22.0 - 2026-11-05
 
 ### Added
