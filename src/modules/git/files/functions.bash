@@ -527,3 +527,450 @@ w_git_disable_wiki_for_user() {
 w_git_disable_discussions_for_user() {
   _w_git_disable_repo_feature hasDiscussionsEnabled enable-discussions discussions
 }
+
+# function: _w_git_list_checked_repos
+#
+# List the repositories the check functions cover: every public, non-archived
+# repository the named owners have, other than forks and profile repositories.
+# A fork's description is usually its upstream's, and a profile repository
+# only holds the README GitHub shows on the owner's page, so neither is a
+# project of the owner's to describe or tag.
+#
+# Arguments:
+#   $@ - one or more GitHub user or organisation names
+# Outputs:
+#   a JSON object on stdout holding repos, the repositories sorted by name and
+#   each with nameWithOwner, description and repositoryTopics, and skipped,
+#   the names of the profile repositories left out; warnings on stderr
+# Returns:
+#   1 when any owner's repositories could not be listed
+_w_git_list_checked_repos() {
+  # gh stops at the limit without saying so, so reaching it is reported rather
+  # than taken to be every repository the owner has. --source leaves forks out
+  # of the listing.
+  local limit=1000 owner listing total
+  local -a listings=()
+  for owner in "$@"; do
+    if ! listing=$(gh repo list "${owner}" --limit "${limit}" --no-archived \
+      --source --visibility public \
+      --json nameWithOwner,description,repositoryTopics); then
+      printf '[!] Could not list repositories for %s\n' "${owner}" >&2
+      return 1
+    fi
+    total=$(jq 'length' <<< "${listing}")
+    if (( total >= limit )); then
+      printf '[!] Listing %s stopped at %s repositories, %s\n' "${owner}" \
+        "${limit}" 'so any beyond it were not checked' >&2
+    fi
+    listings+=("${listing}")
+  done
+
+  # unique_by sorts by name as well, and drops the repeats an owner named
+  # twice would otherwise produce. A profile repository is the one GitHub
+  # shows on the owner's page: a user's is named after the user and an
+  # organisation's is .github.
+  printf '%s\n' "${listings[@]}" | jq -s '
+    def profile: .nameWithOwner | ascii_downcase | split("/")
+      | .[1] == .[0] or .[1] == ".github";
+    add | unique_by(.nameWithOwner | ascii_downcase)
+    | {repos: map(select(profile | not)),
+       skipped: map(select(profile) | .nameWithOwner)}'
+}
+
+# function: _w_git_print_problems
+#
+# Print what each failing repository needs, beneath a check function's table.
+#
+# Arguments:
+#   $1 - the results, a JSON array of objects each holding name, problems (what
+#        the repository needs) and detail (lines printed beneath the problems)
+# Outputs:
+#   one block per failing repository on stdout
+_w_git_print_problems() {
+  jq -r '.[] | select(.problems | length > 0)
+    | "", "[!] \(.name)",
+      (.problems[] | "    - \(.)"),
+      (.detail[] | "      \(.)")' <<< "$1"
+}
+
+# function: _w_git_print_summary
+#
+# Close a check function's report with the profile repositories skipped and
+# how many repositories passed.
+#
+# Arguments:
+#   $1 - the results, as passed to _w_git_print_problems
+#   $2 - the names of the profile repositories skipped, as a JSON array
+# Outputs:
+#   the summary on stdout
+# Returns:
+#   1 when any repository has a problem
+_w_git_print_summary() {
+  local skipped count failing
+  skipped=$(jq -r 'join(" ")' <<< "$2")
+  if [[ -n "${skipped}" ]]; then
+    printf '\n[*] Skipped profile repositories: %s\n' "${skipped}"
+  fi
+
+  count=$(jq 'length' <<< "$1")
+  failing=$(jq 'map(select(.problems | length > 0)) | length' <<< "$1")
+  printf '\n[*] Repositories passing: %s of %s\n' \
+    "$(( count - failing ))" "${count}"
+
+  (( failing == 0 ))
+}
+
+# function: _w_git_site_projects
+#
+# Print the projects thomaslaurenson.com lists, read from the site's data file
+# on its default branch. The published branch is read, rather than a local
+# clone, because a clone can be ahead of or behind what the site shows.
+#
+# The file is JavaScript, not JSON, so it is read line by line rather than
+# evaluated. That relies on the layout it has: each project an object literal
+# with one property per line, each value a quoted string or a bare true or
+# false, and each object closed by a line holding only "}" or "},". Anything
+# else in the file, such as the social links, has no description and is
+# skipped.
+#
+# Arguments:
+#   $1 - repository holding the site, as owner/name
+#   $2 - path of the data file within it
+# Outputs:
+#   one line per project on stdout: the GitHub repository as owner/name in
+#   lower case, the archived flag, and the description, separated by tabs
+# Returns:
+#   1 when the file could not be fetched
+_w_git_site_projects() {
+  local site_repo=$1 site_path=$2 content
+
+  if ! content=$(gh api -H 'Accept: application/vnd.github.raw' \
+    "repos/${site_repo}/contents/${site_path}"); then
+    return 1
+  fi
+
+  # \047 is a single quote, which this single-quoted program cannot hold. A
+  # value loses its surrounding quotes and trailing comma, and a quote escaped
+  # inside it is unescaped, so the description compares equal to GitHub's.
+  awk '
+    function value(line,    q) {
+      sub(/^[^:]*:[[:space:]]*/, "", line)
+      sub(/,?[[:space:]]*$/, "", line)
+      q = substr(line, 1, 1)
+      if (q == "\047" || q == "\"") {
+        line = substr(line, 2, length(line) - 2)
+        gsub("\\\\" q, q, line)
+      }
+      return line
+    }
+    function reset() { desc = ""; repo = ""; archived = "false" }
+    /^[[:space:]]*name:/ { reset() }
+    /^[[:space:]]*description:/ { desc = value($0) }
+    /^[[:space:]]*github:/ {
+      repo = tolower(value($0))
+      sub(/^https?:\/\/(www\.)?github\.com\//, "", repo)
+      sub(/(\.git)?\/?$/, "", repo)
+    }
+    /^[[:space:]]*archived:/ { archived = value($0) }
+    /^[[:space:]]*},?[[:space:]]*$/ {
+      if (desc != "" && repo != "") {
+        printf "%s\t%s\t%s\n", repo, archived, desc
+      }
+      reset()
+    }
+  ' <<< "${content}"
+}
+
+# function: w_git_check_descriptions
+#
+# Check the description of every public, non-archived repository the named
+# GitHub users or organisations own, forks and profile repositories aside. Each
+# must fall within the length limits, and one thomaslaurenson.com lists must
+# match the site's word for word. A project the site shows as active must also
+# be among the repositories checked, since the site links to it.
+#
+# The limits count characters, not words, because they exist to make the
+# portfolio cards on the site render alike. A card's height follows how many
+# lines its description wraps to, and that turns on characters: 130 to 160 is
+# three lines at the desktop width. Words are reported alongside for reference.
+#
+# Nothing is edited, on GitHub or on the site. Both are read through the
+# GitHub CLI, so gh has to be authenticated.
+#
+# Arguments:
+#   $@ - one or more GitHub user or organisation names, and the options
+#        described by --help
+# Outputs:
+#   a table on stdout, one row per repository, then what each failing
+#   repository needs; warnings and errors on stderr
+# Returns:
+#   1 on a bad option or no owner, when a listing or the site's data could
+#   not be read, or when any repository or site project fails the check
+w_git_check_descriptions() {
+  local min_chars=130 max_chars=160 site="yes"
+  local site_repo="thomaslaurenson/thomaslaurenson.github.io"
+  local site_path="src/data/constants.js"
+  local -a owners=()
+
+  while (( $# > 0 )); do
+    case "$1" in
+      --help|-h|help)
+        printf '%s\n' \
+          'Usage: w_git_check_descriptions OWNER... [options]' \
+          '' \
+          'Check that the description of every public, non-archived repository' \
+          'OWNER has is within the length limits, and that the projects' \
+          'thomaslaurenson.com lists have the same description as the site.' \
+          'Forks and profile repositories (OWNER/OWNER, OWNER/.github) are' \
+          'skipped.' \
+          '' \
+          'Options:' \
+          '  --min-chars N   Shortest description allowed (default 130)' \
+          '  --max-chars N   Longest description allowed (default 160)' \
+          '  --no-site       Skip the comparison with the site' \
+          '' \
+          'The default limits keep a description to three lines on a site card.' \
+          "The site's descriptions are read from ${site_path} on the" \
+          "default branch of ${site_repo}."
+        return 0
+        ;;
+      --min-chars|--max-chars)
+        if [[ ! "${2:-}" =~ ^[0-9]+$ ]]; then
+          printf 'w_git_check_descriptions: %s needs a number\n' "$1" >&2
+          return 1
+        fi
+        if [[ "$1" == "--min-chars" ]]; then
+          min_chars=$2
+        else
+          max_chars=$2
+        fi
+        shift
+        ;;
+      --no-site) site="no" ;;
+      -*)
+        printf 'w_git_check_descriptions: unknown option: %s\n' "$1" >&2
+        return 1
+        ;;
+      *) owners+=("$1") ;;
+    esac
+    shift
+  done
+
+  # Required rather than defaulting to the authenticated account, which is
+  # what gh repo list does with no owner, so the report always says whose
+  # repositories it covers.
+  if (( ${#owners[@]} == 0 )); then
+    printf 'w_git_check_descriptions: an owner is required, try --help\n' >&2
+    return 1
+  fi
+
+  if (( min_chars > max_chars )); then
+    printf 'w_git_check_descriptions: --min-chars is above --max-chars\n' >&2
+    return 1
+  fi
+
+  local listing
+  if ! listing=$(_w_git_list_checked_repos "${owners[@]}"); then
+    return 1
+  fi
+
+  local projects='[]' site_lines
+  if [[ "${site}" == "yes" ]]; then
+    if ! site_lines=$(_w_git_site_projects "${site_repo}" "${site_path}"); then
+      printf '[!] Could not read %s from %s\n' "${site_path}" "${site_repo}" >&2
+      printf '[*] Re-run with --no-site to check the repositories alone\n' >&2
+      return 1
+    fi
+    # An empty result means the file's layout no longer matches what the
+    # reader expects. Carrying on would compare against nothing and pass
+    # every repository the site lists.
+    if [[ -z "${site_lines}" ]]; then
+      printf '[!] Found no projects in %s, so its layout may have changed\n' \
+        "${site_path}" >&2
+      return 1
+    fi
+    projects=$(jq -R -s 'split("\n") | map(select(length > 0)
+      | split("\t")
+      | {repo: .[0], archived: (.[1] == "true"),
+         description: (.[2:] | join("\t"))})' <<< "${site_lines}")
+  fi
+
+  # Both descriptions are kept under a mismatch so the fix can be made
+  # without opening either.
+  local results
+  results=$(jq --argjson projects "${projects}" --argjson min "${min_chars}" \
+    --argjson max "${max_chars}" '
+    ($projects | map({key: .repo, value: .description}) | from_entries)
+      as $site
+    | .repos | map(
+        (.description // "") as $text
+        | ($text | length) as $chars
+        | $site[.nameWithOwner | ascii_downcase] as $listed
+        | (if $listed == null then "-"
+           elif $listed == $text then "match"
+           else "differs" end) as $state
+        | {
+            name: .nameWithOwner,
+            chars: $chars,
+            words: ([$text | scan("\\S+")] | length),
+            site: $state,
+            problems: [
+              if $text == "" then "no description"
+              elif $chars < $min or $chars > $max then
+                "description is \($chars) characters, needs \($min) to \($max)"
+              else empty end,
+              if $state == "differs" then "description differs from the site"
+              else empty end
+            ],
+            detail: (if $state == "differs" then [
+                "github: \(if $text == "" then "(none)" else $text end)",
+                "site:   \($listed)"
+              ] else [] end)
+          }
+      )' <<< "${listing}")
+
+  # Only the owners checked are held to this. A project under any other owner
+  # was not listed, so its absence says nothing.
+  local -a absent=()
+  readarray -t absent < <(jq -r --argjson projects "${projects}" '
+    (.repos | map(.nameWithOwner | ascii_downcase)) as $listed
+    | ($ARGS.positional | map(ascii_downcase)) as $owners
+    | $projects[]
+    | select(.archived | not)
+    | select(.repo | split("/")[0] | IN($owners[]))
+    | select(.repo | IN($listed[]) | not)
+    | .repo' --args "${owners[@]}" <<< "${listing}")
+
+  local width
+  width=$(jq '[.[].name | length, 10] | max' <<< "${results}")
+
+  printf '%-*s  %5s  %5s  %-7s  %s\n' \
+    "${width}" "Repository" "Chars" "Words" "Site" "Result"
+  printf '%-*s  %5s  %5s  %-7s  %s\n' \
+    "${width}" "----------" "-----" "-----" "----" "------"
+
+  local name chars words state result
+  while IFS=$'\t' read -r name chars words state result; do
+    printf '%-*s  %5s  %5s  %-7s  %s\n' \
+      "${width}" "${name}" "${chars}" "${words}" "${state}" "${result}"
+  done < <(jq -r '.[] | [.name, .chars, .words, .site,
+      (if (.problems | length) == 0 then "pass" else "fail" end)]
+    | @tsv' <<< "${results}")
+
+  _w_git_print_problems "${results}"
+
+  if (( ${#absent[@]} > 0 )); then
+    printf '\n[!] On the site as active, but not a public, active repository:\n'
+    printf '    %s\n' "${absent[@]}"
+  fi
+
+  local status=0
+  _w_git_print_summary "${results}" "$(jq '.skipped' <<< "${listing}")" \
+    || status=1
+  if (( ${#absent[@]} > 0 )); then
+    status=1
+  fi
+  return "${status}"
+}
+
+# function: w_git_check_topics
+#
+# Check that every public, non-archived repository the named GitHub users or
+# organisations own, forks and profile repositories aside, is tagged with
+# enough topics. The topics each repository has are listed so they can be
+# compared across repositories.
+#
+# Nothing is edited. Repositories are read through the GitHub CLI, so gh has
+# to be authenticated.
+#
+# Arguments:
+#   $@ - one or more GitHub user or organisation names, and the options
+#        described by --help
+# Outputs:
+#   a table on stdout, one row per repository, then what each failing
+#   repository needs; warnings and errors on stderr
+# Returns:
+#   1 on a bad option or no owner, when a listing could not be read, or when
+#   any repository has too few topics
+w_git_check_topics() {
+  local min_topics=3
+  local -a owners=()
+
+  while (( $# > 0 )); do
+    case "$1" in
+      --help|-h|help)
+        printf '%s\n' \
+          'Usage: w_git_check_topics OWNER... [options]' \
+          '' \
+          'Check that every public, non-archived repository OWNER has is' \
+          'tagged with enough topics, and list the topics each one has.' \
+          'Forks and profile repositories (OWNER/OWNER, OWNER/.github) are' \
+          'skipped.' \
+          '' \
+          'Options:' \
+          '  --min-topics N  Fewest topics allowed (default 3)'
+        return 0
+        ;;
+      --min-topics)
+        if [[ ! "${2:-}" =~ ^[0-9]+$ ]]; then
+          printf 'w_git_check_topics: %s needs a number\n' "$1" >&2
+          return 1
+        fi
+        min_topics=$2
+        shift
+        ;;
+      -*)
+        printf 'w_git_check_topics: unknown option: %s\n' "$1" >&2
+        return 1
+        ;;
+      *) owners+=("$1") ;;
+    esac
+    shift
+  done
+
+  if (( ${#owners[@]} == 0 )); then
+    printf 'w_git_check_topics: an owner is required, try --help\n' >&2
+    return 1
+  fi
+
+  local listing
+  if ! listing=$(_w_git_list_checked_repos "${owners[@]}"); then
+    return 1
+  fi
+
+  # gh reports a repository with no topics as null rather than an empty list.
+  local results
+  results=$(jq --argjson min "${min_topics}" '.repos | map(
+      [(.repositoryTopics // [])[].name] as $topics
+      | {
+          name: .nameWithOwner,
+          count: ($topics | length),
+          topics: (if $topics == [] then "-" else $topics | join(", ") end),
+          problems: [
+            if ($topics | length) < $min then
+              "needs at least \($min) topics, has \($topics | length)"
+            else empty end
+          ],
+          detail: []
+        }
+    )' <<< "${listing}")
+
+  local width
+  width=$(jq '[.[].name | length, 10] | max' <<< "${results}")
+
+  printf '%-*s  %6s  %-6s  %s\n' \
+    "${width}" "Repository" "Topics" "Result" "Names"
+  printf '%-*s  %6s  %-6s  %s\n' \
+    "${width}" "----------" "------" "------" "-----"
+
+  local name count result topics
+  while IFS=$'\t' read -r name count result topics; do
+    printf '%-*s  %6s  %-6s  %s\n' \
+      "${width}" "${name}" "${count}" "${result}" "${topics}"
+  done < <(jq -r '.[] | [.name, .count,
+      (if (.problems | length) == 0 then "pass" else "fail" end), .topics]
+    | @tsv' <<< "${results}")
+
+  _w_git_print_problems "${results}"
+  _w_git_print_summary "${results}" "$(jq '.skipped' <<< "${listing}")"
+}

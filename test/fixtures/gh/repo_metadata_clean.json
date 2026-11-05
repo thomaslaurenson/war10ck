@@ -1,0 +1,5 @@
+[
+  {"nameWithOwner": "owner/good", "description": "A blurb that passes every check, written to a fixed length so the character limits can be tested at the boundary and on either side of it wi", "repositoryTopics": [{"name": "one"}, {"name": "two"}, {"name": "three"}]},
+  {"nameWithOwner": "owner/at-min", "description": "A blurb at the shortest length allowed, written to a fixed length so the character limits can be tested at the boundary and on eit", "repositoryTopics": [{"name": "one"}, {"name": "two"}, {"name": "three"}]},
+  {"nameWithOwner": "owner/at-max", "description": "A blurb at the longest length allowed, written to a fixed length so the character limits can be tested at the boundary and on either side of it without guessing", "repositoryTopics": [{"name": "one"}, {"name": "two"}, {"name": "three"}]}
+]

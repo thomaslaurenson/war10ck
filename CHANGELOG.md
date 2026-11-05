@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.22.0 - 2026-11-05
+
+### Added
+
+- Add git functions checking public repositories for description length, website match and topics
+
 ## 0.21.0 - 2026-10-28
 
 ### Added
