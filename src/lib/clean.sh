@@ -57,6 +57,10 @@ readonly W_CLEAN_ENTRIES=(
   # The github shell helpers, moved into the git module
   "file|${HOME}/.war10ck/functions.d/github|~/.war10ck/functions.d/git"
 
+  # The claude module, renamed claude-cli
+  "file|${HOME}/.war10ck/env.d/claude|~/.war10ck/env.d/claude-cli"
+  "file|${HOME}/.war10ck/registry.d/claude|~/.war10ck/registry.d/claude-cli"
+
   # The sshfs shell helpers, replaced by the smount tool
   "file|${HOME}/.war10ck/functions.d/sshfs|smount"
   "file|${HOME}/.war10ck/.sshfs_favorites|smount"

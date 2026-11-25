@@ -12,7 +12,7 @@ if [[ ! -x "${ASEPRITE_DIR}/aseprite" || ! -d "${ASEPRITE_MCP_DIR}" ]]; then
 fi
 
 if ! w_is_installed claude; then
-  w_log_error "claude not found. Install it with: war10ck install claude"
+  w_log_error "claude not found. Install it with: war10ck install claude-cli"
   exit 1
 fi
 

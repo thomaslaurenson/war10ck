@@ -12,7 +12,7 @@ if [[ ! -x "${LDTK_DIR}/ldtk" || ! -x "${LDTK_MCP_BIN}" ]]; then
 fi
 
 if ! w_is_installed claude; then
-  w_log_error "claude not found. Install it with: war10ck install claude"
+  w_log_error "claude not found. Install it with: war10ck install claude-cli"
   exit 1
 fi
 
