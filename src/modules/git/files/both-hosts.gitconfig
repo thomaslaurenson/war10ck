@@ -1,0 +1,7 @@
+# Included by the war10ck settings for a repository with a GitHub remote, and
+# repeats the Bitbucket patterns, so its include applies only when a
+# repository has remotes on both hosts.
+[includeIf "hasconfig:remote.*.url:*bitbucket.org:*/**"]
+    path = ~/.war10ck/git/no-identity.gitconfig
+[includeIf "hasconfig:remote.*.url:https://*bitbucket.org/**"]
+    path = ~/.war10ck/git/no-identity.gitconfig

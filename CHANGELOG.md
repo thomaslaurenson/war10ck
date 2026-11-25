@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.23.0 - 2026-11-25
+
+### Added
+
+- Add separate GitHub and Bitbucket git identities, refusing to commit when neither or both apply
+- Add a claude-desktop module installing the Claude desktop app, with kvm access for Cowork
+
+### Changed
+
+- Keep shared git settings in ~/.war10ck/git and include them from ~/.gitconfig, which install no longer overwrites
+- Rename the claude module to claude-cli, with clean removing its old files
+- Float wow.exe windows in i3
+
+### Updated
+
+- Bump Go to 1.27.4, goreleaser to 2.20.2 and govulncheck to 1.10.0
+- Bump uv to 0.13.9
+
 ## 0.22.1 - 2026-11-05
 
 ### Changed

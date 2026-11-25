@@ -5,8 +5,8 @@ set -euo pipefail
 
 # Update UV_SHA256 when bumping UV_VERSION.
 # To get the hash: curl -fsSL "https://astral.sh/uv/VERSION/install.sh" | sha256sum
-readonly UV_VERSION="0.13.5"
-readonly UV_SHA256="1c6e7f025499664633ac2dce43a210800510e9ef0625c52e034a8afdf8bf177a"
+readonly UV_VERSION="0.13.9"
+readonly UV_SHA256="ccc888115ac831bd9c30855c1d4abeae32fce679701d2aac8e72eb0beffb41c2"
 
 readonly UV_INSTALLER_URL="https://astral.sh/uv/${UV_VERSION}/install.sh"
 

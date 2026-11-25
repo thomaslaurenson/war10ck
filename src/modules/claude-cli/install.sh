@@ -90,4 +90,4 @@ if ! w_verify_sha256 "${_binary}" "${_checksum}"; then
   exit 1
 fi
 
-w_log_info "claude module installed (${_version})."
+w_log_info "claude-cli module installed (${_version})."

@@ -1,7 +1,6 @@
+# Shared git settings, deployed to ~/.war10ck/git/gitconfig and included from
+# ~/.gitconfig, after its [user] section.
 [user]
-    name = YOUR_NAME
-    email = YOUR_EMAIL
-    signingkey = YOUR_SIGNING_KEY
     useConfigOnly = true
 [gpg]
     format = ssh
@@ -11,3 +10,29 @@
     default = current
 [init]
     defaultBranch = main
+# Identity comes from the host of a repository's remotes and nowhere else.
+# ~/.gitconfig sets none, so with useConfigOnly a repository with no remote,
+# or remotes only on another host, cannot commit until it is given an identity
+# of its own. The host files are written by the git module install and are
+# skipped when absent.
+#
+# hasconfig matches any remote, not only origin: git has no origin-only
+# condition. Patterns are case-sensitive globs, and * stops at a slash, so the
+# SSH and HTTPS forms each need one.
+[includeIf "hasconfig:remote.*.url:*github.com:*/**"]
+    path = ~/.war10ck/git/github.gitconfig
+[includeIf "hasconfig:remote.*.url:https://*github.com/**"]
+    path = ~/.war10ck/git/github.gitconfig
+[includeIf "hasconfig:remote.*.url:*bitbucket.org:*/**"]
+    path = ~/.war10ck/git/bitbucket.gitconfig
+[includeIf "hasconfig:remote.*.url:https://*bitbucket.org/**"]
+    path = ~/.war10ck/git/bitbucket.gitconfig
+# A repository with remotes on both hosts gets no identity, rather than
+# whichever host was included last. git cannot combine two conditions in one
+# includeIf, so the second is nested in both-hosts.gitconfig. These stay last:
+# git applies settings in file order, and an identity included after them
+# would put one back.
+[includeIf "hasconfig:remote.*.url:*github.com:*/**"]
+    path = ~/.war10ck/git/both-hosts.gitconfig
+[includeIf "hasconfig:remote.*.url:https://*github.com/**"]
+    path = ~/.war10ck/git/both-hosts.gitconfig

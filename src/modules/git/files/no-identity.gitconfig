@@ -1,0 +1,9 @@
+# Included for a repository with remotes on both GitHub and Bitbucket. Blank
+# values replace whatever identity either host supplied, rather than leaving
+# one to win, so git refuses to commit or sign. The repository's own config is
+# read after this file, so setting user.name, user.email and user.signingkey
+# there is how such a repository gets an identity.
+[user]
+    name =
+    email =
+    signingkey =

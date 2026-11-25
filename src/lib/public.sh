@@ -121,14 +121,19 @@ w_apt_remove() {
 
 # Add a GPG key for an apt repository.
 # Fetches the key from a URL and writes it to /etc/apt/keyrings/<name>.gpg
-# Skips if the key file already exists.
+# Skips if the key file already exists. Given a fingerprint, writes nothing
+# unless the download holds that key and no other.
 #
 # Arguments:
 #   $1 - Short name for the key (used as filename, e.g. "docker")
 #   $2 - URL to fetch the key from
+#   $3 - Expected primary key fingerprint (optional)
+# Returns:
+#   1 when a fingerprint is given and the download does not match it
 w_apt_add_key() {
   local name=$1
   local url=$2
+  local fingerprint=${3:-}
   local keyfile="/etc/apt/keyrings/${name}.gpg"
   if [[ -f "${keyfile}" ]]; then
     w_log_info "GPG key already present: ${keyfile}. Skipping."
@@ -139,6 +144,11 @@ w_apt_add_key() {
   local _tmpkey
   _tmpkey=$(mktemp --suffix=-key.asc)
   w_download "${url}" "${_tmpkey}"
+  if [[ -n "${fingerprint}" ]] \
+      && ! w_verify_gpg_fingerprint "${_tmpkey}" "${fingerprint}"; then
+    rm -f "${_tmpkey}"
+    return 1
+  fi
   sudo gpg --dearmor -o "${keyfile}" "${_tmpkey}"
   rm -f "${_tmpkey}"
   sudo chmod a+r "${keyfile}"
@@ -544,6 +554,40 @@ w_verify_sha256() {
   w_log_info "Checksum OK: $(basename "${file}")"
 }
 
+# Verify that a key file holds exactly one primary key, with the expected
+# fingerprint. Logs the result and returns 1 otherwise.
+#
+# Only primary key fingerprints are compared: subkeys carry their own, which
+# are not what a vendor publishes. A second primary key fails the check even
+# when the first matches, since apt trusts every key in the file.
+#
+# gpg runs against a throwaway home because --show-keys still creates a keybox
+# and trustdb in whichever home it is given.
+#
+# Arguments:
+#   $1 - Path to the key file, armoured or binary
+#   $2 - Expected fingerprint, 40 hex characters
+w_verify_gpg_fingerprint() {
+  local file=$1
+  local expected=${2^^}
+  local gnupghome
+  gnupghome=$(mktemp -d)
+  local -a found=()
+  mapfile -t found < <(
+    GNUPGHOME="${gnupghome}" gpg --batch --show-keys --with-colons \
+      "${file}" 2>/dev/null \
+      | awk -F: '$1 == "fpr" && prev == "pub" { print $10 } { prev = $1 }'
+  )
+  rm -rf "${gnupghome}"
+  if (( ${#found[@]} != 1 )) || [[ "${found[0]}" != "${expected}" ]]; then
+    w_log_error "Key fingerprint mismatch for $(basename "${file}")"
+    w_log_error "  expected: ${expected}"
+    w_log_error "  actual:   ${found[*]:-none}"
+    return 1
+  fi
+  w_log_info "Key fingerprint OK: $(basename "${file}")"
+}
+
 # Download a checksums file, extract the expected SHA256 for a named archive,
 # and verify it. Returns 1 on any failure (caller is responsible for cleanup).
 #
@@ -707,4 +751,5 @@ export -f w_block_range
 export -f w_remove_block
 export -f w_github_latest_tag
 export -f w_verify_sha256
+export -f w_verify_gpg_fingerprint
 export -f w_github_checksums_verify
