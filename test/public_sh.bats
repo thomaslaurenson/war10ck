@@ -451,6 +451,116 @@ WGET
   grep -q -- '--dearmor -o /etc/apt/keyrings/war10cktestkey.gpg' "$bin/gpg.calls"
 }
 
+# Stub gpg so --show-keys prints a fixed colon listing and every other call is
+# recorded, which is enough to drive w_verify_gpg_fingerprint without a real
+# key and to see whether w_apt_add_key went on to dearmor.
+#
+# Arguments:
+#   $1 - Directory to write the stub into
+#   $2 - Colon listing --show-keys prints
+_gpg_listing_stub() {
+  local dir=$1 listing=$2
+  mkdir -p "$dir"
+  printf '%s\n' "$listing" > "$dir/gpg.listing"
+  { printf '#!/usr/bin/env bash\n'
+    printf '[[ "$*" == *--show-keys* ]] && { cat %q; exit 0; }\n' "$dir/gpg.listing"
+    printf 'printf "%%s\\n" "$*" >> %q\n' "$dir/gpg.calls"
+  } > "$dir/gpg"
+  chmod +x "$dir/gpg"
+}
+
+FPR_A="31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE"
+FPR_B="0123456789ABCDEF0123456789ABCDEF01234567"
+
+@test "w_verify_gpg_fingerprint: passes a single primary key that matches" {
+  local bin="$BATS_TEST_TMPDIR/bin"
+  _gpg_listing_stub "$bin" "pub:-:4096:1:BAA929FF1A7ECACE:::::
+fpr:::::::::$FPR_A:"
+  run bash -c "PATH='$bin:$PATH'; source '$LIB'; w_verify_gpg_fingerprint /dev/null '$FPR_A'"
+  (( status == 0 ))
+  [[ "$output" =~ "Key fingerprint OK" ]]
+}
+
+@test "w_verify_gpg_fingerprint: accepts the expected value in lower case" {
+  local bin="$BATS_TEST_TMPDIR/bin"
+  _gpg_listing_stub "$bin" "pub:-:4096:1:BAA929FF1A7ECACE:::::
+fpr:::::::::$FPR_A:"
+  run bash -c "PATH='$bin:$PATH'; source '$LIB'; w_verify_gpg_fingerprint /dev/null '${FPR_A,,}'"
+  (( status == 0 ))
+}
+
+@test "w_verify_gpg_fingerprint: ignores subkey fingerprints" {
+  local bin="$BATS_TEST_TMPDIR/bin"
+  _gpg_listing_stub "$bin" "pub:-:4096:1:BAA929FF1A7ECACE:::::
+fpr:::::::::$FPR_A:
+sub:-:4096:1:89ABCDEF01234567:::::
+fpr:::::::::$FPR_B:"
+  run bash -c "PATH='$bin:$PATH'; source '$LIB'; w_verify_gpg_fingerprint /dev/null '$FPR_A'"
+  (( status == 0 ))
+}
+
+@test "w_verify_gpg_fingerprint: fails a key with a different fingerprint" {
+  local bin="$BATS_TEST_TMPDIR/bin"
+  _gpg_listing_stub "$bin" "pub:-:4096:1:89ABCDEF01234567:::::
+fpr:::::::::$FPR_B:"
+  run bash -c "PATH='$bin:$PATH'; source '$LIB'; w_verify_gpg_fingerprint /dev/null '$FPR_A'"
+  (( status == 1 ))
+  [[ "$output" =~ "Key fingerprint mismatch" ]]
+}
+
+@test "w_verify_gpg_fingerprint: fails a file carrying a second primary key" {
+  # apt trusts every key in a keyring, so a matching first key is not enough.
+  local bin="$BATS_TEST_TMPDIR/bin"
+  _gpg_listing_stub "$bin" "pub:-:4096:1:BAA929FF1A7ECACE:::::
+fpr:::::::::$FPR_A:
+pub:-:4096:1:89ABCDEF01234567:::::
+fpr:::::::::$FPR_B:"
+  run bash -c "PATH='$bin:$PATH'; source '$LIB'; w_verify_gpg_fingerprint /dev/null '$FPR_A'"
+  (( status == 1 ))
+}
+
+@test "w_verify_gpg_fingerprint: fails a file holding no key" {
+  local bin="$BATS_TEST_TMPDIR/bin"
+  _gpg_listing_stub "$bin" ""
+  run bash -c "PATH='$bin:$PATH'; source '$LIB'; w_verify_gpg_fingerprint /dev/null '$FPR_A'"
+  (( status == 1 ))
+  [[ "$output" =~ "actual:   none" ]]
+}
+
+@test "w_apt_add_key: installs nothing when the fingerprint does not match" {
+  local bin="$BATS_TEST_TMPDIR/bin"
+  _stub_sudo "$bin"
+  _capturing_stub "$bin" install
+  _capturing_stub "$bin" chmod
+  _gpg_listing_stub "$bin" "pub:-:4096:1:89ABCDEF01234567:::::
+fpr:::::::::$FPR_B:"
+  run bash -c "
+    PATH='$bin:$PATH'
+    source '$LIB'
+    w_download() { printf 'KEYDATA\n' > \"\$2\"; }
+    w_apt_add_key war10cktestkey https://example.com/key.asc '$FPR_A'
+  "
+  (( status == 1 ))
+  [[ ! -f "$bin/gpg.calls" ]]
+}
+
+@test "w_apt_add_key: installs the keyring when the fingerprint matches" {
+  local bin="$BATS_TEST_TMPDIR/bin"
+  _stub_sudo "$bin"
+  _capturing_stub "$bin" install
+  _capturing_stub "$bin" chmod
+  _gpg_listing_stub "$bin" "pub:-:4096:1:BAA929FF1A7ECACE:::::
+fpr:::::::::$FPR_A:"
+  run bash -c "
+    PATH='$bin:$PATH'
+    source '$LIB'
+    w_download() { printf 'KEYDATA\n' > \"\$2\"; }
+    w_apt_add_key war10cktestkey https://example.com/key.asc '$FPR_A'
+  "
+  (( status == 0 ))
+  grep -q -- '--dearmor -o /etc/apt/keyrings/war10cktestkey.gpg' "$bin/gpg.calls"
+}
+
 @test "w_apt_add_source: writes the source entry and refreshes apt" {
   local bin="$BATS_TEST_TMPDIR/bin"
   _stub_sudo "$bin"
