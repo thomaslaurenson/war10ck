@@ -5,51 +5,100 @@ set -euo pipefail
 
 w_apt_install git
 
-# Deploy gitconfig template, preserving any existing user values
-local_gitconfig="$HOME/.gitconfig"
+# ~/.gitconfig belongs to the user and is never rewritten: install only appends
+# one include of the war10ck settings, which config deploys. Anything else in
+# the file, including settings added later with git config --global, survives
+# a rerun. Identity lives in one file per host under ~/.war10ck/git, included
+# by the war10ck settings according to the host of a repository's remotes.
+readonly GITCONFIG="$HOME/.gitconfig"
+readonly IDENTITY_DIR="$HOME/.war10ck/git"
 
-existing_name=""
-existing_email=""
-existing_signingkey=""
+# Prompt for a key a config file lacks and write the answer there. An empty
+# answer writes nothing.
+#
+# Arguments:
+#   $1 - Config file
+#   $2 - Key (e.g. user.name)
+#   $3 - Prompt message
+#   $4 - Value used for an empty answer, optional
+_set_if_missing() {
+  local file=$1
+  local key=$2
+  local message=$3
+  local fallback=${4:-}
+  local value
+  value=$(git config -f "${file}" "${key}" 2>/dev/null || true)
+  if [[ -n "${value}" ]]; then
+    w_log_info "Using existing ${key} in ${file}: ${value}"
+    return 0
+  fi
+  value=$(w_prompt "${message}")
+  value=${value:-${fallback}}
+  if [[ -n "${value}" ]]; then
+    git config -f "${file}" "${key}" "${value}"
+  fi
+}
 
-if [[ -f "${local_gitconfig}" ]]; then
-  w_log_info "Found existing .gitconfig, extracting user values..."
-  existing_name=$(git config -f "${local_gitconfig}" user.name 2>/dev/null || true)
-  existing_email=$(git config -f "${local_gitconfig}" user.email 2>/dev/null || true)
-  existing_signingkey=$(git config -f "${local_gitconfig}" user.signingkey 2>/dev/null || true)
+# Prompt for one host's identity. Skipping the email writes no file, so that
+# host's repositories have no identity and cannot commit.
+#
+# Arguments:
+#   $1 - File name stem, matching the include in the war10ck settings
+#   $2 - Host name shown in the prompts
+#   $3 - Name used for an empty answer, optional
+_set_host_identity() {
+  local stem=$1
+  local label=$2
+  local name_fallback=${3:-}
+  local file="${IDENTITY_DIR}/${stem}.gitconfig"
+  local name_prompt="Enter your ${label} Git name"
+  if [[ -n "${name_fallback}" ]]; then
+    name_prompt+=" (Enter for ${name_fallback})"
+  fi
+
+  _set_if_missing "${file}" user.email \
+    "Enter your ${label} Git email (or press Enter to skip ${label})"
+  [[ -f "${file}" ]] || return 0
+  _set_if_missing "${file}" user.name "${name_prompt}" "${name_fallback}"
+  _set_if_missing "${file}" user.signingkey \
+    "Enter your ${label} Git signing key path"
+}
+
+# The include has to follow a [user] section. git config --global, which git's
+# own "Author identity unknown" message suggests, adds to an existing [user]
+# section but appends a new one at the end of the file when there is none,
+# and a section after the include would override every host identity. An empty
+# section above the include keeps those keys where the includes override them.
+#
+# The include is appended rather than written with git config --add, which
+# would put it in any [include] section already in the file.
+if ! grep -qs '^# war10ck BEGIN git$' "${GITCONFIG}"; then
+  grep -qs '^\[user\]' "${GITCONFIG}" || printf '[user]\n' >> "${GITCONFIG}"
+  printf '\n# war10ck BEGIN git\n[include]\n\tpath = ~/.war10ck/git/gitconfig\n# war10ck END git\n' \
+    >> "${GITCONFIG}"
 fi
 
-tmp_gitconfig=$(mktemp --suffix=".gitconfig")
-w_deploy_remote_file "modules/git/files/gitconfig" "${tmp_gitconfig}"
+mkdir -p "${IDENTITY_DIR}"
+_set_host_identity github GitHub
+_github_name=$(git config -f "${IDENTITY_DIR}/github.gitconfig" user.name \
+  2>/dev/null || true)
+_set_host_identity bitbucket Bitbucket "${_github_name}"
 
-if [[ -z "${existing_name}" ]]; then
-  printf '[?] Enter your Git name: '
-  read -r existing_name
-else
-  w_log_info "Using existing Git name: ${existing_name}"
+# An identity in ~/.gitconfig applies wherever no host identity does, so a
+# repository with no remote, or on another host, commits with it instead of
+# failing. The file is the user's, so this is reported rather than removed.
+_defaults=()
+for _key in user.name user.email user.signingkey; do
+  if git config -f "${GITCONFIG}" "${_key}" > /dev/null 2>&1; then
+    _defaults+=("${_key}")
+  fi
+done
+if (( ${#_defaults[@]} > 0 )); then
+  w_log_error "${GITCONFIG} sets ${_defaults[*]}, which any repository"
+  w_log_error "without a GitHub or Bitbucket remote will use. To remove it:"
+  for _key in "${_defaults[@]}"; do
+    w_log_error "  git config --global --unset ${_key}"
+  done
 fi
 
-if [[ -z "${existing_email}" ]]; then
-  printf '[?] Enter your Git email: '
-  read -r existing_email
-else
-  w_log_info "Using existing Git email: ${existing_email}"
-fi
-
-if [[ -z "${existing_signingkey}" ]]; then
-  printf '[?] Enter your Git signing key path (or press Enter to skip): '
-  read -r existing_signingkey
-else
-  w_log_info "Using existing Git signing key: ${existing_signingkey}"
-fi
-
-sed -i "s|name = YOUR_NAME|name = ${existing_name}|"   "${tmp_gitconfig}"
-sed -i "s|email = YOUR_EMAIL|email = ${existing_email}|" "${tmp_gitconfig}"
-
-if [[ -n "${existing_signingkey}" ]]; then
-  escaped_key="${existing_signingkey//\//\\/}"
-  sed -i "s|signingkey = YOUR_SIGNING_KEY|signingkey = ${escaped_key}|" "${tmp_gitconfig}"
-fi
-
-mv "${tmp_gitconfig}" "${local_gitconfig}"
 w_log_info "git module installed."
